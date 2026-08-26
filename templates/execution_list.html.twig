@@ -1,0 +1,102 @@
+{#
+ # -------------------------------------------------------------------------
+ # TicketFlow plugin for GLPI
+ # -------------------------------------------------------------------------
+ #
+ # MIT License
+ #
+ # Permission is hereby granted, free of charge, to any person obtaining a copy
+ # of this software and associated documentation files (the "Software"), to deal
+ # in the Software without restriction, including without limitation the rights
+ # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ # copies of the Software, and to permit persons to whom the Software is
+ # furnished to do so, subject to the following conditions:
+ #
+ # The above copyright notice and this permission notice shall be included in all
+ # copies or substantial portions of the Software.
+ #
+ # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ # SOFTWARE.
+ # -------------------------------------------------------------------------
+ # @copyright Copyright (C) 2026 Felipe Jovino.
+ # @license   MIT https://opensource.org/licenses/mit-license.php
+ # @link      https://github.com/Jovinull/ticketflow
+ # -------------------------------------------------------------------------
+ #}
+
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>{{ __('Ticket') }}</th>
+                <th>{{ __('Result', 'ticketflow') }}</th>
+                <th>{{ __('Reference date', 'ticketflow') }}</th>
+                <th>{{ __('Deadline', 'ticketflow') }}</th>
+                <th>{{ __('Calendar') }}</th>
+                <th>{{ __('Triggered at', 'ticketflow') }}</th>
+                <th>{{ __('Details', 'ticketflow') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for row in rows %}
+            <tr>
+                <td>
+                    <a href="{{ config('root_doc') }}/front/ticket.form.php?id={{ row.tickets_id }}">
+                        #{{ row.tickets_id }}
+                    </a>
+                </td>
+                <td>
+                    {% set badge = {
+                        'executed': 'bg-success',
+                        'failed': 'bg-danger',
+                        'skipped': 'bg-secondary',
+                        'dry_run': 'bg-azure',
+                        'processing': 'bg-orange'
+                    } %}
+                    <span class="badge {{ badge[row.state]|default('bg-secondary') }}">
+                        {{ states[row.state]|default(row.state) }}
+                    </span>
+                </td>
+                <td>{{ row.reference_date ? row.reference_date|date('Y-m-d H:i') : '—' }}</td>
+                <td>
+                    {{ row.deadline_date ? row.deadline_date|date('Y-m-d H:i') : '—' }}
+                    {% if row.used_elapsed_fallback %}
+                        <i class="ti ti-alert-triangle text-warning ms-1"
+                           title="{{ __('No usable calendar: computed as plain elapsed time.', 'ticketflow') }}"></i>
+                    {% endif %}
+                </td>
+                <td>{{ row.calendar_name|default('—') }}</td>
+                <td>{{ row.triggered_at ? row.triggered_at|date('Y-m-d H:i') : '—' }}</td>
+                <td class="small">
+                    {% if row.error %}
+                        <span class="text-danger">{{ row.error }}</span>
+                    {% else %}
+                        {% for action in row.actions %}
+                            <span class="badge {{ action.success ? 'bg-secondary-lt' : 'bg-danger-lt' }}">
+                                {{ action.type }}{{ action.simulated ? ' (dry run)' : '' }}
+                            </span>
+                        {% else %}
+                            <span class="text-secondary">—</span>
+                        {% endfor %}
+                    {% endif %}
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="7" class="text-center text-secondary">
+                    {{ __('This rule has not run yet.', 'ticketflow') }}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<p class="text-secondary small mt-2">
+    {{ __('Showing the 100 most recent entries. Use TicketFlow > Execution logs for the full, searchable history.', 'ticketflow') }}
+</p>

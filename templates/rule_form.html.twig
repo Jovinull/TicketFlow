@@ -1,0 +1,218 @@
+{#
+ # -------------------------------------------------------------------------
+ # TicketFlow plugin for GLPI
+ # -------------------------------------------------------------------------
+ #
+ # MIT License
+ #
+ # Permission is hereby granted, free of charge, to any person obtaining a copy
+ # of this software and associated documentation files (the "Software"), to deal
+ # in the Software without restriction, including without limitation the rights
+ # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ # copies of the Software, and to permit persons to whom the Software is
+ # furnished to do so, subject to the following conditions:
+ #
+ # The above copyright notice and this permission notice shall be included in all
+ # copies or substantial portions of the Software.
+ #
+ # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ # SOFTWARE.
+ # -------------------------------------------------------------------------
+ # @copyright Copyright (C) 2026 Felipe Jovino.
+ # @license   MIT https://opensource.org/licenses/mit-license.php
+ # @link      https://github.com/Jovinull/ticketflow
+ # -------------------------------------------------------------------------
+ #}
+
+{% import 'components/form/fields_macros.html.twig' as fields %}
+
+{% set no_header = no_header|default(not item.isNewItem() and not _get._in_modal|default(false)) %}
+{% set id = item.fields['id'] ?? -1 %}
+{% set is_new = item.isNewItem() %}
+{% set canedit = item.canUpdateItem() %}
+
+<div class="asset">
+    {{ include('components/form/header.html.twig', {'in_twig': true}) }}
+
+    <div class="card-body d-flex flex-wrap">
+        <div class="col-12 flex-column">
+
+            {% if description is not empty %}
+                <div class="alert alert-info d-flex align-items-start" role="status">
+                    <i class="ti ti-info-circle me-2 mt-1"></i>
+                    <div>
+                        <div class="fw-bold">{{ __('What this rule does', 'ticketflow') }}</div>
+                        <div>{{ description }}</div>
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if is_destructive %}
+                <div class="alert alert-warning d-flex align-items-start" role="alert">
+                    <i class="ti ti-alert-triangle me-2 mt-1"></i>
+                    <div>{{ __('This rule can solve, close or change the status of tickets automatically.', 'ticketflow') }}</div>
+                </div>
+            {% endif %}
+
+            {# ---------------------------------------------------------------- #}
+            <div class="row flex-row">
+                {{ fields.largeTitle(__('Information', 'ticketflow'), 'ti ti-info-circle', true) }}
+
+                {{ fields.textField('name', item.fields['name'], __('Name'), {'required': true}) }}
+
+                {{ fields.dropdownYesNo('is_active', item.fields['is_active'], __('Active'), {
+                    'helper': __('A new rule is always created inactive.', 'ticketflow')
+                }) }}
+
+                {{ fields.dropdownYesNo('is_recursive', item.fields['is_recursive'], __('Child entities')) }}
+
+                {{ fields.numberField('ranking', item.fields['ranking']|default(0), __('Evaluation order', 'ticketflow'), {
+                    'min': 0,
+                    'helper': __('Lower values are evaluated first.', 'ticketflow')
+                }) }}
+
+                {{ fields.textareaField('comment', item.fields['comment'], __('Comments')) }}
+            </div>
+
+            {# ---------------------------------------------------------------- #}
+            <div class="row flex-row">
+                {{ fields.largeTitle(__('When', 'ticketflow'), 'ti ti-filter') }}
+
+                {{ fields.dropdownArrayField('rule_type', item.fields['rule_type']|default('pending_inactivity'), rule_types, __('Rule type', 'ticketflow')) }}
+
+                {# The value must be an array when 'multiple' is set: GLPI's Dropdown::show()
+                   feeds it to array_diff() and a scalar makes it throw. The macro emits the
+                   "__groups_id_defined" marker itself, so an empty selection is still
+                   distinguishable from a form that never had the field. #}
+                {{ fields.dropdownField('Group', '_groups_id', selected_groups, __('Assigned groups', 'ticketflow'), {
+                    'multiple': true,
+                    'values': selected_groups,
+                    'condition': {'is_assign': 1},
+                    'entity': item.fields['entities_id'],
+                    'entity_sons': item.fields['is_recursive'],
+                    'helper': __('Leave empty to target every group. A ticket matches when one of its assigned groups is listed.', 'ticketflow')
+                }) }}
+
+                {{ fields.dropdownArrayField('target_status', item.fields['target_status']|default(0), statuses, __('Ticket status'), {
+                    'helper': __('For a pending rule, leave "Pending" selected unless you know why you are changing it.', 'ticketflow')
+                }) }}
+
+                {{ fields.dropdownField('PendingReason', 'pendingreasons_id', item.fields['pendingreasons_id']|default(0), __('Pending reason'), {
+                    'helper': __('Empty means any pending reason, including tickets that are pending without one.', 'ticketflow')
+                }) }}
+            </div>
+
+            {# ---------------------------------------------------------------- #}
+            <div class="row flex-row">
+                {{ fields.largeTitle(__('Clock', 'ticketflow'), 'ti ti-clock') }}
+
+                {{ fields.dropdownArrayField('start_event', item.fields['start_event']|default('pending_start'), start_events, __('The countdown starts at', 'ticketflow'), {
+                    'helper': start_event_helpers[item.fields['start_event']|default('pending_start')]|default('')
+                }) }}
+
+                {{ fields.numberField('delay_value', item.fields['delay_value']|default(5), __('Delay', 'ticketflow'), {'min': 1, 'required': true}) }}
+
+                {{ fields.dropdownArrayField('delay_unit', item.fields['delay_unit']|default('business_days'), delay_units, __('Unit', 'ticketflow')) }}
+
+                {{ fields.dropdownArrayField('calendar_mode', item.fields['calendar_mode']|default('entity'), calendar_modes, __('Calendar', 'ticketflow')) }}
+
+                {{ fields.dropdownField('Calendar', 'calendars_id', item.fields['calendars_id']|default(0), __('Specific calendar', 'ticketflow'), {
+                    'helper': __('Only used when the calendar mode is "Specific calendar".', 'ticketflow')
+                }) }}
+
+                <input type="hidden" name="_reset_events_defined" value="1" />
+                {# Two traps in GLPI's own API, both in this one field.
+                   1. With 'multiple', Dropdown::show() (used by dropdownField above) wants
+                      an *array* value, while Dropdown::showFromArray() used here wants a
+                      *scalar* value and the selection in 'values'. An array here throws in
+                      strlen().
+                   2. The name must NOT carry its own '[]': showFromArray() appends it when
+                      'multiple' is set (Dropdown.php, `$field_name = $name . "[]"`).
+                      Writing '_reset_events[]' produced '_reset_events[][]', which PHP
+                      parses one level too deep, so the selection never reached
+                      prepareInput() and saving a rule silently cleared its reset events. #}
+                {{ fields.dropdownArrayField('_reset_events', '', reset_events, __('Restart the clock on', 'ticketflow'), {
+                    'multiple': true,
+                    'values': selected_resets,
+                    'helper': __('Only these interactions push the deadline forward. Choosing "Answer from a requester" is what makes a technician reply *not* restart the countdown.', 'ticketflow')
+                }) }}
+            </div>
+
+            {# ---------------------------------------------------------------- #}
+            <div class="row flex-row">
+                {{ fields.largeTitle(__('Then', 'ticketflow'), 'ti ti-player-play') }}
+
+                {{ fields.dropdownYesNo('_actions[add_followup][enabled]', actions.add_followup.enabled, __('Add a message to the timeline', 'ticketflow')) }}
+
+                {{ fields.textareaField('_actions[add_followup][content]', actions.add_followup.content, __('Message', 'ticketflow'), {
+                    'enable_richtext': true,
+                    'enable_images': false,
+                    'rows': 5,
+                    'helper': __('Placeholders: {{ticket.id}}, {{ticket.name}}, {{rule.name}}, {{deadline}}, {{reference}}, {{delay}}, {{delay_unit}}, {{group.name}}, {{entity.name}}, {{calendar.name}}', 'ticketflow')
+                }) }}
+
+                {{ fields.dropdownYesNo('_actions[add_followup][is_private]', actions.add_followup.is_private, __('Private followup')) }}
+
+                {{ fields.dropdownArrayField('_actions[final][type]', actions.final.type, {
+                    'none': __('Do nothing else', 'ticketflow'),
+                    'add_solution': __('Solve the ticket (add a solution) — recommended', 'ticketflow'),
+                    'change_status': __('Change the status', 'ticketflow'),
+                    'close_ticket': __('Close the ticket (skips the solution workflow)', 'ticketflow'),
+                }, __('Then', 'ticketflow')) }}
+
+                {{ fields.textareaField('_actions[final][content]', actions.final.content, __('Solution content', 'ticketflow'), {
+                    'enable_richtext': true,
+                    'enable_images': false,
+                    'rows': 5
+                }) }}
+
+                {{ fields.dropdownField('SolutionType', '_actions[final][solutiontypes_id]', actions.final.solutiontypes_id, __('Solution type')) }}
+
+                {{ fields.dropdownArrayField('_actions[final][status]', actions.final.status, target_statuses, __('Target status', 'ticketflow')) }}
+
+                {{ fields.dropdownYesNo('_actions[send_notification][enabled]', actions.send_notification.enabled, __('Raise a notification', 'ticketflow')) }}
+
+                {{ fields.textField('_actions[send_notification][event]', actions.send_notification.event, __('Notification event', 'ticketflow'), {
+                    'helper': __('A GLPI ticket notification event, for example "update".', 'ticketflow')
+                }) }}
+            </div>
+
+            {# ---------------------------------------------------------------- #}
+            <div class="row flex-row">
+                {{ fields.largeTitle(__('Safety', 'ticketflow'), 'ti ti-shield-check') }}
+
+                {{ fields.dropdownYesNo('is_dry_run', item.fields['is_dry_run'], __('Simulation only', 'ticketflow'), {
+                    'helper': __('The rule is evaluated and logged, but no ticket is modified. Use this to watch a new rule for a few days before arming it.', 'ticketflow')
+                }) }}
+
+                {% if not is_new %}
+                    <div class="col-12 mt-2">
+                        <a class="btn btn-outline-secondary"
+                           href="{{ config('root_doc') }}/plugins/ticketflow/front/rule.simulate.php?id={{ id }}">
+                            <i class="ti ti-player-play"></i>
+                            <span>{{ __('Simulate this rule', 'ticketflow') }}</span>
+                        </a>
+                        <span class="form-text ms-2">{{ __('Shows which tickets would be affected. Changes nothing.', 'ticketflow') }}</span>
+                    </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+
+    {% set buttons_params = params|merge({
+        'addbuttons': (is_new or not canedit) ? {} : {
+            'duplicate': {
+                'text': __('Duplicate', 'ticketflow'),
+                'icon': 'ti ti-copy',
+                'btn_class': 'btn-outline-secondary'
+            }
+        }
+    }) %}
+    {{ include('components/form/buttons.html.twig', {'params': buttons_params}) }}
+</div>

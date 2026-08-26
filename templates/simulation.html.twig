@@ -1,0 +1,196 @@
+{#
+ # -------------------------------------------------------------------------
+ # TicketFlow plugin for GLPI
+ # -------------------------------------------------------------------------
+ #
+ # MIT License
+ #
+ # Permission is hereby granted, free of charge, to any person obtaining a copy
+ # of this software and associated documentation files (the "Software"), to deal
+ # in the Software without restriction, including without limitation the rights
+ # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ # copies of the Software, and to permit persons to whom the Software is
+ # furnished to do so, subject to the following conditions:
+ #
+ # The above copyright notice and this permission notice shall be included in all
+ # copies or substantial portions of the Software.
+ #
+ # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ # SOFTWARE.
+ # -------------------------------------------------------------------------
+ # @copyright Copyright (C) 2026 Felipe Jovino.
+ # @license   MIT https://opensource.org/licenses/mit-license.php
+ # @link      https://github.com/Jovinull/ticketflow
+ # -------------------------------------------------------------------------
+ #}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="ti ti-player-play me-1"></i>
+            {{ was_real ? __('Manual run', 'ticketflow') : __('Simulation', 'ticketflow') }}
+            — {{ rule.fields['name'] }}
+        </h3>
+    </div>
+
+    <div class="card-body">
+        <div class="alert alert-info">
+            <div class="fw-bold">{{ __('What this rule does', 'ticketflow') }}</div>
+            <div>{{ description }}</div>
+        </div>
+
+        {% if not was_real %}
+            <div class="alert alert-secondary d-flex align-items-start">
+                <i class="ti ti-eye me-2 mt-1"></i>
+                <div>{{ __('Nothing was modified: no followup, no solution, no status change and no operational notification was produced.', 'ticketflow') }}</div>
+            </div>
+        {% endif %}
+
+        {% if missing_ticket_right|default(false) %}
+            <div class="alert alert-warning d-flex align-items-start">
+                <i class="ti ti-alert-triangle me-2 mt-1"></i>
+                <div>{{ __('You do not have the update right on tickets. A manual run acts as you, not as the scheduler, so ticket changes may be refused here even though the automatic action would succeed.', 'ticketflow') }}</div>
+            </div>
+        {% endif %}
+
+        {% if warnings|length > 0 %}
+            <div class="alert alert-warning">
+                <ul class="mb-0">
+                    {% for warning in warnings %}<li>{{ warning }}</li>{% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <div class="row row-cards mb-3">
+            {% set tiles = {
+                (__('Tickets analysed', 'ticketflow')): counters.analyzed,
+                (__('Match the conditions', 'ticketflow')): counters.matched,
+                (__('Past the deadline', 'ticketflow')): counters.expired,
+                (was_real ? __('Executed', 'ticketflow') : __('Would be processed now', 'ticketflow')): (was_real ? counters.executed : counters.simulated),
+                (__('Already processed', 'ticketflow')): counters.already_processed,
+                (__('Failed', 'ticketflow')): counters.failed,
+            } %}
+            {% for label, value in tiles %}
+                <div class="col-6 col-md-4 col-xl-2">
+                    <div class="card card-sm">
+                        <div class="card-body text-center">
+                            <div class="h1 m-0">{{ value }}</div>
+                            <div class="text-secondary small">{{ label }}</div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if report.errors|length > 0 %}
+            <div class="alert alert-danger">
+                <div class="fw-bold">{{ __('Errors', 'ticketflow') }}</div>
+                <ul class="mb-0">
+                    {% for error in report.errors %}<li>{{ error }}</li>{% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        {% if report.preview|length == 0 %}
+            <p class="text-secondary">{{ __('No ticket currently matches this rule.', 'ticketflow') }}</p>
+        {% else %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>{{ __('ID') }}</th>
+                            <th>{{ __('Title') }}</th>
+                            <th>{{ __('Entity') }}</th>
+                            <th>{{ __('Status') }}</th>
+                            <th>{{ __('Assigned groups', 'ticketflow') }}</th>
+                            <th>{{ __('Reference date', 'ticketflow') }}</th>
+                            <th>{{ __('Deadline', 'ticketflow') }}</th>
+                            <th>{{ __('Overdue', 'ticketflow') }}</th>
+                            <th>{{ __('Calendar') }}</th>
+                            <th>{{ __('Outcome', 'ticketflow') }}</th>
+                            <th>{{ __('Actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for row in report.preview %}
+                        <tr class="{{ row.would_execute ? 'table-warning' : '' }}">
+                            <td>
+                                <a href="{{ config('root_doc') }}/front/ticket.form.php?id={{ row.tickets_id }}">
+                                    {{ row.tickets_id }}
+                                </a>
+                            </td>
+                            <td>{{ row.name }}</td>
+                            <td>{{ get_item_name('Entity', row.entities_id) }}</td>
+                            <td>{{ statuses[row.status]|default(row.status) }}</td>
+                            <td>
+                                {% for groups_id in row.groups_id %}
+                                    <span class="badge bg-secondary-lt">{{ get_item_name('Group', groups_id) }}</span>
+                                {% endfor %}
+                            </td>
+                            <td>{{ row.reference_date|date('Y-m-d H:i') }}</td>
+                            <td>
+                                {{ row.deadline_date|date('Y-m-d H:i') }}
+                                {% if row.used_elapsed_fallback %}
+                                    <i class="ti ti-alert-triangle text-warning ms-1"
+                                       title="{{ __('No usable calendar: computed as plain elapsed time.', 'ticketflow') }}"></i>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if row.overdue_seconds >= 0 %}
+                                    {{ (row.overdue_seconds // 3600) }}h
+                                {% else %}
+                                    <span class="text-secondary">—</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ row.calendar_name|default('—') }}</td>
+                            <td>
+                                {% if row.reason == 'would_execute' %}
+                                    <span class="badge bg-warning">{{ __('Would be processed', 'ticketflow') }}</span>
+                                {% elseif row.reason == 'executed' %}
+                                    <span class="badge bg-success">{{ __('Executed', 'ticketflow') }}</span>
+                                {% elseif row.reason == 'failed' %}
+                                    <span class="badge bg-danger">{{ __('Failed', 'ticketflow') }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ __('Still within the deadline', 'ticketflow') }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="small text-secondary">{{ row.actions|join(', ') }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if report.preview_omitted > 0 %}
+                <p class="text-secondary">
+                    {{ __('%d more matching tickets are not listed here. Raise "Maximum candidates per run" to see them all.', 'ticketflow')|format(report.preview_omitted) }}
+                </p>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <div class="card-footer d-flex flex-row-reverse">
+        <a class="btn btn-outline-secondary ms-2"
+           href="{{ config('root_doc') }}/plugins/ticketflow/front/rule.form.php?id={{ rule.fields['id'] }}">
+            <i class="ti ti-arrow-left"></i>
+            <span>{{ __('Back to the rule', 'ticketflow') }}</span>
+        </a>
+
+        {% if can_run and not was_real %}
+            <form method="post" action="{{ config('root_doc') }}/plugins/ticketflow/front/rule.simulate.php"
+                  onsubmit="return confirm('{{ __('This will really execute the rule on the tickets listed above. Continue?', 'ticketflow')|e('js') }}');">
+                <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token() }}" />
+                <input type="hidden" name="id" value="{{ rule.fields['id'] }}" />
+                <button class="btn btn-danger" type="submit" name="run_real" value="1">
+                    <i class="ti ti-player-play"></i>
+                    <span>{{ __('Run for real now', 'ticketflow') }}</span>
+                </button>
+            </form>
+        {% endif %}
+    </div>
+</div>

@@ -1,0 +1,116 @@
+{#
+ # -------------------------------------------------------------------------
+ # TicketFlow plugin for GLPI
+ # -------------------------------------------------------------------------
+ #
+ # MIT License
+ #
+ # Permission is hereby granted, free of charge, to any person obtaining a copy
+ # of this software and associated documentation files (the "Software"), to deal
+ # in the Software without restriction, including without limitation the rights
+ # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ # copies of the Software, and to permit persons to whom the Software is
+ # furnished to do so, subject to the following conditions:
+ #
+ # The above copyright notice and this permission notice shall be included in all
+ # copies or substantial portions of the Software.
+ #
+ # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ # SOFTWARE.
+ # -------------------------------------------------------------------------
+ # @copyright Copyright (C) 2026 Felipe Jovino.
+ # @license   MIT https://opensource.org/licenses/mit-license.php
+ # @link      https://github.com/Jovinull/ticketflow
+ # -------------------------------------------------------------------------
+ #}
+
+{% import 'components/form/fields_macros.html.twig' as fields %}
+
+<div class="asset">
+    <form name="ticketflow_config" method="post" action="{{ config('root_doc') }}/plugins/ticketflow/front/config.form.php">
+        <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token() }}" />
+
+        <div class="card-body d-flex flex-wrap">
+            <div class="col-12 flex-column">
+
+                {% if warnings|length > 0 %}
+                    <div class="alert alert-warning" role="alert">
+                        <div class="fw-bold mb-1">
+                            <i class="ti ti-alert-triangle me-1"></i>{{ __('Current state', 'ticketflow') }}
+                        </div>
+                        <ul class="mb-0">
+                            {% for warning in warnings %}
+                                <li>{{ warning }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
+                <div class="row flex-row">
+                    {{ fields.largeTitle(__('Safety', 'ticketflow'), 'ti ti-shield-check', true) }}
+
+                    {{ fields.dropdownYesNo('execution_enabled', config.execution_enabled, __('Enable execution', 'ticketflow'), {
+                        'helper': __('Master switch. While this is off, rules are evaluated and logged but no ticket is ever modified. It ships off so a fresh install cannot act on anything.', 'ticketflow')
+                    }) }}
+
+                    {{ fields.dropdownYesNo('dry_run_global', config.dry_run_global, __('Global dry run', 'ticketflow'), {
+                        'helper': __('Keeps every rule simulated even when execution is enabled. Useful while tuning rules on a live instance.', 'ticketflow')
+                    }) }}
+
+                    {{ fields.dropdownField('User', 'system_users_id', config.system_users_id, __('Acting user', 'ticketflow'), {
+                        'right': 'all',
+                        'helper': __('Author of the followups and solutions TicketFlow creates. Leave empty to reuse GLPI\'s own "system_user".', 'ticketflow')
+                    }) }}
+
+                    {% if acting_user is not empty %}
+                        {{ fields.readOnlyField('resolved_acting_user', acting_user, __('Resolved acting user', 'ticketflow')) }}
+                    {% endif %}
+                </div>
+
+                <div class="row flex-row">
+                    {{ fields.largeTitle(__('Throughput', 'ticketflow'), 'ti ti-gauge') }}
+
+                    {{ fields.numberField('batch_size', config.batch_size, __('Batch size', 'ticketflow'), {
+                        'min': 1,
+                        'helper': __('How many candidate tickets are loaded per query. Higher is faster but uses more memory.', 'ticketflow')
+                    }) }}
+
+                    {{ fields.numberField('max_tickets_per_run', config.max_tickets_per_run, __('Maximum candidates per run', 'ticketflow'), {
+                        'min': 1,
+                        'helper': __('Hard ceiling for one cron run, so a backlog can never turn into a single very long execution.', 'ticketflow')
+                    }) }}
+
+                    {{ fields.dropdownField('Calendar', 'fallback_calendars_id', config.fallback_calendars_id, __('Fallback calendar', 'ticketflow'), {
+                        'helper': __('Used by rules in "entity calendar" mode when the entity tree defines none. Without it, business delays fall back to plain elapsed time, which is recorded on every execution.', 'ticketflow')
+                    }) }}
+                </div>
+
+                <div class="row flex-row">
+                    {{ fields.largeTitle(__('Logs', 'ticketflow'), 'ti ti-history') }}
+
+                    {{ fields.dropdownYesNo('log_dry_runs', config.log_dry_runs, __('Log simulations', 'ticketflow'), {
+                        'helper': __('Simulated matches are written to the execution log. They never block a later real execution.', 'ticketflow')
+                    }) }}
+
+                    {{ fields.numberField('log_retention_days', config.log_retention_days, __('Log retention (days)', 'ticketflow'), {
+                        'min': 0,
+                        'helper': __('Executions older than this are deleted by the purge automatic action. 0 disables the purge.', 'ticketflow')
+                    }) }}
+                </div>
+
+            </div>
+        </div>
+
+        <div class="card-body mx-n2 border-top d-flex flex-row-reverse">
+            <button class="btn btn-primary" type="submit" name="update" value="1">
+                <i class="ti ti-device-floppy"></i>
+                <span>{{ _x('button', 'Save') }}</span>
+            </button>
+        </div>
+    </form>
+</div>
