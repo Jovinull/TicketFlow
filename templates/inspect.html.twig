@@ -1,0 +1,248 @@
+{#
+ # -------------------------------------------------------------------------
+ # TicketFlow plugin for GLPI
+ # -------------------------------------------------------------------------
+ #
+ # MIT License
+ #
+ # Permission is hereby granted, free of charge, to any person obtaining a copy
+ # of this software and associated documentation files (the "Software"), to deal
+ # in the Software without restriction, including without limitation the rights
+ # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ # copies of the Software, and to permit persons to whom the Software is
+ # furnished to do so, subject to the following conditions:
+ #
+ # The above copyright notice and this permission notice shall be included in all
+ # copies or substantial portions of the Software.
+ #
+ # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ # SOFTWARE.
+ # -------------------------------------------------------------------------
+ # @copyright Copyright (C) 2026 Felipe Jovino.
+ # @license   MIT https://opensource.org/licenses/mit-license.php
+ # @link      https://github.com/Jovinull/ticketflow
+ # -------------------------------------------------------------------------
+ #}
+
+<div class="card mb-3">
+    <div class="card-header"><h3 class="card-title"><i class="ti ti-stethoscope me-1"></i>{{ __('Environment', 'ticketflow') }}</h3></div>
+    <div class="card-body">
+        <div class="row">
+            {% for key, value in report.environment %}
+                <div class="col-6 col-md-4 col-xl-2 mb-2">
+                    <div class="text-secondary small">{{ key }}</div>
+                    <div class="fw-bold">{{ value }}</div>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if report.warnings|length > 0 %}
+            <div class="alert alert-warning mt-3 mb-0">
+                <ul class="mb-0">
+                    {% for warning in report.warnings %}<li>{{ warning }}</li>{% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header"><h3 class="card-title"><i class="ti ti-clock me-1"></i>{{ __('Calendars', 'ticketflow') }}</h3></div>
+    <div class="card-body">
+        {% if report.calendars|length == 0 %}
+            <div class="alert alert-warning mb-0">
+                {{ __('No calendar is configured. Rules using business days will fall back to plain elapsed time, and every execution row will say so.', 'ticketflow') }}
+            </div>
+        {% else %}
+            <table class="table table-sm">
+                <thead><tr>
+                    <th>{{ __('ID') }}</th><th>{{ __('Name') }}</th><th>{{ __('Entity') }}</th>
+                    <th>{{ __('Recursive') }}</th><th>{{ __('Segments', 'ticketflow') }}</th>
+                    <th>{{ __('Holidays') }}</th><th>{{ __('Usable', 'ticketflow') }}</th>
+                </tr></thead>
+                <tbody>
+                {% for row in report.calendars %}
+                    <tr>
+                        <td>{{ row.id }}</td>
+                        <td>{{ row.name }}</td>
+                        <td>{{ get_item_name('Entity', row.entities_id) }}</td>
+                        <td>{{ row.is_recursive ? __('Yes') : __('No') }}</td>
+                        <td>{{ row.segments }}</td>
+                        <td>{{ row.holidays }}</td>
+                        <td>
+                            {% if row.has_working_day %}
+                                <span class="badge bg-success">{{ __('Yes') }}</span>
+                            {% else %}
+                                <span class="badge bg-danger" title="{{ __('A calendar with no working day cannot produce a deadline.', 'ticketflow') }}">{{ __('No') }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header"><h3 class="card-title"><i class="ti ti-building me-1"></i>{{ __('Entities and their resolved calendar', 'ticketflow') }}</h3></div>
+    <div class="card-body">
+        <p class="text-secondary small">{{ __('This is the calendar a rule in "entity calendar" mode will really use, inheritance included.', 'ticketflow') }}</p>
+        <table class="table table-sm">
+            <thead><tr>
+                <th>{{ __('Entity') }}</th><th>{{ __('Own calendar', 'ticketflow') }}</th>
+                <th>{{ __('Resolved calendar', 'ticketflow') }}</th><th>{{ __('Tickets') }}</th>
+            </tr></thead>
+            <tbody>
+            {% for row in report.entities %}
+                <tr>
+                    <td>{{ row.name }}</td>
+                    <td>{{ row.own > 0 ? get_item_name('Calendar', row.own) : '—' }}</td>
+                    <td>
+                        {% if row.resolved > 0 %}
+                            {{ get_item_name('Calendar', row.resolved) }}
+                        {% else %}
+                            <span class="text-warning">{{ __('none — elapsed time', 'ticketflow') }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ row.tickets }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header"><h3 class="card-title"><i class="ti ti-pause me-1"></i>{{ __('Pending', 'ticketflow') }}</h3></div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-6 col-md-3">
+                <div class="text-secondary small">{{ __('Tickets currently pending', 'ticketflow') }}</div>
+                <div class="h2 m-0">{{ report.pending.waiting_tickets }}</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="text-secondary small">{{ __('Pending without a reference date', 'ticketflow') }}</div>
+                <div class="h2 m-0 {{ report.pending.waiting_without_reference > 0 ? 'text-warning' : '' }}">
+                    {{ report.pending.waiting_without_reference }}
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="text-secondary small">{{ __('Pending items without a reason', 'ticketflow') }}</div>
+                <div class="h2 m-0">{{ report.pending.items_without_reason }}</div>
+            </div>
+        </div>
+
+        {% if report.pending.waiting_without_reference > 0 %}
+            <div class="alert alert-warning">
+                {{ __('Some pending tickets have no begin_waiting_date. TicketFlow refuses to time those rather than guessing a reference date; they will be reported as "no_reference_date".', 'ticketflow') }}
+            </div>
+        {% endif %}
+
+        {% if report.pending.reasons|length == 0 %}
+            <div class="alert alert-info mb-0">
+                {{ __('This installation defines no pending reason. Leave the pending reason empty on your rules — it means "any, including none".', 'ticketflow') }}
+            </div>
+        {% else %}
+            <table class="table table-sm">
+                <thead><tr><th>{{ __('ID') }}</th><th>{{ __('Pending reason') }}</th><th>{{ __('Tickets') }}</th></tr></thead>
+                <tbody>
+                {% for row in report.pending.reasons %}
+                    <tr><td>{{ row.id }}</td><td>{{ row.name }}</td><td>{{ row.in_use }}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header"><h3 class="card-title"><i class="ti ti-thumb-up me-1"></i>{{ __('Approvals', 'ticketflow') }}</h3></div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-6 col-md-3">
+                <div class="text-secondary small">{{ __('Waiting for a decision', 'ticketflow') }}</div>
+                <div class="h2 m-0">{{ report.approvals.waiting }}</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="text-secondary small">{{ __('Targeting a group', 'ticketflow') }}</div>
+                <div class="h2 m-0">{{ report.approvals.group_targets }}</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="text-secondary small">{{ __('Targeting a user', 'ticketflow') }}</div>
+                <div class="h2 m-0">{{ report.approvals.user_targets }}</div>
+            </div>
+        </div>
+
+        <table class="table table-sm">
+            <thead><tr><th>{{ __('Status') }}</th><th>{{ __('Count', 'ticketflow') }}</th></tr></thead>
+            <tbody>
+            {% for row in report.approvals.by_status %}
+                <tr><td>{{ row.label }} <span class="text-secondary small">({{ row.status }})</span></td><td>{{ row.count }}</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header"><h3 class="card-title"><i class="ti ti-users me-1"></i>{{ __('Group assignment', 'ticketflow') }}</h3></div>
+    <div class="card-body">
+        <p class="text-secondary small">
+            {{ __('How many assigned groups tickets actually carry. TicketFlow matches a rule when its group is one of them, because GLPI has no notion of a primary assigned group.', 'ticketflow') }}
+        </p>
+        <table class="table table-sm w-auto">
+            <thead><tr><th>{{ __('Assigned groups per ticket', 'ticketflow') }}</th><th>{{ __('Tickets') }}</th></tr></thead>
+            <tbody>
+            {% for nb, tickets in report.assignment %}
+                <tr><td>{{ nb }}</td><td>{{ tickets }}</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        <h4 class="mt-3">{{ __('Assignable groups', 'ticketflow') }}</h4>
+        <table class="table table-sm">
+            <thead><tr><th>{{ __('ID') }}</th><th>{{ __('Group') }}</th><th>{{ __('Entity') }}</th><th>{{ __('Tickets') }}</th></tr></thead>
+            <tbody>
+            {% for row in report.groups %}
+                <tr>
+                    <td>{{ row.id }}</td>
+                    <td>{{ row.name }}</td>
+                    <td>{{ get_item_name('Entity', row.entities_id) }}</td>
+                    <td>{{ row.tickets }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h3 class="card-title"><i class="ti ti-refresh me-1"></i>{{ __('Automatic actions', 'ticketflow') }}</h3></div>
+    <div class="card-body">
+        <table class="table table-sm">
+            <thead><tr>
+                <th>{{ __('Task', 'ticketflow') }}</th><th>{{ __('Registered', 'ticketflow') }}</th>
+                <th>{{ __('State') }}</th><th>{{ __('Frequency') }}</th>
+                <th>{{ __('Last run') }}</th><th>{{ __('Last exit code', 'ticketflow') }}</th>
+            </tr></thead>
+            <tbody>
+            {% for row in report.crontasks %}
+                <tr>
+                    <td>{{ row.name }}</td>
+                    <td>{{ row.registered ? __('Yes') : __('No') }}</td>
+                    <td>{{ row.registered ? (row.state == 0 ? __('Disabled') : __('Scheduled')) : '—' }}</td>
+                    <td>{{ row.registered ? row.frequency ~ 's' : '—' }}</td>
+                    <td>{{ row.lastrun ?? '—' }}</td>
+                    <td>{{ row.lastcode ?? '—' }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
