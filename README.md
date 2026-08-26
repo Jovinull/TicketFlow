@@ -1,12 +1,18 @@
 # TicketFlow
 
+[![Continuous integration](https://github.com/Jovinull/ticketclock/actions/workflows/continuous-integration.yml/badge.svg)](https://github.com/Jovinull/ticketclock/actions/workflows/continuous-integration.yml)
+[![Latest release](https://img.shields.io/github/v/release/Jovinull/ticketclock?label=release)](https://github.com/Jovinull/ticketclock/releases/latest)
+[![GLPI 11.0.x](https://img.shields.io/badge/GLPI-11.0.x-f9a825)](https://glpi-project.org)
+[![PHP 8.2+](https://img.shields.io/badge/PHP-8.2%2B-777bb4)](https://www.php.net)
+[![Licence MIT](https://img.shields.io/badge/licence-MIT-blue)](LICENSE)
+
 **A time-based automation engine for GLPI tickets.**
 
 TicketFlow watches tickets that are waiting on somebody, measures how long they have been
 waiting in *business* time, and runs configurable actions when the wait goes past a
-deadline. It is a rule engine, not a hard-coded workflow: the two situations shipped in
-0.1 — a pending ticket without an answer, and an approval request without a decision — are
-two configurations of the same machinery.
+deadline. It is a rule engine, not a hard-coded workflow: the two situations it ships with —
+a pending ticket without an answer, and an approval request without a decision — are two
+configurations of the same machinery.
 
 ---
 
