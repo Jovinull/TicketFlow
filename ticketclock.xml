@@ -128,11 +128,14 @@ Instalação nova não faz nada: execução desligada, simulação global ligada
    <license>MIT</license>
    <tags>
       <en>
+         <tag>ticket</tag>
          <tag>tickets</tag>
+         <tag>helpdesk</tag>
          <tag>automation</tag>
+         <tag>management</tag>
+         <tag>calendar</tag>
          <tag>sla</tag>
          <tag>rules</tag>
-         <tag>helpdesk</tag>
       </en>
       <fr>
          <tag>tickets</tag>
