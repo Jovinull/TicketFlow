@@ -613,10 +613,10 @@ final class TicketContextResolver
     private function getEntityCalendar(int $entities_id): int
     {
         if (!array_key_exists($entities_id, $this->entity_calendar_cache)) {
-        // Asked for by its *strategy* field, which is what GLPI 11 expects. Passing
-        // 'calendars_id' as the reference still works -- core rewrites it -- but it
-        // trigger_error()s a deprecation on every single call, and this one runs once per
-        // entity per cron pass.
+            // Asked for by its *strategy* field, which is what GLPI 11 expects. Passing
+            // 'calendars_id' as the reference still works -- core rewrites it -- but it
+            // trigger_error()s a deprecation on every single call, and this one runs once per
+            // entity per cron pass.
             $value = Entity::getUsedConfig('calendars_strategy', $entities_id, 'calendars_id', 0);
             $this->entity_calendar_cache[$entities_id] = is_numeric($value) ? (int) $value : 0;
         }

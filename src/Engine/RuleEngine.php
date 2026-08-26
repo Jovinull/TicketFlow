@@ -85,7 +85,7 @@ final readonly class RuleEngine
         // getAncestorsOf() returns an id-keyed array; the matchers only compare values, so
         // hand them a plain list.
         $ancestors = static fn(int $entities_id): array => array_values(array_map(
-            'intval',
+            intval(...),
             getAncestorsOf('glpi_entities', $entities_id) + [$entities_id => $entities_id],
         ));
 
@@ -233,7 +233,7 @@ final readonly class RuleEngine
 
         if (!$match->expired) {
             $report->notePreview(
-                fn(): PreviewRow => $this->buildPreviewRow($context, $deadline, $now, false, 'not_expired', $rule)
+                fn(): PreviewRow => $this->buildPreviewRow($context, $deadline, $now, false, 'not_expired', $rule),
             );
             return;
         }
@@ -328,7 +328,7 @@ final readonly class RuleEngine
         }
 
         $report->notePreview(
-            fn(): PreviewRow => $this->buildPreviewRow($context, $deadline, $now, true, 'would_execute', $rule)
+            fn(): PreviewRow => $this->buildPreviewRow($context, $deadline, $now, true, 'would_execute', $rule),
         );
     }
 

@@ -136,10 +136,10 @@ final class Inspector
 
         $out = [];
         foreach ($DB->request(['FROM' => Entity::getTable(), 'ORDER' => 'completename', 'LIMIT' => 200]) as $row) {
-        // Asked for by its *strategy* field, which is what GLPI 11 expects. Passing
-        // 'calendars_id' as the reference still works -- core rewrites it -- but it
-        // trigger_error()s a deprecation on every single call, and this one runs once per
-        // entity per cron pass.
+            // Asked for by its *strategy* field, which is what GLPI 11 expects. Passing
+            // 'calendars_id' as the reference still works -- core rewrites it -- but it
+            // trigger_error()s a deprecation on every single call, and this one runs once per
+            // entity per cron pass.
             $resolved = Entity::getUsedConfig('calendars_strategy', (int) $row['id'], 'calendars_id', 0);
 
             $out[] = [

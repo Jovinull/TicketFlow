@@ -204,7 +204,7 @@ final class RuleFormTest extends TestCase
             preg_match_all(
                 '/<(?:select|input)[^>]*\bname=["\']([^"\']+)["\']/i',
                 $this->render($id),
-                $matches
+                $matches,
             );
             self::assertNotEmpty($matches[1], 'the form rendered no named field at all');
 
@@ -212,7 +212,7 @@ final class RuleFormTest extends TestCase
                 self::assertStringNotContainsString(
                     '[][]',
                     $field,
-                    sprintf('"%s" posts one array level deeper than the code reads it', $field)
+                    sprintf('"%s" posts one array level deeper than the code reads it', $field),
                 );
             }
         }
@@ -265,7 +265,7 @@ final class RuleFormTest extends TestCase
                 '/<option[^>]*value=[\'"]' . $status_id . '[\'"][^>]*>\s*'
                     . preg_quote((string) $label, '/') . '\s*</',
                 $html,
-                sprintf('status %d must be offered as "%s"', $status_id, $label)
+                sprintf('status %d must be offered as "%s"', $status_id, $label),
             );
         }
     }
