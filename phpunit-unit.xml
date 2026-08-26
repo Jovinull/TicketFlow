@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Database-free suite.
+
+    Runs with nothing but PHP: no GLPI checkout, no database, no web server. It covers the
+    deadline arithmetic, the matchers, the placeholder renderer, the occurrence keys and
+    action ordering — the parts that were deliberately written without a GLPI dependency.
+
+    The full suite (including integration) is phpunit.xml, which is what CI runs.
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="tests/unit-bootstrap.php"
+         colors="true"
+         testdox="true"
+         cacheDirectory=".phpunit.cache"
+         failOnWarning="true"
+         failOnRisky="true">
+
+    <source>
+        <include>
+            <directory>src</directory>
+        </include>
+    </source>
+
+    <testsuites>
+        <testsuite name="unit">
+            <directory suffix="Test.php">tests/Unit</directory>
+        </testsuite>
+    </testsuites>
+
+    <php>
+        <ini name="date.timezone" value="UTC"/>
+    </php>
+</phpunit>
