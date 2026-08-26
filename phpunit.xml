@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Default suite, and the one the official GLPI plugin CI runs.
+
+    It boots GLPI (tests/bootstrap.php) and runs everything, because in CI the plugin is
+    always installed inside a working GLPI. For a quick loop on a machine without one, use
+    phpunit-unit.xml, which runs the database-free suite on its own bootstrap.
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="tests/bootstrap.php"
+         colors="true"
+         cacheDirectory=".phpunit.cache"
+         failOnWarning="true"
+         failOnRisky="true">
+
+    <source>
+        <include>
+            <directory>src</directory>
+        </include>
+    </source>
+
+    <testsuites>
+        <testsuite name="unit">
+            <directory suffix="Test.php">tests/Unit</directory>
+        </testsuite>
+        <testsuite name="integration">
+            <directory suffix="Test.php">tests/Integration</directory>
+        </testsuite>
+    </testsuites>
+
+    <php>
+        <ini name="date.timezone" value="UTC"/>
+    </php>
+</phpunit>
