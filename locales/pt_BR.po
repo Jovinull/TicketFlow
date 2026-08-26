@@ -1,0 +1,891 @@
+# TicketFlow plugin for GLPI.
+# Copyright (C) 2026 Felipe Jovino.
+# This file is distributed under the same license as the TicketFlow package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: TicketFlow 0.1.0\n"
+"Language: pt_BR\n"
+"Report-Msgid-Bugs-To: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: src/Rule.php:378
+msgid " (any reply from outside the group stops the rule, and a status change restarts the countdown)"
+msgstr " (qualquer resposta de fora do grupo interrompe a regra, e mudança de status reinicia a contagem)"
+
+#: src/Rule.php:336
+msgid " and whose status is %s"
+msgstr " e cujo status seja %s"
+
+#: templates/simulation.html.twig:171
+msgid "%d more matching tickets are not listed here. Raise \"Maximum candidates per run\" to see them all."
+msgstr "Outros %d chamados correspondentes não estão listados aqui. Aumente \"Máximo de candidatos por execução\" para ver todos."
+
+#: front/rule.form.php:57
+msgid "%s (copy)"
+msgstr "%s (cópia)"
+
+#: src/Rule.php:390
+msgid ", nothing happens (no action is configured)."
+msgstr ", nada acontece (nenhuma ação configurada)."
+
+#: src/Rule.php:393
+msgid ", then: %s."
+msgstr ", então: %s."
+
+#: src/Rule.php:381
+msgid ", with the clock restarting on: %s"
+msgstr ", reiniciando a contagem em: %s"
+
+#: templates/rule_form.html.twig:181
+msgid "A GLPI ticket notification event, for example \"update\"."
+msgstr "Um evento de notificação de chamado do GLPI, por exemplo \"update\"."
+
+#: templates/inspect.html.twig:81
+msgid "A calendar with no working day cannot produce a deadline."
+msgstr "Um calendário sem nenhum dia útil não consegue gerar um prazo."
+
+#: src/Engine/Action/AddFollowupAction.php:86
+msgid "A followup would be added."
+msgstr "Um acompanhamento seria adicionado."
+
+#: templates/rule_form.html.twig:69
+msgid "A new rule is always created inactive."
+msgstr "Uma regra nova é sempre criada inativa."
+
+#: src/Rule.php:196
+msgid "A rule needs a name."
+msgstr "A regra precisa de um nome."
+
+#: src/Engine/Action/AddSolutionAction.php:86
+msgid "A solution would be added and the ticket would be solved."
+msgstr "Uma solução seria adicionada e o chamado seria solucionado."
+
+#: templates/config_form.html.twig:65
+msgid "Acting user"
+msgstr "Usuário executor"
+
+#: src/RuleAction.php:68
+msgid "Action"
+msgid_plural "Actions"
+msgstr[0] "Ação"
+msgstr[1] "Ações"
+
+#: src/Enum/ActionType.php:52
+msgid "Add a followup"
+msgstr "Adicionar acompanhamento"
+
+#: templates/rule_form.html.twig:150
+msgid "Add a message to the timeline"
+msgstr "Adicionar mensagem na linha do tempo"
+
+#: templates/simulation.html.twig:75
+msgid "Already processed"
+msgstr "Já processados"
+
+#: src/Enum/ResetEvent.php:68
+msgid "Answer from a requester"
+msgstr "Resposta do solicitante"
+
+#: src/Enum/ResetEvent.php:69
+msgid "Answer from an assignee"
+msgstr "Resposta do responsável"
+
+#: src/Enum/ResetEvent.php:70
+msgid "Any followup"
+msgstr "Qualquer acompanhamento"
+
+#: src/Enum/ResetEvent.php:72
+msgid "Approval answered"
+msgstr "Aprovação respondida"
+
+#: src/Enum/RuleType.php:56
+msgid "Approval without answer"
+msgstr "Aprovação sem retorno"
+
+#: templates/inspect.html.twig:165
+msgid "Approvals"
+msgstr "Aprovações"
+
+#: templates/inspect.html.twig:208
+msgid "Assignable groups"
+msgstr "Grupos atribuíveis"
+
+#: templates/rule_form.html.twig:92
+#: templates/simulation.html.twig:110
+msgid "Assigned groups"
+msgstr "Grupos atribuídos"
+
+#: templates/inspect.html.twig:200
+msgid "Assigned groups per ticket"
+msgstr "Grupos atribuídos por chamado"
+
+#: templates/config_form.html.twig:67
+msgid "Author of the followups and solutions TicketFlow creates. Leave empty to reuse GLPI's own \"system_user\"."
+msgstr "Autor dos acompanhamentos e soluções criados pelo TicketFlow. Deixe vazio para reutilizar o \"system_user\" do próprio GLPI."
+
+#: templates/inspect.html.twig:226
+msgid "Automatic actions"
+msgstr "Ações automáticas"
+
+#: templates/simulation.html.twig:181
+msgid "Back to the rule"
+msgstr "Voltar para a regra"
+
+#: templates/config_form.html.twig:78
+msgid "Batch size"
+msgstr "Tamanho do lote"
+
+#: src/Enum/DelayUnit.php:54
+msgid "Business days"
+msgstr "Dias úteis"
+
+#: src/Enum/DelayUnit.php:55
+msgid "Business hours"
+msgstr "Horas úteis"
+
+#: templates/rule_form.html.twig:122
+msgid "Calendar"
+msgstr "Calendário"
+
+#: src/Enum/DelayUnit.php:56
+msgid "Calendar days"
+msgstr "Dias corridos"
+
+#: templates/inspect.html.twig:55
+msgid "Calendars"
+msgstr "Calendários"
+
+#: src/Enum/ActionType.php:54
+#: templates/rule_form.html.twig:164
+msgid "Change the status"
+msgstr "Alterar o status"
+
+#: templates/rule_form.html.twig:112
+msgid "Clock"
+msgstr "Relógio"
+
+#: src/Enum/ActionType.php:55
+msgid "Close the ticket"
+msgstr "Fechar o chamado"
+
+#: templates/rule_form.html.twig:165
+msgid "Close the ticket (skips the solution workflow)"
+msgstr "Fechar o chamado (ignora o fluxo de solução)"
+
+#: front/config.form.php:58
+msgid "Configuration saved."
+msgstr "Configuração salva."
+
+#: templates/inspect.html.twig:183
+msgid "Count"
+msgstr "Quantidade"
+
+#: templates/config_form.html.twig:44
+msgid "Current state"
+msgstr "Situação atual"
+
+#: src/Execution.php:384
+#: templates/execution_list.html.twig:39
+#: templates/simulation.html.twig:112
+msgid "Deadline"
+msgstr "Prazo final"
+
+#: src/Rule.php:482
+#: templates/rule_form.html.twig:118
+msgid "Delay"
+msgstr "Prazo"
+
+#: src/Rule.php:490
+msgid "Delay unit"
+msgstr "Unidade do prazo"
+
+#: src/Cron.php:157
+msgid "Deletes TicketFlow execution logs older than the configured retention."
+msgstr "Remove os registros de execução do TicketFlow mais antigos que a retenção configurada."
+
+#: templates/execution_list.html.twig:42
+msgid "Details"
+msgstr "Detalhes"
+
+#: src/Menu.php:104
+msgid "Diagnostics"
+msgstr "Diagnóstico"
+
+#: templates/rule_form.html.twig:162
+msgid "Do nothing else"
+msgstr "Não fazer mais nada"
+
+#: src/Enum/ExecutionState.php:65
+msgid "Dry run"
+msgstr "Simulação"
+
+#: templates/rule_form.html.twig:211
+msgid "Duplicate"
+msgstr "Duplicar"
+
+#: templates/rule_form.html.twig:106
+msgid "Empty means any pending reason, including tickets that are pending without one."
+msgstr "Vazio significa qualquer motivo de pendência, inclusive chamados pendentes sem motivo."
+
+#: templates/config_form.html.twig:57
+msgid "Enable execution"
+msgstr "Habilitar execução"
+
+#: templates/inspect.html.twig:93
+msgid "Entities and their resolved calendar"
+msgstr "Entidades e o calendário resolvido"
+
+#: templates/inspect.html.twig:33
+msgid "Environment"
+msgstr "Ambiente"
+
+#: templates/simulation.html.twig:92
+msgid "Errors"
+msgstr "Erros"
+
+#: src/Cron.php:142
+msgid "Evaluates TicketFlow rules and executes their actions."
+msgstr "Avalia as regras do TicketFlow e executa suas ações."
+
+#: templates/rule_form.html.twig:74
+msgid "Evaluation order"
+msgstr "Ordem de avaliação"
+
+#: src/Enum/ExecutionState.php:62
+#: templates/simulation.html.twig:74
+#: templates/simulation.html.twig:155
+msgid "Executed"
+msgstr "Executado"
+
+#: src/Config.php:212
+msgid "Execution is disabled: rules are evaluated and logged, but no ticket is modified."
+msgstr "Execução desabilitada: as regras são avaliadas e registradas, mas nenhum chamado é modificado."
+
+#: src/Execution.php:70
+msgid "Execution log"
+msgid_plural "Execution logs"
+msgstr[0] "Registro de execução"
+msgstr[1] "Registros de execução"
+
+#: templates/config_form.html.twig:102
+msgid "Executions older than this are deleted by the purge automatic action. 0 disables the purge."
+msgstr "Execuções mais antigas que isso são removidas pela ação automática de limpeza. 0 desativa a limpeza."
+
+#: src/Enum/ExecutionState.php:63
+#: templates/simulation.html.twig:76
+#: templates/simulation.html.twig:157
+msgid "Failed"
+msgstr "Falhou"
+
+#: templates/config_form.html.twig:88
+msgid "Fallback calendar"
+msgstr "Calendário padrão"
+
+#: src/Engine/Action/AddFollowupAction.php:124
+msgid "Followup added."
+msgstr "Acompanhamento adicionado."
+
+#: templates/rule_form.html.twig:102
+msgid "For a pending rule, leave \"Pending\" selected unless you know why you are changing it."
+msgstr "Para uma regra de pendência, mantenha \"Pendente\" selecionado, a menos que saiba por que está alterando."
+
+#: templates/config_form.html.twig:61
+msgid "Global dry run"
+msgstr "Simulação global"
+
+#: src/Config.php:216
+msgid "Global dry run is enabled: every rule behaves as a simulation."
+msgstr "A simulação global está ativa: todas as regras se comportam como simulação."
+
+#: templates/inspect.html.twig:194
+msgid "Group assignment"
+msgstr "Atribuição de grupos"
+
+#: templates/config_form.html.twig:85
+msgid "Hard ceiling for one cron run, so a backlog can never turn into a single very long execution."
+msgstr "Limite máximo por execução do cron, para que um acúmulo nunca vire uma única execução muito longa."
+
+#: src/Enum/DelayUnit.php:57
+msgid "Hours"
+msgstr "Horas"
+
+#: templates/inspect.html.twig:197
+msgid "How many assigned groups tickets actually carry. TicketFlow matches a rule when its group is one of them, because GLPI has no notion of a primary assigned group."
+msgstr "Quantos grupos atribuídos os chamados realmente possuem. O TicketFlow considera a regra aplicável quando o grupo dela é um deles, porque o GLPI não tem o conceito de grupo atribuído principal."
+
+#: templates/config_form.html.twig:80
+msgid "How many candidate tickets are loaded per query. Higher is faster but uses more memory."
+msgstr "Quantos chamados candidatos são carregados por consulta. Valores maiores são mais rápidos, mas usam mais memória."
+
+#: templates/rule_form.html.twig:64
+msgid "Information"
+msgstr "Informações"
+
+#: templates/config_form.html.twig:62
+msgid "Keeps every rule simulated even when execution is enabled. Useful while tuning rules on a live instance."
+msgstr "Mantém todas as regras em simulação mesmo com a execução habilitada. Útil ao ajustar regras em um ambiente em produção."
+
+#: templates/inspect.html.twig:232
+msgid "Last exit code"
+msgstr "Último código de retorno"
+
+#: src/Enum/StartEvent.php:59
+msgid "Last message, when written by the target group"
+msgstr "Última mensagem, quando escrita pelo grupo alvo"
+
+#: src/Rule.php:507
+msgid "Last run"
+msgstr "Última execução"
+
+#: templates/rule_form.html.twig:98
+msgid "Leave empty to target every group. A ticket matches when one of its assigned groups is listed."
+msgstr "Deixe vazio para abranger todos os grupos. O chamado corresponde quando um de seus grupos atribuídos está listado."
+
+#: templates/config_form.html.twig:100
+msgid "Log retention (days)"
+msgstr "Retenção dos registros (dias)"
+
+#: templates/config_form.html.twig:96
+msgid "Log simulations"
+msgstr "Registrar simulações"
+
+#: templates/config_form.html.twig:94
+msgid "Logs"
+msgstr "Registros"
+
+#: templates/rule_form.html.twig:76
+msgid "Lower values are evaluated first."
+msgstr "Valores menores são avaliados primeiro."
+
+#: templates/simulation.html.twig:36
+msgid "Manual run"
+msgstr "Execução manual"
+
+#: templates/config_form.html.twig:58
+msgid "Master switch. While this is off, rules are evaluated and logged but no ticket is ever modified. It ships off so a fresh install cannot act on anything."
+msgstr "Chave mestra. Enquanto estiver desligada, as regras são avaliadas e registradas, mas nenhum chamado é modificado. Vem desligada para que uma instalação nova não altere nada."
+
+#: templates/simulation.html.twig:72
+msgid "Match the conditions"
+msgstr "Atendem às condições"
+
+#: templates/config_form.html.twig:83
+msgid "Maximum candidates per run"
+msgstr "Máximo de candidatos por execução"
+
+#: templates/rule_form.html.twig:152
+msgid "Message"
+msgstr "Mensagem"
+
+#: src/Config.php:220
+msgid "No acting user is configured (neither TicketFlow nor GLPI's \"system_user\"). Actions that need an author, such as adding a solution, will fail."
+msgstr "Nenhum usuário executor está configurado (nem no TicketFlow nem no \"system_user\" do GLPI). Ações que exigem autor, como adicionar solução, irão falhar."
+
+#: src/Engine/Action/AddSolutionAction.php:74
+msgid "No acting user is configured; a solution cannot be attributed to anybody."
+msgstr "Nenhum usuário executor configurado; a solução não pode ser atribuída a ninguém."
+
+#: src/Enum/CalendarMode.php:57
+msgid "No calendar (elapsed time)"
+msgstr "Sem calendário (tempo corrido)"
+
+#: templates/inspect.html.twig:59
+msgid "No calendar is configured. Rules using business days will fall back to plain elapsed time, and every execution row will say so."
+msgstr "Nenhum calendário configurado. Regras em dias úteis usarão tempo corrido, e cada registro de execução indicará isso."
+
+#: src/Engine/ActionExecutor.php:89
+msgid "No handler is registered for action \"%s\"."
+msgstr "Nenhum executor registrado para a ação \"%s\"."
+
+#: src/Engine/RuleEngine.php:160
+msgid "No matcher supports rule type \"%s\"."
+msgstr "Nenhum avaliador suporta o tipo de regra \"%s\"."
+
+#: src/Engine/Action/ChangeStatusAction.php:74
+msgid "No target status is configured."
+msgstr "Nenhum status de destino configurado."
+
+#: templates/simulation.html.twig:100
+msgid "No ticket currently matches this rule."
+msgstr "Nenhum chamado corresponde a esta regra no momento."
+
+#: templates/execution_list.html.twig:70
+#: templates/simulation.html.twig:140
+msgid "No usable calendar: computed as plain elapsed time."
+msgstr "Sem calendário utilizável: calculado em tempo corrido."
+
+#: src/Rule.php:445
+msgid "Not applicable"
+msgstr "Não se aplica"
+
+#: templates/simulation.html.twig:50
+msgid "Nothing was modified: no followup, no solution, no status change and no operational notification was produced."
+msgstr "Nada foi modificado: nenhum acompanhamento, nenhuma solução, nenhuma mudança de status e nenhuma notificação operacional foi gerada."
+
+#: templates/rule_form.html.twig:180
+msgid "Notification event"
+msgstr "Evento de notificação"
+
+#: src/Engine/Action/SendNotificationAction.php:93
+msgid "Notification raised."
+msgstr "Notificação disparada."
+
+#: templates/rule_form.html.twig:142
+msgid "Only these interactions push the deadline forward. Choosing \"Answer from a requester\" is what makes a technician reply *not* restart the countdown."
+msgstr "Somente estas interações adiam o prazo. Escolher \"Resposta do solicitante\" é o que faz a resposta de um técnico *não* reiniciar a contagem."
+
+#: templates/rule_form.html.twig:125
+msgid "Only used when the calendar mode is \"Specific calendar\"."
+msgstr "Usado apenas quando o modo de calendário é \"Calendário específico\"."
+
+#: templates/simulation.html.twig:115
+msgid "Outcome"
+msgstr "Resultado"
+
+#: templates/simulation.html.twig:113
+msgid "Overdue"
+msgstr "Atraso"
+
+#: templates/inspect.html.twig:98
+msgid "Own calendar"
+msgstr "Calendário próprio"
+
+#: templates/simulation.html.twig:73
+msgid "Past the deadline"
+msgstr "Prazo vencido"
+
+#: templates/inspect.html.twig:122
+msgid "Pending"
+msgstr "Pendência"
+
+#: templates/inspect.html.twig:136
+msgid "Pending items without a reason"
+msgstr "Pendências sem motivo"
+
+#: templates/inspect.html.twig:130
+msgid "Pending without a reference date"
+msgstr "Pendentes sem data de referência"
+
+#: src/Enum/RuleType.php:55
+msgid "Pending without answer"
+msgstr "Pendência sem retorno"
+
+#: templates/rule_form.html.twig:156
+msgid "Placeholders: {{ticket.id}}, {{ticket.name}}, {{rule.name}}, {{deadline}}, {{reference}}, {{delay}}, {{delay_unit}}, {{group.name}}, {{entity.name}}, {{calendar.name}}"
+msgstr "Marcadores: {{ticket.id}}, {{ticket.name}}, {{rule.name}}, {{deadline}}, {{reference}}, {{delay}}, {{delay_unit}}, {{group.name}}, {{entity.name}}, {{calendar.name}}"
+
+#: src/Enum/ExecutionState.php:61
+msgid "Processing"
+msgstr "Em processamento"
+
+#: templates/rule_form.html.twig:178
+msgid "Raise a notification"
+msgstr "Disparar notificação"
+
+#: src/Execution.php:378
+#: templates/execution_list.html.twig:38
+#: templates/simulation.html.twig:111
+msgid "Reference date"
+msgstr "Data de referência"
+
+#: templates/inspect.html.twig:230
+msgid "Registered"
+msgstr "Registrada"
+
+#: templates/config_form.html.twig:71
+msgid "Resolved acting user"
+msgstr "Usuário executor resolvido"
+
+#: templates/inspect.html.twig:99
+msgid "Resolved calendar"
+msgstr "Calendário resolvido"
+
+#: templates/rule_form.html.twig:139
+msgid "Restart the clock on"
+msgstr "Reiniciar a contagem em"
+
+#: src/Execution.php:371
+#: templates/execution_list.html.twig:37
+msgid "Result"
+msgstr "Resultado"
+
+#: front/rule.form.php:59
+msgid "Rule duplicated. The copy is inactive."
+msgstr "Regra duplicada. A cópia está inativa."
+
+#: front/rule.simulate.php:48
+msgid "Rule not found."
+msgstr "Regra não encontrada."
+
+#: src/Rule.php:473
+#: templates/rule_form.html.twig:86
+msgid "Rule type"
+msgstr "Tipo de regra"
+
+#: templates/simulation.html.twig:191
+msgid "Run for real now"
+msgstr "Executar de verdade agora"
+
+#: templates/config_form.html.twig:55
+#: templates/rule_form.html.twig:187
+msgid "Safety"
+msgstr "Segurança"
+
+#: templates/inspect.html.twig:65
+msgid "Segments"
+msgstr "Faixas de horário"
+
+#: src/Enum/ActionType.php:56
+msgid "Send a notification"
+msgstr "Enviar notificação"
+
+#: templates/execution_list.html.twig:101
+msgid "Showing the 100 most recent entries. Use TicketFlow > Execution logs for the full, searchable history."
+msgstr "Exibindo os 100 registros mais recentes. Use TicketFlow > Registros de execução para o histórico completo e pesquisável."
+
+#: templates/rule_form.html.twig:200
+msgid "Shows which tickets would be affected. Changes nothing."
+msgstr "Mostra quais chamados seriam afetados. Não altera nada."
+
+#: front/rule.simulate.php:69
+msgid "Simulate a rule"
+msgstr "Simular uma regra"
+
+#: templates/rule_form.html.twig:198
+msgid "Simulate this rule"
+msgstr "Simular esta regra"
+
+#: templates/config_form.html.twig:97
+msgid "Simulated matches are written to the execution log. They never block a later real execution."
+msgstr "As correspondências simuladas são gravadas no registro de execução. Elas nunca bloqueiam uma execução real posterior."
+
+#: templates/simulation.html.twig:36
+msgid "Simulation"
+msgstr "Simulação"
+
+#: src/Rule.php:531
+#: templates/rule_form.html.twig:189
+msgid "Simulation only"
+msgstr "Somente simulação"
+
+#: src/Enum/ExecutionState.php:64
+msgid "Skipped"
+msgstr "Ignorado"
+
+#: src/Enum/ResetEvent.php:71
+msgid "Solution added"
+msgstr "Solução adicionada"
+
+#: src/Engine/Action/AddSolutionAction.php:111
+msgid "Solution added; the ticket is now solved."
+msgstr "Solução adicionada; o chamado agora está solucionado."
+
+#: templates/rule_form.html.twig:168
+msgid "Solution content"
+msgstr "Conteúdo da solução"
+
+#: src/Enum/ActionType.php:53
+msgid "Solve the ticket (add a solution)"
+msgstr "Solucionar o chamado (adicionar solução)"
+
+#: templates/rule_form.html.twig:163
+msgid "Solve the ticket (add a solution) — recommended"
+msgstr "Solucionar o chamado (adicionar solução) — recomendado"
+
+#: templates/inspect.html.twig:143
+msgid "Some pending tickets have no begin_waiting_date. TicketFlow refuses to time those rather than guessing a reference date; they will be reported as \"no_reference_date\"."
+msgstr "Alguns chamados pendentes não possuem begin_waiting_date. O TicketFlow prefere não cronometrá-los a inventar uma data de referência; eles aparecem como \"no_reference_date\"."
+
+#: src/Enum/CalendarMode.php:56
+#: templates/rule_form.html.twig:124
+msgid "Specific calendar"
+msgstr "Calendário específico"
+
+#: src/Engine/Action/ChangeStatusAction.php:106
+msgid "Status updated."
+msgstr "Status atualizado."
+
+#: templates/simulation.html.twig:159
+msgid "Still within the deadline"
+msgstr "Ainda dentro do prazo"
+
+#: src/RuleGroup.php:59
+msgid "Target group"
+msgid_plural "Target groups"
+msgstr[0] "Grupo alvo"
+msgstr[1] "Grupos alvo"
+
+#: templates/rule_form.html.twig:176
+msgid "Target status"
+msgstr "Status de destino"
+
+#: templates/inspect.html.twig:173
+msgid "Targeting a group"
+msgstr "Direcionadas a um grupo"
+
+#: templates/inspect.html.twig:177
+msgid "Targeting a user"
+msgstr "Direcionadas a um usuário"
+
+#: templates/inspect.html.twig:230
+msgid "Task"
+msgstr "Tarefa"
+
+#: src/Engine/Action/SendNotificationAction.php:75
+msgid "The \"%s\" notification would be raised."
+msgstr "A notificação \"%s\" seria disparada."
+
+#: src/Enum/StartEvent.php:66
+msgid "The countdown runs from the moment the ticket entered the selected status."
+msgstr "A contagem corre a partir do momento em que o chamado entrou no status selecionado."
+
+#: templates/rule_form.html.twig:114
+msgid "The countdown starts at"
+msgstr "A contagem começa em"
+
+#: src/Rule.php:223
+msgid "The delay must be at least 1."
+msgstr "O prazo deve ser no mínimo 1."
+
+#: src/Engine/Action/AddFollowupAction.php:78
+msgid "The followup content is empty."
+msgstr "O conteúdo do acompanhamento está vazio."
+
+#: src/Engine/Action/AddFollowupAction.php:119
+msgid "The followup could not be created."
+msgstr "Não foi possível criar o acompanhamento."
+
+#: templates/rule_form.html.twig:190
+msgid "The rule is evaluated and logged, but no ticket is modified. Use this to watch a new rule for a few days before arming it."
+msgstr "A regra é avaliada e registrada, mas nenhum chamado é modificado. Use para observar uma regra nova por alguns dias antes de ativá-la de fato."
+
+#: src/Enum/StartEvent.php:67
+msgid "The rule only applies while the most recent message on the ticket was written by a member of one of the target groups. The countdown runs from that message, and stops as soon as anybody else replies."
+msgstr "A regra só se aplica enquanto a mensagem mais recente do chamado tiver sido escrita por um membro de um dos grupos alvo. A contagem corre a partir dessa mensagem e para assim que qualquer outra pessoa responder."
+
+#: src/Engine/Action/AddSolutionAction.php:80
+msgid "The solution content is empty."
+msgstr "O conteúdo da solução está vazio."
+
+#: src/Engine/Action/AddSolutionAction.php:106
+msgid "The solution could not be created."
+msgstr "Não foi possível criar a solução."
+
+#: src/Engine/Action/ChangeStatusAction.php:109
+msgid "The status could not be updated."
+msgstr "Não foi possível atualizar o status."
+
+#: src/Engine/Action/ChangeStatusAction.php:88
+msgid "The status would change from %1$s to %2$s."
+msgstr "O status mudaria de %1$s para %2$s."
+
+#: src/Engine/Action/ChangeStatusAction.php:80
+msgid "The ticket already has the target status."
+msgstr "O chamado já está no status de destino."
+
+#: src/Engine/Action/CloseTicketAction.php:95
+msgid "The ticket could not be closed."
+msgstr "Não foi possível fechar o chamado."
+
+#: src/Engine/Action/CloseTicketAction.php:73
+msgid "The ticket is already closed."
+msgstr "O chamado já está fechado."
+
+#: src/Engine/Action/CloseTicketAction.php:79
+msgid "The ticket would be closed."
+msgstr "O chamado seria fechado."
+
+#: templates/rule_form.html.twig:148
+#: templates/rule_form.html.twig:166
+msgid "Then"
+msgstr "Então"
+
+#: templates/inspect.html.twig:149
+msgid "This installation defines no pending reason. Leave the pending reason empty on your rules — it means \"any, including none\"."
+msgstr "Esta instalação não define nenhum motivo de pendência. Deixe o motivo vazio nas regras — significa \"qualquer um, inclusive nenhum\"."
+
+#: templates/inspect.html.twig:95
+msgid "This is the calendar a rule in \"entity calendar\" mode will really use, inheritance included."
+msgstr "Este é o calendário que uma regra no modo \"calendário da entidade\" realmente usará, incluindo herança."
+
+#: templates/rule_form.html.twig:58
+msgid "This rule can solve, close or change the status of tickets automatically."
+msgstr "Esta regra pode solucionar, fechar ou alterar o status de chamados automaticamente."
+
+#: templates/execution_list.html.twig:92
+msgid "This rule has not run yet."
+msgstr "Esta regra ainda não foi executada."
+
+#: templates/simulation.html.twig:186
+msgid "This will really execute the rule on the tickets listed above. Continue?"
+msgstr "Isto executará a regra de verdade nos chamados listados acima. Continuar?"
+
+#: templates/config_form.html.twig:76
+msgid "Throughput"
+msgstr "Desempenho"
+
+#: src/Engine/Action/CloseTicketAction.php:94
+msgid "Ticket closed."
+msgstr "Chamado fechado."
+
+#: src/Engine/Action/SendNotificationAction.php:83
+msgid "Ticket not found."
+msgstr "Chamado não encontrado."
+
+#: front/config.form.php:63
+#: src/Cron.php:61
+#: src/Menu.php:50
+#: src/Profile.php:56
+#: src/Profile.php:94
+#: src/Rule.php:96
+msgid "TicketFlow"
+msgstr "TicketFlow"
+
+#: front/inspect.php:46
+msgid "TicketFlow diagnostics"
+msgstr "Diagnóstico do TicketFlow"
+
+#: src/Rule.php:86
+msgid "TicketFlow rule"
+msgid_plural "TicketFlow rules"
+msgstr[0] "Regra do TicketFlow"
+msgstr[1] "Regras do TicketFlow"
+
+#: src/Cron.php:71
+msgid "TicketFlow: evaluate rules and run their actions"
+msgstr "TicketFlow: avaliar regras e executar suas ações"
+
+#: src/Cron.php:74
+msgid "TicketFlow: purge old execution logs"
+msgstr "TicketFlow: limpar registros de execução antigos"
+
+#: templates/simulation.html.twig:71
+msgid "Tickets analysed"
+msgstr "Chamados analisados"
+
+#: templates/inspect.html.twig:126
+msgid "Tickets currently pending"
+msgstr "Chamados pendentes no momento"
+
+#: src/Execution.php:390
+#: templates/execution_list.html.twig:41
+msgid "Triggered at"
+msgstr "Disparado em"
+
+#: templates/rule_form.html.twig:120
+msgid "Unit"
+msgstr "Unidade"
+
+#: src/Rule.php:216
+msgid "Unknown calendar mode."
+msgstr "Modo de calendário desconhecido."
+
+#: src/Rule.php:206
+msgid "Unknown delay unit."
+msgstr "Unidade de prazo desconhecida."
+
+#: src/Rule.php:201
+msgid "Unknown rule type."
+msgstr "Tipo de regra desconhecido."
+
+#: src/Rule.php:211
+msgid "Unknown start event."
+msgstr "Evento de início desconhecido."
+
+#: templates/inspect.html.twig:66
+msgid "Usable"
+msgstr "Utilizável"
+
+#: templates/config_form.html.twig:89
+msgid "Used by rules in \"entity calendar\" mode when the entity tree defines none. Without it, business delays fall back to plain elapsed time, which is recorded on every execution."
+msgstr "Usado por regras no modo \"calendário da entidade\" quando a árvore de entidades não define nenhum. Sem ele, prazos úteis passam a usar tempo corrido, o que é registrado em cada execução."
+
+#: templates/inspect.html.twig:169
+msgid "Waiting for a decision"
+msgstr "Aguardando decisão"
+
+#: templates/rule_form.html.twig:49
+#: templates/simulation.html.twig:43
+msgid "What this rule does"
+msgstr "O que esta regra faz"
+
+#: templates/rule_form.html.twig:84
+msgid "When"
+msgstr "Quando"
+
+#: src/Rule.php:361
+msgid "When a ticket assigned to %1$s%2$s stays pending for %3$d %4$s %5$s"
+msgstr "Quando um chamado atribuído a %1$s%2$s permanecer pendente por %3$d %4$s %5$s"
+
+#: src/Rule.php:369
+msgid "When an approval request on a ticket assigned to %1$s stays unanswered for %2$d %3$s %4$s"
+msgstr "Quando uma solicitação de aprovação em um chamado atribuído a %1$s permanecer sem resposta por %2$d %3$s %4$s"
+
+#: src/Rule.php:353
+msgid "When the last message on a ticket assigned to %1$s was written by that group%2$s, and %3$d %4$s go by %5$s without anybody answering"
+msgstr "Quando a última mensagem de um chamado atribuído a %1$s tiver sido escrita por esse grupo%2$s e passarem %3$d %4$s %5$s sem ninguém responder"
+
+#: src/Enum/StartEvent.php:58
+msgid "When the ticket entered the status"
+msgstr "Quando o chamado entrou no status"
+
+#: templates/simulation.html.twig:153
+msgid "Would be processed"
+msgstr "Seria processado"
+
+#: templates/simulation.html.twig:74
+msgid "Would be processed now"
+msgstr "Seriam processados agora"
+
+#: templates/simulation.html.twig:57
+msgid "You do not have the update right on tickets. A manual run acts as you, not as the scheduler, so ticket changes may be refused here even though the automatic action would succeed."
+msgstr "Você não tem o direito de atualização em chamados. A execução manual age como você, não como o agendador, então alterações em chamados podem ser recusadas aqui mesmo que a ação automática funcionasse."
+
+#: src/Engine/Action/AddFollowupAction.php:71
+msgid "add a followup"
+msgstr "adicionar um acompanhamento"
+
+#: src/Engine/Action/AddFollowupAction.php:70
+msgid "add a private followup"
+msgstr "adicionar um acompanhamento privado"
+
+#: src/Rule.php:329
+msgid "any group"
+msgstr "qualquer grupo"
+
+#: src/Engine/Action/ChangeStatusAction.php:65
+msgid "change the status to %s"
+msgstr "alterar o status para %s"
+
+#: src/Engine/Action/CloseTicketAction.php:63
+msgid "close the ticket"
+msgstr "fechar o chamado"
+
+#: src/Rule.php:342
+msgid "ignoring calendars"
+msgstr "ignorando calendários"
+
+#: templates/inspect.html.twig:110
+msgid "none — elapsed time"
+msgstr "nenhum — tempo corrido"
+
+#: src/Engine/Action/SendNotificationAction.php:63
+msgid "send the \"%s\" notification"
+msgstr "enviar a notificação \"%s\""
+
+#: src/Engine/Action/AddSolutionAction.php:66
+msgid "solve the ticket by adding a solution"
+msgstr "solucionar o chamado adicionando uma solução"
+
+#: src/Rule.php:330
+msgid "the group(s) %s"
+msgstr "o(s) grupo(s) %s"
+
+#: src/Rule.php:344
+msgid "using the calendar \"%s\""
+msgstr "usando o calendário \"%s\""
+

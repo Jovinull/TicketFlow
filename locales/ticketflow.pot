@@ -1,0 +1,890 @@
+# TicketFlow plugin for GLPI.
+# Copyright (C) 2026 Felipe Jovino.
+# This file is distributed under the same license as the TicketFlow package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: TicketFlow 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: src/Rule.php:378
+msgid " (any reply from outside the group stops the rule, and a status change restarts the countdown)"
+msgstr ""
+
+#: src/Rule.php:336
+msgid " and whose status is %s"
+msgstr ""
+
+#: templates/simulation.html.twig:171
+msgid "%d more matching tickets are not listed here. Raise \"Maximum candidates per run\" to see them all."
+msgstr ""
+
+#: front/rule.form.php:57
+msgid "%s (copy)"
+msgstr ""
+
+#: src/Rule.php:390
+msgid ", nothing happens (no action is configured)."
+msgstr ""
+
+#: src/Rule.php:393
+msgid ", then: %s."
+msgstr ""
+
+#: src/Rule.php:381
+msgid ", with the clock restarting on: %s"
+msgstr ""
+
+#: templates/rule_form.html.twig:181
+msgid "A GLPI ticket notification event, for example \"update\"."
+msgstr ""
+
+#: templates/inspect.html.twig:81
+msgid "A calendar with no working day cannot produce a deadline."
+msgstr ""
+
+#: src/Engine/Action/AddFollowupAction.php:86
+msgid "A followup would be added."
+msgstr ""
+
+#: templates/rule_form.html.twig:69
+msgid "A new rule is always created inactive."
+msgstr ""
+
+#: src/Rule.php:196
+msgid "A rule needs a name."
+msgstr ""
+
+#: src/Engine/Action/AddSolutionAction.php:86
+msgid "A solution would be added and the ticket would be solved."
+msgstr ""
+
+#: templates/config_form.html.twig:65
+msgid "Acting user"
+msgstr ""
+
+#: src/RuleAction.php:68
+msgid "Action"
+msgid_plural "Actions"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/Enum/ActionType.php:52
+msgid "Add a followup"
+msgstr ""
+
+#: templates/rule_form.html.twig:150
+msgid "Add a message to the timeline"
+msgstr ""
+
+#: templates/simulation.html.twig:75
+msgid "Already processed"
+msgstr ""
+
+#: src/Enum/ResetEvent.php:68
+msgid "Answer from a requester"
+msgstr ""
+
+#: src/Enum/ResetEvent.php:69
+msgid "Answer from an assignee"
+msgstr ""
+
+#: src/Enum/ResetEvent.php:70
+msgid "Any followup"
+msgstr ""
+
+#: src/Enum/ResetEvent.php:72
+msgid "Approval answered"
+msgstr ""
+
+#: src/Enum/RuleType.php:56
+msgid "Approval without answer"
+msgstr ""
+
+#: templates/inspect.html.twig:165
+msgid "Approvals"
+msgstr ""
+
+#: templates/inspect.html.twig:208
+msgid "Assignable groups"
+msgstr ""
+
+#: templates/rule_form.html.twig:92
+#: templates/simulation.html.twig:110
+msgid "Assigned groups"
+msgstr ""
+
+#: templates/inspect.html.twig:200
+msgid "Assigned groups per ticket"
+msgstr ""
+
+#: templates/config_form.html.twig:67
+msgid "Author of the followups and solutions TicketFlow creates. Leave empty to reuse GLPI's own \"system_user\"."
+msgstr ""
+
+#: templates/inspect.html.twig:226
+msgid "Automatic actions"
+msgstr ""
+
+#: templates/simulation.html.twig:181
+msgid "Back to the rule"
+msgstr ""
+
+#: templates/config_form.html.twig:78
+msgid "Batch size"
+msgstr ""
+
+#: src/Enum/DelayUnit.php:54
+msgid "Business days"
+msgstr ""
+
+#: src/Enum/DelayUnit.php:55
+msgid "Business hours"
+msgstr ""
+
+#: templates/rule_form.html.twig:122
+msgid "Calendar"
+msgstr ""
+
+#: src/Enum/DelayUnit.php:56
+msgid "Calendar days"
+msgstr ""
+
+#: templates/inspect.html.twig:55
+msgid "Calendars"
+msgstr ""
+
+#: src/Enum/ActionType.php:54
+#: templates/rule_form.html.twig:164
+msgid "Change the status"
+msgstr ""
+
+#: templates/rule_form.html.twig:112
+msgid "Clock"
+msgstr ""
+
+#: src/Enum/ActionType.php:55
+msgid "Close the ticket"
+msgstr ""
+
+#: templates/rule_form.html.twig:165
+msgid "Close the ticket (skips the solution workflow)"
+msgstr ""
+
+#: front/config.form.php:58
+msgid "Configuration saved."
+msgstr ""
+
+#: templates/inspect.html.twig:183
+msgid "Count"
+msgstr ""
+
+#: templates/config_form.html.twig:44
+msgid "Current state"
+msgstr ""
+
+#: src/Execution.php:384
+#: templates/execution_list.html.twig:39
+#: templates/simulation.html.twig:112
+msgid "Deadline"
+msgstr ""
+
+#: src/Rule.php:482
+#: templates/rule_form.html.twig:118
+msgid "Delay"
+msgstr ""
+
+#: src/Rule.php:490
+msgid "Delay unit"
+msgstr ""
+
+#: src/Cron.php:157
+msgid "Deletes TicketFlow execution logs older than the configured retention."
+msgstr ""
+
+#: templates/execution_list.html.twig:42
+msgid "Details"
+msgstr ""
+
+#: src/Menu.php:104
+msgid "Diagnostics"
+msgstr ""
+
+#: templates/rule_form.html.twig:162
+msgid "Do nothing else"
+msgstr ""
+
+#: src/Enum/ExecutionState.php:65
+msgid "Dry run"
+msgstr ""
+
+#: templates/rule_form.html.twig:211
+msgid "Duplicate"
+msgstr ""
+
+#: templates/rule_form.html.twig:106
+msgid "Empty means any pending reason, including tickets that are pending without one."
+msgstr ""
+
+#: templates/config_form.html.twig:57
+msgid "Enable execution"
+msgstr ""
+
+#: templates/inspect.html.twig:93
+msgid "Entities and their resolved calendar"
+msgstr ""
+
+#: templates/inspect.html.twig:33
+msgid "Environment"
+msgstr ""
+
+#: templates/simulation.html.twig:92
+msgid "Errors"
+msgstr ""
+
+#: src/Cron.php:142
+msgid "Evaluates TicketFlow rules and executes their actions."
+msgstr ""
+
+#: templates/rule_form.html.twig:74
+msgid "Evaluation order"
+msgstr ""
+
+#: src/Enum/ExecutionState.php:62
+#: templates/simulation.html.twig:74
+#: templates/simulation.html.twig:155
+msgid "Executed"
+msgstr ""
+
+#: src/Config.php:212
+msgid "Execution is disabled: rules are evaluated and logged, but no ticket is modified."
+msgstr ""
+
+#: src/Execution.php:70
+msgid "Execution log"
+msgid_plural "Execution logs"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/config_form.html.twig:102
+msgid "Executions older than this are deleted by the purge automatic action. 0 disables the purge."
+msgstr ""
+
+#: src/Enum/ExecutionState.php:63
+#: templates/simulation.html.twig:76
+#: templates/simulation.html.twig:157
+msgid "Failed"
+msgstr ""
+
+#: templates/config_form.html.twig:88
+msgid "Fallback calendar"
+msgstr ""
+
+#: src/Engine/Action/AddFollowupAction.php:124
+msgid "Followup added."
+msgstr ""
+
+#: templates/rule_form.html.twig:102
+msgid "For a pending rule, leave \"Pending\" selected unless you know why you are changing it."
+msgstr ""
+
+#: templates/config_form.html.twig:61
+msgid "Global dry run"
+msgstr ""
+
+#: src/Config.php:216
+msgid "Global dry run is enabled: every rule behaves as a simulation."
+msgstr ""
+
+#: templates/inspect.html.twig:194
+msgid "Group assignment"
+msgstr ""
+
+#: templates/config_form.html.twig:85
+msgid "Hard ceiling for one cron run, so a backlog can never turn into a single very long execution."
+msgstr ""
+
+#: src/Enum/DelayUnit.php:57
+msgid "Hours"
+msgstr ""
+
+#: templates/inspect.html.twig:197
+msgid "How many assigned groups tickets actually carry. TicketFlow matches a rule when its group is one of them, because GLPI has no notion of a primary assigned group."
+msgstr ""
+
+#: templates/config_form.html.twig:80
+msgid "How many candidate tickets are loaded per query. Higher is faster but uses more memory."
+msgstr ""
+
+#: templates/rule_form.html.twig:64
+msgid "Information"
+msgstr ""
+
+#: templates/config_form.html.twig:62
+msgid "Keeps every rule simulated even when execution is enabled. Useful while tuning rules on a live instance."
+msgstr ""
+
+#: templates/inspect.html.twig:232
+msgid "Last exit code"
+msgstr ""
+
+#: src/Enum/StartEvent.php:59
+msgid "Last message, when written by the target group"
+msgstr ""
+
+#: src/Rule.php:507
+msgid "Last run"
+msgstr ""
+
+#: templates/rule_form.html.twig:98
+msgid "Leave empty to target every group. A ticket matches when one of its assigned groups is listed."
+msgstr ""
+
+#: templates/config_form.html.twig:100
+msgid "Log retention (days)"
+msgstr ""
+
+#: templates/config_form.html.twig:96
+msgid "Log simulations"
+msgstr ""
+
+#: templates/config_form.html.twig:94
+msgid "Logs"
+msgstr ""
+
+#: templates/rule_form.html.twig:76
+msgid "Lower values are evaluated first."
+msgstr ""
+
+#: templates/simulation.html.twig:36
+msgid "Manual run"
+msgstr ""
+
+#: templates/config_form.html.twig:58
+msgid "Master switch. While this is off, rules are evaluated and logged but no ticket is ever modified. It ships off so a fresh install cannot act on anything."
+msgstr ""
+
+#: templates/simulation.html.twig:72
+msgid "Match the conditions"
+msgstr ""
+
+#: templates/config_form.html.twig:83
+msgid "Maximum candidates per run"
+msgstr ""
+
+#: templates/rule_form.html.twig:152
+msgid "Message"
+msgstr ""
+
+#: src/Config.php:220
+msgid "No acting user is configured (neither TicketFlow nor GLPI's \"system_user\"). Actions that need an author, such as adding a solution, will fail."
+msgstr ""
+
+#: src/Engine/Action/AddSolutionAction.php:74
+msgid "No acting user is configured; a solution cannot be attributed to anybody."
+msgstr ""
+
+#: src/Enum/CalendarMode.php:57
+msgid "No calendar (elapsed time)"
+msgstr ""
+
+#: templates/inspect.html.twig:59
+msgid "No calendar is configured. Rules using business days will fall back to plain elapsed time, and every execution row will say so."
+msgstr ""
+
+#: src/Engine/ActionExecutor.php:89
+msgid "No handler is registered for action \"%s\"."
+msgstr ""
+
+#: src/Engine/RuleEngine.php:160
+msgid "No matcher supports rule type \"%s\"."
+msgstr ""
+
+#: src/Engine/Action/ChangeStatusAction.php:74
+msgid "No target status is configured."
+msgstr ""
+
+#: templates/simulation.html.twig:100
+msgid "No ticket currently matches this rule."
+msgstr ""
+
+#: templates/execution_list.html.twig:70
+#: templates/simulation.html.twig:140
+msgid "No usable calendar: computed as plain elapsed time."
+msgstr ""
+
+#: src/Rule.php:445
+msgid "Not applicable"
+msgstr ""
+
+#: templates/simulation.html.twig:50
+msgid "Nothing was modified: no followup, no solution, no status change and no operational notification was produced."
+msgstr ""
+
+#: templates/rule_form.html.twig:180
+msgid "Notification event"
+msgstr ""
+
+#: src/Engine/Action/SendNotificationAction.php:93
+msgid "Notification raised."
+msgstr ""
+
+#: templates/rule_form.html.twig:142
+msgid "Only these interactions push the deadline forward. Choosing \"Answer from a requester\" is what makes a technician reply *not* restart the countdown."
+msgstr ""
+
+#: templates/rule_form.html.twig:125
+msgid "Only used when the calendar mode is \"Specific calendar\"."
+msgstr ""
+
+#: templates/simulation.html.twig:115
+msgid "Outcome"
+msgstr ""
+
+#: templates/simulation.html.twig:113
+msgid "Overdue"
+msgstr ""
+
+#: templates/inspect.html.twig:98
+msgid "Own calendar"
+msgstr ""
+
+#: templates/simulation.html.twig:73
+msgid "Past the deadline"
+msgstr ""
+
+#: templates/inspect.html.twig:122
+msgid "Pending"
+msgstr ""
+
+#: templates/inspect.html.twig:136
+msgid "Pending items without a reason"
+msgstr ""
+
+#: templates/inspect.html.twig:130
+msgid "Pending without a reference date"
+msgstr ""
+
+#: src/Enum/RuleType.php:55
+msgid "Pending without answer"
+msgstr ""
+
+#: templates/rule_form.html.twig:156
+msgid "Placeholders: {{ticket.id}}, {{ticket.name}}, {{rule.name}}, {{deadline}}, {{reference}}, {{delay}}, {{delay_unit}}, {{group.name}}, {{entity.name}}, {{calendar.name}}"
+msgstr ""
+
+#: src/Enum/ExecutionState.php:61
+msgid "Processing"
+msgstr ""
+
+#: templates/rule_form.html.twig:178
+msgid "Raise a notification"
+msgstr ""
+
+#: src/Execution.php:378
+#: templates/execution_list.html.twig:38
+#: templates/simulation.html.twig:111
+msgid "Reference date"
+msgstr ""
+
+#: templates/inspect.html.twig:230
+msgid "Registered"
+msgstr ""
+
+#: templates/config_form.html.twig:71
+msgid "Resolved acting user"
+msgstr ""
+
+#: templates/inspect.html.twig:99
+msgid "Resolved calendar"
+msgstr ""
+
+#: templates/rule_form.html.twig:139
+msgid "Restart the clock on"
+msgstr ""
+
+#: src/Execution.php:371
+#: templates/execution_list.html.twig:37
+msgid "Result"
+msgstr ""
+
+#: front/rule.form.php:59
+msgid "Rule duplicated. The copy is inactive."
+msgstr ""
+
+#: front/rule.simulate.php:48
+msgid "Rule not found."
+msgstr ""
+
+#: src/Rule.php:473
+#: templates/rule_form.html.twig:86
+msgid "Rule type"
+msgstr ""
+
+#: templates/simulation.html.twig:191
+msgid "Run for real now"
+msgstr ""
+
+#: templates/config_form.html.twig:55
+#: templates/rule_form.html.twig:187
+msgid "Safety"
+msgstr ""
+
+#: templates/inspect.html.twig:65
+msgid "Segments"
+msgstr ""
+
+#: src/Enum/ActionType.php:56
+msgid "Send a notification"
+msgstr ""
+
+#: templates/execution_list.html.twig:101
+msgid "Showing the 100 most recent entries. Use TicketFlow > Execution logs for the full, searchable history."
+msgstr ""
+
+#: templates/rule_form.html.twig:200
+msgid "Shows which tickets would be affected. Changes nothing."
+msgstr ""
+
+#: front/rule.simulate.php:69
+msgid "Simulate a rule"
+msgstr ""
+
+#: templates/rule_form.html.twig:198
+msgid "Simulate this rule"
+msgstr ""
+
+#: templates/config_form.html.twig:97
+msgid "Simulated matches are written to the execution log. They never block a later real execution."
+msgstr ""
+
+#: templates/simulation.html.twig:36
+msgid "Simulation"
+msgstr ""
+
+#: src/Rule.php:531
+#: templates/rule_form.html.twig:189
+msgid "Simulation only"
+msgstr ""
+
+#: src/Enum/ExecutionState.php:64
+msgid "Skipped"
+msgstr ""
+
+#: src/Enum/ResetEvent.php:71
+msgid "Solution added"
+msgstr ""
+
+#: src/Engine/Action/AddSolutionAction.php:111
+msgid "Solution added; the ticket is now solved."
+msgstr ""
+
+#: templates/rule_form.html.twig:168
+msgid "Solution content"
+msgstr ""
+
+#: src/Enum/ActionType.php:53
+msgid "Solve the ticket (add a solution)"
+msgstr ""
+
+#: templates/rule_form.html.twig:163
+msgid "Solve the ticket (add a solution) — recommended"
+msgstr ""
+
+#: templates/inspect.html.twig:143
+msgid "Some pending tickets have no begin_waiting_date. TicketFlow refuses to time those rather than guessing a reference date; they will be reported as \"no_reference_date\"."
+msgstr ""
+
+#: src/Enum/CalendarMode.php:56
+#: templates/rule_form.html.twig:124
+msgid "Specific calendar"
+msgstr ""
+
+#: src/Engine/Action/ChangeStatusAction.php:106
+msgid "Status updated."
+msgstr ""
+
+#: templates/simulation.html.twig:159
+msgid "Still within the deadline"
+msgstr ""
+
+#: src/RuleGroup.php:59
+msgid "Target group"
+msgid_plural "Target groups"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/rule_form.html.twig:176
+msgid "Target status"
+msgstr ""
+
+#: templates/inspect.html.twig:173
+msgid "Targeting a group"
+msgstr ""
+
+#: templates/inspect.html.twig:177
+msgid "Targeting a user"
+msgstr ""
+
+#: templates/inspect.html.twig:230
+msgid "Task"
+msgstr ""
+
+#: src/Engine/Action/SendNotificationAction.php:75
+msgid "The \"%s\" notification would be raised."
+msgstr ""
+
+#: src/Enum/StartEvent.php:66
+msgid "The countdown runs from the moment the ticket entered the selected status."
+msgstr ""
+
+#: templates/rule_form.html.twig:114
+msgid "The countdown starts at"
+msgstr ""
+
+#: src/Rule.php:223
+msgid "The delay must be at least 1."
+msgstr ""
+
+#: src/Engine/Action/AddFollowupAction.php:78
+msgid "The followup content is empty."
+msgstr ""
+
+#: src/Engine/Action/AddFollowupAction.php:119
+msgid "The followup could not be created."
+msgstr ""
+
+#: templates/rule_form.html.twig:190
+msgid "The rule is evaluated and logged, but no ticket is modified. Use this to watch a new rule for a few days before arming it."
+msgstr ""
+
+#: src/Enum/StartEvent.php:67
+msgid "The rule only applies while the most recent message on the ticket was written by a member of one of the target groups. The countdown runs from that message, and stops as soon as anybody else replies."
+msgstr ""
+
+#: src/Engine/Action/AddSolutionAction.php:80
+msgid "The solution content is empty."
+msgstr ""
+
+#: src/Engine/Action/AddSolutionAction.php:106
+msgid "The solution could not be created."
+msgstr ""
+
+#: src/Engine/Action/ChangeStatusAction.php:109
+msgid "The status could not be updated."
+msgstr ""
+
+#: src/Engine/Action/ChangeStatusAction.php:88
+msgid "The status would change from %1$s to %2$s."
+msgstr ""
+
+#: src/Engine/Action/ChangeStatusAction.php:80
+msgid "The ticket already has the target status."
+msgstr ""
+
+#: src/Engine/Action/CloseTicketAction.php:95
+msgid "The ticket could not be closed."
+msgstr ""
+
+#: src/Engine/Action/CloseTicketAction.php:73
+msgid "The ticket is already closed."
+msgstr ""
+
+#: src/Engine/Action/CloseTicketAction.php:79
+msgid "The ticket would be closed."
+msgstr ""
+
+#: templates/rule_form.html.twig:148
+#: templates/rule_form.html.twig:166
+msgid "Then"
+msgstr ""
+
+#: templates/inspect.html.twig:149
+msgid "This installation defines no pending reason. Leave the pending reason empty on your rules — it means \"any, including none\"."
+msgstr ""
+
+#: templates/inspect.html.twig:95
+msgid "This is the calendar a rule in \"entity calendar\" mode will really use, inheritance included."
+msgstr ""
+
+#: templates/rule_form.html.twig:58
+msgid "This rule can solve, close or change the status of tickets automatically."
+msgstr ""
+
+#: templates/execution_list.html.twig:92
+msgid "This rule has not run yet."
+msgstr ""
+
+#: templates/simulation.html.twig:186
+msgid "This will really execute the rule on the tickets listed above. Continue?"
+msgstr ""
+
+#: templates/config_form.html.twig:76
+msgid "Throughput"
+msgstr ""
+
+#: src/Engine/Action/CloseTicketAction.php:94
+msgid "Ticket closed."
+msgstr ""
+
+#: src/Engine/Action/SendNotificationAction.php:83
+msgid "Ticket not found."
+msgstr ""
+
+#: front/config.form.php:63
+#: src/Cron.php:61
+#: src/Menu.php:50
+#: src/Profile.php:56
+#: src/Profile.php:94
+#: src/Rule.php:96
+msgid "TicketFlow"
+msgstr ""
+
+#: front/inspect.php:46
+msgid "TicketFlow diagnostics"
+msgstr ""
+
+#: src/Rule.php:86
+msgid "TicketFlow rule"
+msgid_plural "TicketFlow rules"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/Cron.php:71
+msgid "TicketFlow: evaluate rules and run their actions"
+msgstr ""
+
+#: src/Cron.php:74
+msgid "TicketFlow: purge old execution logs"
+msgstr ""
+
+#: templates/simulation.html.twig:71
+msgid "Tickets analysed"
+msgstr ""
+
+#: templates/inspect.html.twig:126
+msgid "Tickets currently pending"
+msgstr ""
+
+#: src/Execution.php:390
+#: templates/execution_list.html.twig:41
+msgid "Triggered at"
+msgstr ""
+
+#: templates/rule_form.html.twig:120
+msgid "Unit"
+msgstr ""
+
+#: src/Rule.php:216
+msgid "Unknown calendar mode."
+msgstr ""
+
+#: src/Rule.php:206
+msgid "Unknown delay unit."
+msgstr ""
+
+#: src/Rule.php:201
+msgid "Unknown rule type."
+msgstr ""
+
+#: src/Rule.php:211
+msgid "Unknown start event."
+msgstr ""
+
+#: templates/inspect.html.twig:66
+msgid "Usable"
+msgstr ""
+
+#: templates/config_form.html.twig:89
+msgid "Used by rules in \"entity calendar\" mode when the entity tree defines none. Without it, business delays fall back to plain elapsed time, which is recorded on every execution."
+msgstr ""
+
+#: templates/inspect.html.twig:169
+msgid "Waiting for a decision"
+msgstr ""
+
+#: templates/rule_form.html.twig:49
+#: templates/simulation.html.twig:43
+msgid "What this rule does"
+msgstr ""
+
+#: templates/rule_form.html.twig:84
+msgid "When"
+msgstr ""
+
+#: src/Rule.php:361
+msgid "When a ticket assigned to %1$s%2$s stays pending for %3$d %4$s %5$s"
+msgstr ""
+
+#: src/Rule.php:369
+msgid "When an approval request on a ticket assigned to %1$s stays unanswered for %2$d %3$s %4$s"
+msgstr ""
+
+#: src/Rule.php:353
+msgid "When the last message on a ticket assigned to %1$s was written by that group%2$s, and %3$d %4$s go by %5$s without anybody answering"
+msgstr ""
+
+#: src/Enum/StartEvent.php:58
+msgid "When the ticket entered the status"
+msgstr ""
+
+#: templates/simulation.html.twig:153
+msgid "Would be processed"
+msgstr ""
+
+#: templates/simulation.html.twig:74
+msgid "Would be processed now"
+msgstr ""
+
+#: templates/simulation.html.twig:57
+msgid "You do not have the update right on tickets. A manual run acts as you, not as the scheduler, so ticket changes may be refused here even though the automatic action would succeed."
+msgstr ""
+
+#: src/Engine/Action/AddFollowupAction.php:71
+msgid "add a followup"
+msgstr ""
+
+#: src/Engine/Action/AddFollowupAction.php:70
+msgid "add a private followup"
+msgstr ""
+
+#: src/Rule.php:329
+msgid "any group"
+msgstr ""
+
+#: src/Engine/Action/ChangeStatusAction.php:65
+msgid "change the status to %s"
+msgstr ""
+
+#: src/Engine/Action/CloseTicketAction.php:63
+msgid "close the ticket"
+msgstr ""
+
+#: src/Rule.php:342
+msgid "ignoring calendars"
+msgstr ""
+
+#: templates/inspect.html.twig:110
+msgid "none — elapsed time"
+msgstr ""
+
+#: src/Engine/Action/SendNotificationAction.php:63
+msgid "send the \"%s\" notification"
+msgstr ""
+
+#: src/Engine/Action/AddSolutionAction.php:66
+msgid "solve the ticket by adding a solution"
+msgstr ""
+
+#: src/Rule.php:330
+msgid "the group(s) %s"
+msgstr ""
+
+#: src/Rule.php:344
+msgid "using the calendar \"%s\""
+msgstr ""
+
