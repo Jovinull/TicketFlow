@@ -7,6 +7,28 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **The integration suite established its session on only one of its two entry paths.**
+  `tests/bootstrap.php` chains into GLPI's own bootstrap when the plugin sits in a
+  development checkout, and boots the kernel itself otherwise. Everything it set up — the
+  cron marker, the active entity, the rights — lived in the second branch. Locally the
+  plugin sat in a release tarball, which has no `tests/` directory, so only that branch ever
+  ran; on CI, which uses a development checkout, the suite ran with no rights at all and 17
+  tests failed. The setup now happens after either path, and grants the rights explicitly
+  rather than leaning on `Session::isCron()` answering yes to everything.
+- `Rule::defineTabs()` narrowed its return type to `array<string, string>`, but core
+  declares `array<string, string|bool>` and may add a boolean `no_all_tab` entry.
+- `hook.php` was the only PHP file without `declare(strict_types=1)`.
+
+### Changed
+
+- Formatting and modernisation for the tool versions GLPI 11.0.x actually ships:
+  trailing commas required by PER-CS under PHP 8.2, and first-class callable syntax in place
+  of string callables. One Rector rule is skipped in `tests/`, where `last_message: null` is
+  the subject under test spelled out rather than a redundant argument.
+
+
 ## [1.0.0] — 2026-08-26
 
 First public release. The two entries below it are the development history that led here.
