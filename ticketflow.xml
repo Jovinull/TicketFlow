@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Manifest for the GLPI plugin catalog (https://plugins.glpi-project.org).
+
+    Submitted as the *raw* URL of this file, not the repository page. The <key> must match
+    the plugin directory name exactly, and each <compatibility> is a Composer version
+    constraint. See the "Publishing your plugin" section of the GLPI developer documentation.
+-->
+<root>
+   <name>TicketFlow</name>
+   <key>ticketflow</key>
+   <state>stable</state>
+   <logo>https://raw.githubusercontent.com/Jovinull/ticketflow/main/ticketflow.png</logo>
+   <description>
+      <short>
+         <en>Time-based automation for tickets: business-day deadlines, configurable conditions and actions.</en>
+         <fr>Automatisation temporelle des tickets : délais en jours ouvrés, conditions et actions configurables.</fr>
+         <pt_BR>Automação temporal de chamados: prazos em dias úteis, condições e ações configuráveis.</pt_BR>
+      </short>
+      <long>
+         <en><![CDATA[
+TicketFlow watches tickets that are waiting on somebody, measures how long they have been waiting in **business** time, and runs configurable actions when the wait goes past a deadline.
+
+It is a rule engine, not a hard-coded workflow. Two situations ship configured out of the box, and both are just settings of the same machinery:
+
+* a ticket sitting in a pending status without the answer you are waiting for;
+* an approval request nobody has decided on.
+
+**What it adds over what GLPI already does**
+
+GLPI can already bump and auto-solve a pending ticket, but only per pending reason, only with followup and solution templates configured, and with no notion of *who* was supposed to answer — a technician's reply counts the same as the requester's.
+
+TicketFlow adds:
+
+* conditions on the **assigned group**, the status, the entity and the pending reason;
+* deadlines in **business days or hours**, computed by GLPI's own calendars, holidays included — the same function that computes SLA due dates, not a re-implementation;
+* two ways to start the clock: when the ticket entered the status, or **from the last message on the ticket, and only while that message came from your team** — so a rule goes quiet the moment somebody else replies;
+* a status change always restarts the countdown;
+* the same treatment for approval requests;
+* a **dry run** that lists exactly which tickets would be touched, before anything is;
+* a per-ticket **audit trail**, and idempotency that survives a cron running every minute.
+
+**Safety**
+
+A fresh install does nothing. Execution is disabled, global dry run is on, the processing task ships disabled, and rules are always created inactive. Rules that can solve or close tickets are flagged as such in the interface.
+
+**Standards**
+
+No GLPI core file or core table is ever modified. Every ticket change goes through `ITILFollowup`, `ITILSolution` or `Ticket`, so history, notifications, hooks and other plugins keep working.
+         ]]></en>
+         <fr><![CDATA[
+TicketFlow surveille les tickets en attente d'un tiers, mesure la durée d'attente en temps **ouvré** et exécute des actions configurables lorsque le délai est dépassé.
+
+C'est un moteur de règles, pas un workflow figé. Deux situations sont livrées configurées, et toutes deux ne sont que des réglages du même mécanisme :
+
+* un ticket en attente sans la réponse attendue ;
+* une demande d'approbation sans décision.
+
+**Ce que cela ajoute**
+
+* des conditions sur le **groupe attribué**, le statut, l'entité et le motif de mise en attente ;
+* des délais en **jours ou heures ouvrés**, calculés par les calendriers de GLPI, jours fériés compris — la fonction même qui calcule les échéances de SLA ;
+* deux façons de démarrer le compte à rebours : à l'entrée dans le statut, ou **depuis le dernier message du ticket, tant qu'il vient de votre équipe** ;
+* un changement de statut relance toujours le compte à rebours ;
+* le même traitement pour les demandes d'approbation ;
+* une **simulation** qui liste les tickets concernés avant toute modification ;
+* une **piste d'audit** par ticket et une idempotence qui résiste à une tâche planifiée exécutée chaque minute.
+
+**Sécurité**
+
+Une installation neuve ne fait rien : exécution désactivée, simulation globale active, tâche automatique désactivée, règles créées inactives.
+         ]]></fr>
+         <pt_BR><![CDATA[
+O TicketFlow observa chamados que estão aguardando alguém, mede há quanto tempo esperam em tempo **útil** e executa ações configuráveis quando o prazo vence.
+
+É um motor de regras, não um fluxo fixo. Duas situações vêm configuradas, e ambas são apenas ajustes da mesma máquina:
+
+* chamado parado em um status de pendência sem a resposta esperada;
+* solicitação de aprovação sem decisão.
+
+**O que acrescenta ao que o GLPI já faz**
+
+O GLPI já sabe cobrar e solucionar automaticamente um chamado pendente, mas só por motivo de pendência, só com modelos de acompanhamento e solução configurados, e sem noção de *quem* deveria responder — a resposta de um técnico conta igual à do solicitante.
+
+O TicketFlow acrescenta:
+
+* condições por **grupo atribuído**, status, entidade e motivo de pendência;
+* prazos em **dias ou horas úteis**, calculados pelos calendários do próprio GLPI, feriados incluídos — a mesma função que calcula prazos de SLA;
+* duas formas de iniciar a contagem: quando o chamado entrou no status, ou **a partir da última mensagem do chamado, e só enquanto ela for da sua equipe** — a regra silencia assim que outra pessoa responde;
+* mudança de status sempre reinicia a contagem;
+* o mesmo tratamento para solicitações de aprovação;
+* **simulação** que lista exatamente quais chamados seriam afetados, antes de qualquer alteração;
+* **trilha de auditoria** por chamado e idempotência que aguenta um cron rodando a cada minuto.
+
+**Segurança**
+
+Instalação nova não faz nada: execução desligada, simulação global ligada, tarefa automática desabilitada e regras sempre criadas inativas.
+         ]]></pt_BR>
+      </long>
+   </description>
+   <screenshots>
+      <screenshot>https://raw.githubusercontent.com/Jovinull/ticketflow/main/docs/screenshots/01-rule-form.png</screenshot>
+      <screenshot>https://raw.githubusercontent.com/Jovinull/ticketflow/main/docs/screenshots/02-simulation.png</screenshot>
+      <screenshot>https://raw.githubusercontent.com/Jovinull/ticketflow/main/docs/screenshots/03-execution-log.png</screenshot>
+      <screenshot>https://raw.githubusercontent.com/Jovinull/ticketflow/main/docs/screenshots/04-diagnostics.png</screenshot>
+      <screenshot>https://raw.githubusercontent.com/Jovinull/ticketflow/main/docs/screenshots/05-rule-list.png</screenshot>
+      <screenshot>https://raw.githubusercontent.com/Jovinull/ticketflow/main/docs/screenshots/06-configuration.png</screenshot>
+   </screenshots>
+   <homepage>https://github.com/Jovinull/ticketflow</homepage>
+   <download>https://github.com/Jovinull/ticketflow/releases</download>
+   <issues>https://github.com/Jovinull/ticketflow/issues</issues>
+   <readme>https://github.com/Jovinull/ticketflow/blob/main/README.md</readme>
+   <authors>
+      <author>Felipe Jovino</author>
+   </authors>
+   <versions>
+      <version>
+         <num>1.0.0</num>
+         <compatibility>~11.0.0</compatibility>
+         <download_url>https://github.com/Jovinull/ticketflow/releases/download/1.0.0/glpi-ticketflow-1.0.0.tar.bz2</download_url>
+      </version>
+   </versions>
+   <langs>
+      <lang>en_GB</lang>
+      <lang>fr_FR</lang>
+      <lang>pt_BR</lang>
+   </langs>
+   <license>MIT</license>
+   <tags>
+      <en>
+         <tag>tickets</tag>
+         <tag>automation</tag>
+         <tag>sla</tag>
+         <tag>rules</tag>
+         <tag>helpdesk</tag>
+      </en>
+      <fr>
+         <tag>tickets</tag>
+         <tag>automatisation</tag>
+         <tag>sla</tag>
+         <tag>règles</tag>
+      </fr>
+      <pt_BR>
+         <tag>chamados</tag>
+         <tag>automação</tag>
+         <tag>sla</tag>
+         <tag>regras</tag>
+      </pt_BR>
+   </tags>
+</root>
