@@ -37,6 +37,7 @@ use Rector\CodeQuality\Rector\If_\ExplicitBoolCompareRector;
 use Rector\CodeQuality\Rector\Identical\FlipTypeControlToUseExclusiveTypeRector;
 use Rector\Config\RectorConfig;
 use Rector\DeadCode\Rector\ClassMethod\RemoveUnusedPrivateMethodParameterRector;
+use Rector\DeadCode\Rector\MethodCall\RemoveNullNamedArgOnNullDefaultParamRector;
 use Rector\DeadCode\Rector\If_\RemoveAlwaysTrueIfConditionRector;
 use Rector\DeadCode\Rector\StmtsAwareInterface\RemoveJustPropertyFetchRector;
 use Rector\DeadCode\Rector\Return_\RemoveDeadConditionAboveReturnRector;
@@ -88,6 +89,13 @@ return RectorConfig::configure()
         // would make that contract accidental.
         RemoveUnusedPrivateMethodParameterRector::class => [
             __DIR__ . '/src/Install.php',
+        ],
+
+        // In a test, `last_message: null` is the subject under test spelled out, not a
+        // redundant argument. Removing it leaves a factory call whose relevance to the
+        // assertion is invisible.
+        RemoveNullNamedArgOnNullDefaultParamRector::class => [
+            __DIR__ . '/tests',
         ],
     ])
     ->withPhpSets(php82: true)

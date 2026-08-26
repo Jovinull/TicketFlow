@@ -270,7 +270,7 @@ final class CandidateFinder
 
         $sons = getSonsOf('glpi_entities', $rule->entities_id);
 
-        return array_values(array_map('intval', $sons));
+        return array_values(array_map(intval(...), $sons));
     }
 
     /**

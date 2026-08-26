@@ -247,7 +247,7 @@ class Execution extends CommonDBTM
 
         $decoded = json_decode($raw, true);
 
-        return is_array($decoded) ? array_values(array_filter($decoded, 'is_array')) : [];
+        return is_array($decoded) ? array_values(array_filter($decoded, is_array(...))) : [];
     }
 
     /**

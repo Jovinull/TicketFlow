@@ -31,6 +31,8 @@
  * -------------------------------------------------------------------------
  */
 
+declare(strict_types=1);
+
 use GlpiPlugin\Ticketflow\Install;
 use GlpiPlugin\Ticketflow\Version;
 

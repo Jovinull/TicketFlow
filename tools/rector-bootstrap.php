@@ -52,7 +52,7 @@ if (file_exists($constants)) {
     require_once $constants;
 }
 
-foreach (spl_autoload_functions() ?: [] as $autoloader) {
+foreach (spl_autoload_functions() as $autoloader) {
     if ($autoloader === 'glpi_autoload') {
         spl_autoload_unregister($autoloader);
     }

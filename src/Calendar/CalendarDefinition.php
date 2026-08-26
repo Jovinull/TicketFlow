@@ -207,7 +207,7 @@ final class CalendarDefinition
 
     private function toSeconds(string $time): int
     {
-        $parts = array_map('intval', explode(':', $time) + [0, 0, 0]);
+        $parts = array_map(intval(...), explode(':', $time) + [0, 0, 0]);
 
         return $parts[0] * 3600 + $parts[1] * 60 + $parts[2];
     }
