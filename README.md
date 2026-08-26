@@ -259,6 +259,18 @@ Rules are entity-scoped and honour the reader's active entity.
 * `files/_log/ticketclock.log` — one summary line per run.
 * *Administration > TicketFlow > Diagnostics* — what this installation actually looks like.
 
+The execution log is a real GLPI itemtype, not a private table with a page bolted on. It is
+registered with `Plugin::registerClass()` and carries search options, so everything core
+does with a ticket list works on it: the search engine with filters and sorting, saved
+searches, and CSV or PDF export. Searching `Result contains executed` narrows the history
+exactly as it would on any core object, and the rule name, the entity and the deadline are
+all searchable columns rather than display-only text.
+
+What that does not buy you is the third party reporting plugins. `reports` ships a fixed set
+of inventory reports and never looks at other itemtypes, and My Dashboard expects a widget
+written against its own hook. Core search and export cover the usual questions without
+either of them.
+
 ## Troubleshooting
 
 **Nothing happens.** Check *Diagnostics*. In order: is execution enabled, is global dry run
