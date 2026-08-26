@@ -1,0 +1,17 @@
+includes:
+    - ../../vendor/glpi-project/phpstan-glpi/extension.neon
+    - ../../vendor/phpstan/phpstan-deprecation-rules/rules.neon
+    - ../../vendor/thecodingmachine/phpstan-safe-rule/phpstan-safe-rule.neon
+
+parameters:
+    level: 8
+    paths:
+        - src
+        - hook.php
+        - setup.php
+    scanDirectories:
+        - ../../src
+    bootstrapFiles:
+        - ../../stubs/glpi_constants.php
+        - ../../vendor/autoload.php
+    treatPhpDocTypesAsCertain: false
