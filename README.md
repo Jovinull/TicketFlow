@@ -43,21 +43,23 @@ TicketFlow adds the part that was missing:
 
 ```bash
 cd /var/www/glpi/plugins
-git clone https://github.com/Jovinull/ticketflow.git ticketflow
+git clone https://github.com/Jovinull/ticketclock.git ticketclock
 ```
 
-> The directory **must** be named `ticketflow`: GLPI derives the plugin's namespace
-> (`GlpiPlugin\Ticketflow\`) and its table prefix from the folder name.
+> The directory **must** be named `ticketclock`: GLPI derives the plugin's namespace
+> (`GlpiPlugin\Ticketclock\`) and its table prefix from the folder name. The plugin is
+> named TicketFlow but keyed `ticketclock` because `ticketflow` was already taken on the
+> GLPI plugin catalog, where keys are unique across every published plugin.
 
 Then either through the interface — *Setup > Plugins > TicketFlow > Install, then Enable* —
 or from the CLI:
 
 ```bash
-php bin/console plugin:install ticketflow
-php bin/console plugin:activate ticketflow
+php bin/console plugin:install ticketclock
+php bin/console plugin:activate ticketclock
 ```
 
-Installing creates four tables (`glpi_plugin_ticketflow_rules`, `…_rulegroups`,
+Installing creates four tables (`glpi_plugin_ticketclock_rules`, `…_rulegroups`,
 `…_ruleactions`, `…_executions`), registers two automatic actions and one right.
 
 **A fresh install does nothing.** Execution is disabled, global dry run is on, the
@@ -230,7 +232,7 @@ steps.
 
 ## Permissions
 
-One right, `plugin_ticketflow_rule`, in the standard profile matrix
+One right, `plugin_ticketclock_rule`, in the standard profile matrix
 (*Administration > Profiles > TicketFlow*):
 
 | Bit | Grants |
@@ -248,7 +250,7 @@ Rules are entity-scoped and honour the reader's active entity.
 * *Setup > Automatic actions > ProcessRules* — last run, exit code, processed volume.
 * *Administration > TicketFlow > Execution logs* — searchable, filterable history:
   rule, ticket, result, reference date, deadline, calendar, error.
-* `files/_log/ticketflow.log` — one summary line per run.
+* `files/_log/ticketclock.log` — one summary line per run.
 * *Administration > TicketFlow > Diagnostics* — what this installation actually looks like.
 
 ## Troubleshooting

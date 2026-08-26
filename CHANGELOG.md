@@ -5,33 +5,14 @@ All notable changes to TicketFlow are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-### Fixed
-
-- **The integration suite established its session on only one of its two entry paths.**
-  `tests/bootstrap.php` chains into GLPI's own bootstrap when the plugin sits in a
-  development checkout, and boots the kernel itself otherwise. Everything it set up — the
-  cron marker, the active entity, the rights — lived in the second branch. Locally the
-  plugin sat in a release tarball, which has no `tests/` directory, so only that branch ever
-  ran; on CI, which uses a development checkout, the suite ran with no rights at all and 17
-  tests failed. The setup now happens after either path, and grants the rights explicitly
-  rather than leaning on `Session::isCron()` answering yes to everything.
-- `Rule::defineTabs()` narrowed its return type to `array<string, string>`, but core
-  declares `array<string, string|bool>` and may add a boolean `no_all_tab` entry.
-- `hook.php` was the only PHP file without `declare(strict_types=1)`.
-
-### Changed
-
-- Formatting and modernisation for the tool versions GLPI 11.0.x actually ships:
-  trailing commas required by PER-CS under PHP 8.2, and first-class callable syntax in place
-  of string callables. One Rector rule is skipped in `tests/`, where `last_message: null` is
-  the subject under test spelled out rather than a redundant argument.
-
-
 ## [1.0.0] — 2026-08-26
 
 First public release. The two entries below it are the development history that led here.
+
+The plugin is called **TicketFlow**, but its GLPI key — the directory name, the table
+prefix and the PHP namespace — is `ticketclock`. The key `ticketflow` was already taken on
+the GLPI plugin catalog (entry #310, registered 2025-05-16), and a catalog key has to be
+unique across every published plugin.
 
 Verified on GLPI 11.0.4 against **PHP 8.2 / MariaDB 10.6** and **PHP 8.5 / MariaDB 12.3** —
 both ends of the official plugin CI matrix — plus PHP 8.3 in between: full suite, an
@@ -42,8 +23,8 @@ archive itself was installed on a virgin instance and confirmed inert on arrival
 
 ### Added
 
-- **Everything needed to publish on the GLPI plugin catalog**: `ticketflow.xml` manifest
-  (en/fr/pt-BR), a `ticketflow.png` logo, and [docs/publishing.md](docs/publishing.md) —
+- **Everything needed to publish on the GLPI plugin catalog**: `ticketclock.xml` manifest
+  (en/fr/pt-BR), a `ticketclock.png` logo, and [docs/publishing.md](docs/publishing.md) —
   the requirements, their sources, and an audit of this plugin against each one.
 - The official CI is wired up: `.github/workflows/continuous-integration.yml` calls
   `glpi-project/plugin-ci-workflows@v1` across the GLPI 11.0.x matrix, and `release.yml`
@@ -51,7 +32,7 @@ archive itself was installed on a virgin instance and confirmed inert on arrival
 - Quality configuration matching the official skeleton: `.php-cs-fixer.php`, `phpstan.neon`,
   `psalm.xml`, `.twig_cs.dist.php`, `tools/HEADER` and `.glpi-coverage.json`. All six tools
   run clean against a real GLPI 11.0.4 checkout.
-- `GlpiPlugin\Ticketflow\Version` — one source of truth for the version numbers, which
+- `GlpiPlugin\Ticketclock\Version` — one source of truth for the version numbers, which
   setup.php still exposes under GLPI's `PLUGIN_*` constant convention.
 - `tools/apply-headers.php` keeps the licence header on every file (`--check` in CI-style
   verification).
@@ -93,20 +74,24 @@ archive itself was installed on a virgin instance and confirmed inert on arrival
   when it fails, so nothing else would have caught it. Notifications are switched on for the
   test and put back afterwards; a fresh GLPI ships with them off, which is why this had
   never been exercised by accident.
-- Six screenshots in `docs/screenshots/`, referenced from `ticketflow.xml` and the README.
+- Six screenshots in `docs/screenshots/`, referenced from `ticketclock.xml` and the README.
   They come from a demo instance seeded on purpose, never from a copy of a real one: these
   screens show ticket titles, group names and user names, and a catalog listing is public.
   `tools/seed-demo.php` builds that instance and `tools/seed-screenshots.py` captures it
   through headless Chromium, so the set can be refreshed the same way.
 - `tools/seed-demo.php` is re-runnable: it reuses a record that already carries the name
   instead of failing halfway through and leaving a half-seeded instance behind.
+- Formatting and modernisation for the tool versions GLPI 11.0.x actually ships:
+  trailing commas required by PER-CS under PHP 8.2, and first-class callable syntax in place
+  of string callables. One Rector rule is skipped in `tests/`, where `last_message: null` is
+  the subject under test spelled out rather than a redundant argument.
 
 ### Fixed
 
 - **The official release workflow could not read the supported GLPI range from
   `setup.php`.** It greps for `PLUGIN_<KEY>_MIN_GLPI` / `_MAX_GLPI` with a *quoted* value,
   to put "Compatible GLPI: x -- y" on the GitHub release page. This plugin used
-  `PLUGIN_TICKETFLOW_MIN_GLPI_VERSION` — a name the pattern does not match — holding a
+  `PLUGIN_TICKETCLOCK_MIN_GLPI_VERSION` — a name the pattern does not match — holding a
   class constant rather than a literal, so the grep found nothing and the release quietly
   lost that line. The constants now use the names `pluginsGLPI/example` uses, spelled out
   as literals; `Version` stays the source of truth for code, and a test asserts the two
@@ -156,8 +141,19 @@ archive itself was installed on a virgin instance and confirmed inert on arrival
   at all. Every earlier test passed only because the plugin was already activated in those
   databases, so `bootPlugins()` had registered the autoloader earlier in the request. On a
   fresh GLPI the very first page load died with
-  `Attempted to load class "Version" from namespace "GlpiPlugin\Ticketflow"`. `setup.php`
+  `Attempted to load class "Version" from namespace "GlpiPlugin\Ticketclock"`. `setup.php`
   now requires `src/Version.php` explicitly.
+- **The integration suite established its session on only one of its two entry paths.**
+  `tests/bootstrap.php` chains into GLPI's own bootstrap when the plugin sits in a
+  development checkout, and boots the kernel itself otherwise. Everything it set up — the
+  cron marker, the active entity, the rights — lived in the second branch. Locally the
+  plugin sat in a release tarball, which has no `tests/` directory, so only that branch ever
+  ran; on CI, which uses a development checkout, the suite ran with no rights at all and 17
+  tests failed. The setup now happens after either path, and grants the rights explicitly
+  rather than leaning on `Session::isCron()` answering yes to everything.
+- `Rule::defineTabs()` narrowed its return type to `array<string, string>`, but core
+  declares `array<string, string|bool>` and may add a boolean `no_all_tab` entry.
+- `hook.php` was the only PHP file without `declare(strict_types=1)`.
 
 ### Removed
 
@@ -200,7 +196,7 @@ long has this been pending?" but "we answered, and nobody came back to us".
 
 ### Changed
 
-- Schema 1.1.0 adds `glpi_plugin_ticketflow_rules.start_event`. Existing rules keep their
+- Schema 1.1.0 adds `glpi_plugin_ticketclock_rules.start_event`. Existing rules keep their
   behaviour: the migration defaults them to `pending_start`.
 
 
@@ -270,7 +266,7 @@ First release. Targets GLPI 11.0.
 
 **Security**
 
-- Dedicated `plugin_ticketflow_rule` right in the standard profile matrix, CSRF-compliant
+- Dedicated `plugin_ticketclock_rule` right in the standard profile matrix, CSRF-compliant
   forms, server-side validation of every enum, entity scoping on rules and logs.
 
 **Quality**
@@ -296,7 +292,7 @@ First release. Targets GLPI 11.0.
   administrator deletes it — deliberately, since the alternative risks repeating a
   destructive action.
 
-[Unreleased]: https://github.com/Jovinull/ticketflow/compare/1.0.0...HEAD
-[1.0.0]: https://github.com/Jovinull/ticketflow/releases/tag/1.0.0
-[0.2.0]: https://github.com/Jovinull/ticketflow/releases/tag/0.2.0
-[0.1.0]: https://github.com/Jovinull/ticketflow/releases/tag/0.1.0
+[Unreleased]: https://github.com/Jovinull/ticketclock/compare/1.0.0...HEAD
+[1.0.0]: https://github.com/Jovinull/ticketclock/releases/tag/1.0.0
+[0.2.0]: https://github.com/Jovinull/ticketclock/releases/tag/0.2.0
+[0.1.0]: https://github.com/Jovinull/ticketclock/releases/tag/0.1.0
