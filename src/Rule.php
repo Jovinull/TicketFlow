@@ -398,8 +398,9 @@ class Rule extends CommonDBTM
     // -----------------------------------------------------------------------------
 
     /**
-     * @param array<string, mixed> $options
-     * @return array<string, string>
+     * @param array{withtemplate?: int} $options
+     * @return array<string, string|bool> tab identifier => tab label, plus the `no_all_tab`
+     *                                    flag core may set, which is a boolean
      */
     public function defineTabs($options = []): array
     {
