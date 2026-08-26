@@ -72,33 +72,57 @@ if (file_exists($glpi_test_bootstrap)) {
 
     (new Glpi\Kernel\Kernel())->boot();
 
-    /** @var DBmysql|null $DB */
-    global $DB;
-    if (!($DB instanceof DBmysql) || !$DB->connected) {
-        throw new RuntimeException('GLPI is not connected to a database.');
-    }
-
-    // Run the suite in GLPI's cron context, because that is the context the engine runs in
-    // for real. It is not a shortcut: core gates ticket updates on it. See
-    // CommonITILObject::handleTemplateFields(), which skips the ticket-template mandatory
-    // field restrictions when Session::isCron() is true — without this marker every
-    // Ticket::update() is refused and the suite would be testing a situation that never
-    // happens in production. Session::isCron() additionally requires a CLI context, which a
-    // PHPUnit run always is.
-    $_SESSION['glpicronuserrunning'] = 'cron_ticketflow_tests';
-
-    // The engine writes followups and solutions; core attributes them to the session user
-    // when none is given, and logs under this name.
-    $_SESSION['glpiname']            = 'cli';
-    $_SESSION['glpi_currenttime']    = date('Y-m-d H:i:s');
-    $_SESSION['glpiactiveprofile'] ??= ['id' => 0, 'interface' => 'central'];
-    $_SESSION['glpiactiveentities'] ??= [0];
-    $_SESSION['glpiactive_entity'] ??= 0;
-    $_SESSION['glpiactiveentities_string'] ??= "'0'";
-
     // Register the plugin autoloaders and run plugin_init_*, exactly as a web request does.
+    // The development bootstrap does this itself.
     (new Plugin())->init();
 }
+
+/** @var DBmysql|null $DB */
+global $DB;
+if (!($DB instanceof DBmysql) || !$DB->connected) {
+    throw new RuntimeException('GLPI is not connected to a database.');
+}
+
+// -----------------------------------------------------------------------------
+// The session the suite runs in, established the same way whichever path was taken.
+//
+// This used to live inside the `else` above, which meant it only ever ran against a plain
+// installation. In a development checkout GLPI's own bootstrap took over and the suite ran
+// with no cron marker and no rights -- so every test that writes a ticket failed, but only
+// on CI, which is the one place nobody was watching.
+// -----------------------------------------------------------------------------
+
+// GLPI's cron context, because that is the context the engine runs in for real. It is not a
+// shortcut: core gates ticket updates on it. See CommonITILObject::handleTemplateFields(),
+// which skips the ticket-template mandatory field restrictions when Session::isCron() is
+// true -- without this marker every Ticket::update() is refused and the suite would be
+// testing a situation that never happens in production. Session::isCron() additionally
+// requires a CLI context, which a PHPUnit run always is.
+$_SESSION['glpicronuserrunning'] = 'cron_ticketflow_tests';
+
+// The engine writes followups and solutions; core attributes them to the session user when
+// none is given, and logs under this name.
+$_SESSION['glpiname']         = 'cli';
+$_SESSION['glpi_currenttime'] = date('Y-m-d H:i:s');
+$_SESSION['glpi_use_mode']    = Session::NORMAL_MODE;
+
+// Rights are granted explicitly rather than inherited from the cron marker. Session::isCron()
+// makes haveRight() answer yes to everything, which is convenient right up to the moment a
+// test runs somewhere that marker is not set -- and then the failure looks like a bug in the
+// engine instead of a missing profile.
+$_SESSION['glpiactiveprofile'] = [
+    'id'        => 0,
+    'name'      => 'ticketflow-tests',
+    'interface' => 'central',
+] + array_fill_keys(
+    ['ticket', 'group', 'calendar', 'entity', 'config', 'profile', 'user', GlpiPlugin\Ticketflow\Rule::$rightname],
+    ALLSTANDARDRIGHT | READNOTE | UPDATENOTE | UNLOCK,
+);
+
+$_SESSION['glpiactiveentities']        = [0];
+$_SESSION['glpiactive_entity']         = 0;
+$_SESSION['glpiactiveentities_string'] = "'0'";
+$_SESSION['glpiactive_entity_recursive'] = true;
 
 if (!Plugin::isPluginActive($plugin_key)) {
     throw new RuntimeException(
