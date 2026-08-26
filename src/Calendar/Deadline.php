@@ -27,15 +27,15 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Calendar;
+namespace GlpiPlugin\Ticketclock\Calendar;
 
-use GlpiPlugin\Ticketflow\Enum\DelayUnit;
+use GlpiPlugin\Ticketclock\Enum\DelayUnit;
 
 use function Safe\strtotime;
 

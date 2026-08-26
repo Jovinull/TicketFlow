@@ -27,15 +27,15 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Engine;
+namespace GlpiPlugin\Ticketclock\Engine;
 
-use GlpiPlugin\Ticketflow\Enum\ActionType;
+use GlpiPlugin\Ticketclock\Enum\ActionType;
 
 use function Safe\json_decode;
 
@@ -81,7 +81,7 @@ final readonly class ActionDefinition
     }
 
     /**
-     * @param array<string, mixed> $row A glpi_plugin_ticketflow_ruleactions row.
+     * @param array<string, mixed> $row A glpi_plugin_ticketclock_ruleactions row.
      */
     public static function fromRow(array $row): ?self
     {

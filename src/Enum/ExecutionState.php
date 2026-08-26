@@ -27,13 +27,13 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Enum;
+namespace GlpiPlugin\Ticketclock\Enum;
 
 /**
  * Lifecycle of one rule occurrence on one ticket.
@@ -58,11 +58,11 @@ enum ExecutionState: string
     public function label(): string
     {
         return match ($this) {
-            self::Processing => __('Processing', 'ticketflow'),
-            self::Executed   => __('Executed', 'ticketflow'),
-            self::Failed     => __('Failed', 'ticketflow'),
-            self::Skipped    => __('Skipped', 'ticketflow'),
-            self::DryRun     => __('Dry run', 'ticketflow'),
+            self::Processing => __('Processing', 'ticketclock'),
+            self::Executed   => __('Executed', 'ticketclock'),
+            self::Failed     => __('Failed', 'ticketclock'),
+            self::Skipped    => __('Skipped', 'ticketclock'),
+            self::DryRun     => __('Dry run', 'ticketclock'),
         };
     }
 

@@ -27,13 +27,13 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Enum;
+namespace GlpiPlugin\Ticketclock\Enum;
 
 /**
  * How a rule delay is expressed.
@@ -51,10 +51,10 @@ enum DelayUnit: string
     public function label(): string
     {
         return match ($this) {
-            self::BusinessDays  => __('Business days', 'ticketflow'),
-            self::BusinessHours => __('Business hours', 'ticketflow'),
-            self::CalendarDays  => __('Calendar days', 'ticketflow'),
-            self::Hours         => __('Hours', 'ticketflow'),
+            self::BusinessDays  => __('Business days', 'ticketclock'),
+            self::BusinessHours => __('Business hours', 'ticketclock'),
+            self::CalendarDays  => __('Calendar days', 'ticketclock'),
+            self::Hours         => __('Hours', 'ticketclock'),
         };
     }
 

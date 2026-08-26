@@ -27,19 +27,19 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Engine\Action;
+namespace GlpiPlugin\Ticketclock\Engine\Action;
 
 use ITILSolution;
-use GlpiPlugin\Ticketflow\Engine\ActionContext;
-use GlpiPlugin\Ticketflow\Engine\ActionDefinition;
-use GlpiPlugin\Ticketflow\Engine\ActionResult;
-use GlpiPlugin\Ticketflow\Enum\ActionType;
+use GlpiPlugin\Ticketclock\Engine\ActionContext;
+use GlpiPlugin\Ticketclock\Engine\ActionDefinition;
+use GlpiPlugin\Ticketclock\Engine\ActionResult;
+use GlpiPlugin\Ticketclock\Enum\ActionType;
 use Throwable;
 
 /**
@@ -63,7 +63,7 @@ final class AddSolutionAction implements ActionInterface
 
     public function describe(ActionDefinition $definition): string
     {
-        return __('solve the ticket by adding a solution', 'ticketflow');
+        return __('solve the ticket by adding a solution', 'ticketclock');
     }
 
     public function execute(ActionDefinition $definition, ActionContext $context): ActionResult
@@ -71,19 +71,19 @@ final class AddSolutionAction implements ActionInterface
         if ($context->actor_users_id <= 0) {
             return ActionResult::failure(
                 ActionType::AddSolution,
-                __('No acting user is configured; a solution cannot be attributed to anybody.', 'ticketflow'),
+                __('No acting user is configured; a solution cannot be attributed to anybody.', 'ticketclock'),
             );
         }
 
         $content = $context->renderer->render($definition->stringParam('content'));
         if (trim(strip_tags($content)) === '') {
-            return ActionResult::failure(ActionType::AddSolution, __('The solution content is empty.', 'ticketflow'));
+            return ActionResult::failure(ActionType::AddSolution, __('The solution content is empty.', 'ticketclock'));
         }
 
         if ($context->dry_run) {
             return ActionResult::simulated(
                 ActionType::AddSolution,
-                __('A solution would be added and the ticket would be solved.', 'ticketflow'),
+                __('A solution would be added and the ticket would be solved.', 'ticketclock'),
                 ['content' => $content],
             );
         }
@@ -103,12 +103,12 @@ final class AddSolutionAction implements ActionInterface
         }
 
         if (!is_int($id) || $id <= 0) {
-            return ActionResult::failure(ActionType::AddSolution, __('The solution could not be created.', 'ticketflow'));
+            return ActionResult::failure(ActionType::AddSolution, __('The solution could not be created.', 'ticketclock'));
         }
 
         return ActionResult::success(
             ActionType::AddSolution,
-            __('Solution added; the ticket is now solved.', 'ticketflow'),
+            __('Solution added; the ticket is now solved.', 'ticketclock'),
             ['itilsolutions_id' => $id],
         );
     }

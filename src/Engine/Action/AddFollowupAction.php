@@ -27,19 +27,19 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Engine\Action;
+namespace GlpiPlugin\Ticketclock\Engine\Action;
 
 use ITILFollowup;
-use GlpiPlugin\Ticketflow\Engine\ActionContext;
-use GlpiPlugin\Ticketflow\Engine\ActionDefinition;
-use GlpiPlugin\Ticketflow\Engine\ActionResult;
-use GlpiPlugin\Ticketflow\Enum\ActionType;
+use GlpiPlugin\Ticketclock\Engine\ActionContext;
+use GlpiPlugin\Ticketclock\Engine\ActionDefinition;
+use GlpiPlugin\Ticketclock\Engine\ActionResult;
+use GlpiPlugin\Ticketclock\Enum\ActionType;
 use Throwable;
 
 /**
@@ -57,7 +57,7 @@ use Throwable;
 final class AddFollowupAction implements ActionInterface
 {
     /** Invisible in the rendered timeline, greppable in SQL, stable across versions. */
-    public const MARKER = '<!-- ticketflow-generated -->';
+    public const MARKER = '<!-- ticketclock-generated -->';
 
     public function supports(ActionType $type): bool
     {
@@ -67,15 +67,15 @@ final class AddFollowupAction implements ActionInterface
     public function describe(ActionDefinition $definition): string
     {
         return $definition->boolParam('is_private')
-            ? __('add a private followup', 'ticketflow')
-            : __('add a followup', 'ticketflow');
+            ? __('add a private followup', 'ticketclock')
+            : __('add a followup', 'ticketclock');
     }
 
     public function execute(ActionDefinition $definition, ActionContext $context): ActionResult
     {
         $content = $context->renderer->render($definition->stringParam('content'));
         if (trim(strip_tags($content)) === '') {
-            return ActionResult::failure(ActionType::AddFollowup, __('The followup content is empty.', 'ticketflow'));
+            return ActionResult::failure(ActionType::AddFollowup, __('The followup content is empty.', 'ticketclock'));
         }
 
         $body = self::MARKER . "\n" . $content;
@@ -83,7 +83,7 @@ final class AddFollowupAction implements ActionInterface
         if ($context->dry_run) {
             return ActionResult::simulated(
                 ActionType::AddFollowup,
-                __('A followup would be added.', 'ticketflow'),
+                __('A followup would be added.', 'ticketclock'),
                 ['content' => $content],
             );
         }
@@ -116,12 +116,12 @@ final class AddFollowupAction implements ActionInterface
         }
 
         if (!is_int($id) || $id <= 0) {
-            return ActionResult::failure(ActionType::AddFollowup, __('The followup could not be created.', 'ticketflow'));
+            return ActionResult::failure(ActionType::AddFollowup, __('The followup could not be created.', 'ticketclock'));
         }
 
         return ActionResult::success(
             ActionType::AddFollowup,
-            __('Followup added.', 'ticketflow'),
+            __('Followup added.', 'ticketclock'),
             ['itilfollowups_id' => $id],
         );
     }

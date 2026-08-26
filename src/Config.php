@@ -27,13 +27,13 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow;
+namespace GlpiPlugin\Ticketclock;
 
 use Config as CoreConfig;
 use Glpi\Application\View\TemplateRenderer;
@@ -49,7 +49,7 @@ use User;
  */
 final class Config
 {
-    public const CONTEXT = 'plugin:ticketflow';
+    public const CONTEXT = 'plugin:ticketclock';
 
     /**
      * Defaults. A fresh install is deliberately inert: execution off, global dry run on,
@@ -209,15 +209,15 @@ final class Config
         $warnings = [];
 
         if (!self::getBool('execution_enabled')) {
-            $warnings[] = __('Execution is disabled: rules are evaluated and logged, but no ticket is modified.', 'ticketflow');
+            $warnings[] = __('Execution is disabled: rules are evaluated and logged, but no ticket is modified.', 'ticketclock');
         }
 
         if (self::getBool('dry_run_global')) {
-            $warnings[] = __('Global dry run is enabled: every rule behaves as a simulation.', 'ticketflow');
+            $warnings[] = __('Global dry run is enabled: every rule behaves as a simulation.', 'ticketclock');
         }
 
         if (self::getActingUserId() <= 0) {
-            $warnings[] = __('No acting user is configured (neither TicketFlow nor GLPI\'s "system_user"). Actions that need an author, such as adding a solution, will fail.', 'ticketflow');
+            $warnings[] = __('No acting user is configured (neither TicketFlow nor GLPI\'s "system_user"). Actions that need an author, such as adding a solution, will fail.', 'ticketclock');
         }
 
         return $warnings;
@@ -233,7 +233,7 @@ final class Config
             return;
         }
 
-        TemplateRenderer::getInstance()->display('@ticketflow/config_form.html.twig', [
+        TemplateRenderer::getInstance()->display('@ticketclock/config_form.html.twig', [
             'config'   => self::all(),
             'warnings' => self::getHealthWarnings(),
             'acting_user' => self::getActingUserId() > 0

@@ -27,11 +27,11 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
-use GlpiPlugin\Ticketflow\Rule;
+use GlpiPlugin\Ticketclock\Rule;
 
 include __DIR__ . '/../../../inc/includes.php';
 
@@ -41,7 +41,7 @@ Html::header(
     Rule::getTypeName(Session::getPluralNumber()),
     $_SERVER['PHP_SELF'],
     'admin',
-    \GlpiPlugin\Ticketflow\Menu::class,
+    \GlpiPlugin\Ticketclock\Menu::class,
     'rule',
 );
 

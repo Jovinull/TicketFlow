@@ -27,18 +27,18 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Engine\Matcher;
+namespace GlpiPlugin\Ticketclock\Engine\Matcher;
 
-use GlpiPlugin\Ticketflow\Engine\MatchResult;
-use GlpiPlugin\Ticketflow\Engine\RuleDefinition;
-use GlpiPlugin\Ticketflow\Engine\TicketContext;
-use GlpiPlugin\Ticketflow\Enum\RuleType;
+use GlpiPlugin\Ticketclock\Engine\MatchResult;
+use GlpiPlugin\Ticketclock\Engine\RuleDefinition;
+use GlpiPlugin\Ticketclock\Engine\TicketContext;
+use GlpiPlugin\Ticketclock\Enum\RuleType;
 
 /**
  * Decides whether a rule applies to a ticket occurrence and when it expires.

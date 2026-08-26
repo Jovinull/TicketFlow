@@ -27,25 +27,25 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Tests\Integration;
+namespace GlpiPlugin\Ticketclock\Tests\Integration;
 
 use CommonITILActor;
 use CommonITILValidation;
 use Group;
 use Group_Ticket;
-use GlpiPlugin\Ticketflow\Config;
-use GlpiPlugin\Ticketflow\Engine\Action\AddFollowupAction;
-use GlpiPlugin\Ticketflow\Engine\RuleEngine;
-use GlpiPlugin\Ticketflow\Enum\ActionType;
-use GlpiPlugin\Ticketflow\Rule;
-use GlpiPlugin\Ticketflow\RuleAction;
-use GlpiPlugin\Ticketflow\RuleGroup;
+use GlpiPlugin\Ticketclock\Config;
+use GlpiPlugin\Ticketclock\Engine\Action\AddFollowupAction;
+use GlpiPlugin\Ticketclock\Engine\RuleEngine;
+use GlpiPlugin\Ticketclock\Enum\ActionType;
+use GlpiPlugin\Ticketclock\Rule;
+use GlpiPlugin\Ticketclock\RuleAction;
+use GlpiPlugin\Ticketclock\RuleGroup;
 use ITILFollowup;
 use PHPUnit\Framework\TestCase;
 use Session;
@@ -76,7 +76,7 @@ final class PendingApprovalFlowTest extends TestCase
         ]);
 
         $this->approver_id = (int) (new User())->add([
-            'name'        => 'ticketflow_approver_' . uniqid(),
+            'name'        => 'ticketclock_approver_' . uniqid(),
             'entities_id' => 0,
         ]);
 
@@ -239,7 +239,7 @@ final class PendingApprovalFlowTest extends TestCase
         [$tickets_id] = $this->createTicketWithWaitingApproval(date('Y-m-d H:i:s', strtotime('-10 days')));
 
         $second_approver = (int) (new User())->add([
-            'name'        => 'ticketflow_approver2_' . uniqid(),
+            'name'        => 'ticketclock_approver2_' . uniqid(),
             'entities_id' => 0,
         ]);
 
@@ -279,7 +279,7 @@ final class PendingApprovalFlowTest extends TestCase
         [$tickets_id] = $this->createTicketWithWaitingApproval(date('Y-m-d H:i:s', strtotime('-10 days')));
 
         $second_approver = (int) (new User())->add([
-            'name'        => 'ticketflow_approver3_' . uniqid(),
+            'name'        => 'ticketclock_approver3_' . uniqid(),
             'entities_id' => 0,
         ]);
 

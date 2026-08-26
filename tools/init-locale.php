@@ -27,14 +27,14 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
 /**
- * Creates or refreshes a translation catalogue from locales/ticketflow.pot.
+ * Creates or refreshes a translation catalogue from locales/ticketclock.pot.
  *
  * Existing translations are preserved: run it again after `extract-locales.php` and only
  * the new strings come through empty. `--identity` fills every entry with the source text,
@@ -56,7 +56,7 @@ if (!preg_match('/^[a-z]{2}_[A-Z]{2}$/', $language)) {
     exit(1);
 }
 
-$pot_path = $root . '/locales/ticketflow.pot';
+$pot_path = $root . '/locales/ticketclock.pot';
 $po_path  = $root . '/locales/' . $language . '.po';
 
 $pot = file_get_contents($pot_path);

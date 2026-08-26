@@ -27,24 +27,24 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow;
+namespace GlpiPlugin\Ticketclock;
 
 use Config as CoreConfig;
 use CronTask;
 use DisplayPreference;
-use GlpiPlugin\Ticketflow\Enum\StartEvent;
+use GlpiPlugin\Ticketclock\Enum\StartEvent;
 use Migration;
 
 /**
  * Schema lifecycle: install, upgrade, uninstall.
  *
- * Versioned from the very first release. `plugin_ticketflow_install()` is not a
+ * Versioned from the very first release. `plugin_ticketclock_install()` is not a
  * throwaway script — it reads the schema version stored in the plugin's configuration
  * context and applies the migrations that are missing, so an existing installation can
  * always move forward without anybody hand-editing tables.
@@ -92,7 +92,7 @@ final class Install
 
         // Crontasks first: an orphan task would keep appearing in the automatic actions
         // list and fail on every run.
-        CronTask::unregister('ticketflow');
+        CronTask::unregister('ticketclock');
 
         foreach (self::tables() as $table) {
             if ($DB->tableExists($table)) {
@@ -205,10 +205,10 @@ final class Install
             $DB->doQuery("
                 CREATE TABLE `{$rulegroups}` (
                     `id`                         INT UNSIGNED NOT NULL AUTO_INCREMENT,
-                    `plugin_ticketflow_rules_id` INT UNSIGNED NOT NULL DEFAULT 0,
+                    `plugin_ticketclock_rules_id` INT UNSIGNED NOT NULL DEFAULT 0,
                     `groups_id`                  INT UNSIGNED NOT NULL DEFAULT 0,
                     PRIMARY KEY (`id`),
-                    UNIQUE KEY `unicity` (`plugin_ticketflow_rules_id`, `groups_id`),
+                    UNIQUE KEY `unicity` (`plugin_ticketclock_rules_id`, `groups_id`),
                     KEY `groups_id` (`groups_id`)
                 ) {$suffix}
             ");
@@ -219,12 +219,12 @@ final class Install
             $DB->doQuery("
                 CREATE TABLE `{$ruleactions}` (
                     `id`                         INT UNSIGNED NOT NULL AUTO_INCREMENT,
-                    `plugin_ticketflow_rules_id` INT UNSIGNED NOT NULL DEFAULT 0,
+                    `plugin_ticketclock_rules_id` INT UNSIGNED NOT NULL DEFAULT 0,
                     `action_type`                VARCHAR(50) NOT NULL DEFAULT '',
                     `ranking`                    INT NOT NULL DEFAULT 0,
                     `params`                     TEXT DEFAULT NULL,
                     PRIMARY KEY (`id`),
-                    KEY `rule_ranking` (`plugin_ticketflow_rules_id`, `ranking`)
+                    KEY `rule_ranking` (`plugin_ticketclock_rules_id`, `ranking`)
                 ) {$suffix}
             ");
         }
@@ -237,7 +237,7 @@ final class Install
             $DB->doQuery("
                 CREATE TABLE `{$executions}` (
                     `id`                         INT UNSIGNED NOT NULL AUTO_INCREMENT,
-                    `plugin_ticketflow_rules_id` INT UNSIGNED NOT NULL DEFAULT 0,
+                    `plugin_ticketclock_rules_id` INT UNSIGNED NOT NULL DEFAULT 0,
                     `tickets_id`                 INT UNSIGNED NOT NULL DEFAULT 0,
                     `entities_id`                INT UNSIGNED NOT NULL DEFAULT 0,
                     `occurrence_key`             VARCHAR(100) NOT NULL DEFAULT '',
@@ -258,8 +258,8 @@ final class Install
                     `date_creation`              TIMESTAMP NULL DEFAULT NULL,
                     PRIMARY KEY (`id`),
                     UNIQUE KEY `claim_key` (`claim_key`),
-                    KEY `rule_ticket` (`plugin_ticketflow_rules_id`, `tickets_id`),
-                    KEY `occurrence` (`plugin_ticketflow_rules_id`, `tickets_id`, `occurrence_key`),
+                    KEY `rule_ticket` (`plugin_ticketclock_rules_id`, `tickets_id`),
+                    KEY `occurrence` (`plugin_ticketclock_rules_id`, `tickets_id`, `occurrence_key`),
                     KEY `tickets_id` (`tickets_id`),
                     KEY `entities_id` (`entities_id`),
                     KEY `state` (`state`),

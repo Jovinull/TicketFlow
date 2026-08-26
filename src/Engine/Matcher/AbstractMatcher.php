@@ -27,17 +27,17 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Engine\Matcher;
+namespace GlpiPlugin\Ticketclock\Engine\Matcher;
 
-use GlpiPlugin\Ticketflow\Calendar\BusinessTimeCalculator;
-use GlpiPlugin\Ticketflow\Engine\RuleDefinition;
-use GlpiPlugin\Ticketflow\Engine\TicketContext;
+use GlpiPlugin\Ticketclock\Calendar\BusinessTimeCalculator;
+use GlpiPlugin\Ticketclock\Engine\RuleDefinition;
+use GlpiPlugin\Ticketclock\Engine\TicketContext;
 
 /**
  * Conditions every rule type shares: the rule must be live, the ticket must be inside

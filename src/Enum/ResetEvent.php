@@ -27,13 +27,13 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Enum;
+namespace GlpiPlugin\Ticketclock\Enum;
 
 /**
  * Interactions that push the clock forward.
@@ -65,11 +65,11 @@ enum ResetEvent: string
     public function label(): string
     {
         return match ($this) {
-            self::RequesterFollowup  => __('Answer from a requester', 'ticketflow'),
-            self::AssigneeFollowup   => __('Answer from an assignee', 'ticketflow'),
-            self::AnyFollowup        => __('Any followup', 'ticketflow'),
-            self::SolutionAdded      => __('Solution added', 'ticketflow'),
-            self::ValidationAnswered => __('Approval answered', 'ticketflow'),
+            self::RequesterFollowup  => __('Answer from a requester', 'ticketclock'),
+            self::AssigneeFollowup   => __('Answer from an assignee', 'ticketclock'),
+            self::AnyFollowup        => __('Any followup', 'ticketclock'),
+            self::SolutionAdded      => __('Solution added', 'ticketclock'),
+            self::ValidationAnswered => __('Approval answered', 'ticketclock'),
         };
     }
 

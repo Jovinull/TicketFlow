@@ -27,14 +27,14 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 use Glpi\Application\View\TemplateRenderer;
-use GlpiPlugin\Ticketflow\Inspector;
-use GlpiPlugin\Ticketflow\Menu;
-use GlpiPlugin\Ticketflow\Rule;
+use GlpiPlugin\Ticketclock\Inspector;
+use GlpiPlugin\Ticketclock\Menu;
+use GlpiPlugin\Ticketclock\Rule;
 
 include __DIR__ . '/../../../inc/includes.php';
 
@@ -43,14 +43,14 @@ include __DIR__ . '/../../../inc/includes.php';
 Session::checkRight(Rule::$rightname, UPDATE);
 
 Html::header(
-    __('TicketFlow diagnostics', 'ticketflow'),
+    __('TicketFlow diagnostics', 'ticketclock'),
     $_SERVER['PHP_SELF'],
     'admin',
     Menu::class,
     'config',
 );
 
-TemplateRenderer::getInstance()->display('@ticketflow/inspect.html.twig', [
+TemplateRenderer::getInstance()->display('@ticketclock/inspect.html.twig', [
     'report' => Inspector::report(),
 ]);
 

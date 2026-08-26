@@ -25,7 +25,7 @@
  # -------------------------------------------------------------------------
  # @copyright Copyright (C) 2026 Felipe Jovino.
  # @license   MIT https://opensource.org/licenses/mit-license.php
- # @link      https://github.com/Jovinull/ticketflow
+ # @link      https://github.com/Jovinull/ticketclock
  # -------------------------------------------------------------------------
  #}
 
@@ -34,12 +34,12 @@
         <thead>
             <tr>
                 <th>{{ __('Ticket') }}</th>
-                <th>{{ __('Result', 'ticketflow') }}</th>
-                <th>{{ __('Reference date', 'ticketflow') }}</th>
-                <th>{{ __('Deadline', 'ticketflow') }}</th>
+                <th>{{ __('Result', 'ticketclock') }}</th>
+                <th>{{ __('Reference date', 'ticketclock') }}</th>
+                <th>{{ __('Deadline', 'ticketclock') }}</th>
                 <th>{{ __('Calendar') }}</th>
-                <th>{{ __('Triggered at', 'ticketflow') }}</th>
-                <th>{{ __('Details', 'ticketflow') }}</th>
+                <th>{{ __('Triggered at', 'ticketclock') }}</th>
+                <th>{{ __('Details', 'ticketclock') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -67,7 +67,7 @@
                     {{ row.deadline_date ? row.deadline_date|date('Y-m-d H:i') : '—' }}
                     {% if row.used_elapsed_fallback %}
                         <i class="ti ti-alert-triangle text-warning ms-1"
-                           title="{{ __('No usable calendar: computed as plain elapsed time.', 'ticketflow') }}"></i>
+                           title="{{ __('No usable calendar: computed as plain elapsed time.', 'ticketclock') }}"></i>
                     {% endif %}
                 </td>
                 <td>{{ row.calendar_name|default('—') }}</td>
@@ -89,7 +89,7 @@
         {% else %}
             <tr>
                 <td colspan="7" class="text-center text-secondary">
-                    {{ __('This rule has not run yet.', 'ticketflow') }}
+                    {{ __('This rule has not run yet.', 'ticketclock') }}
                 </td>
             </tr>
         {% endfor %}
@@ -98,5 +98,5 @@
 </div>
 
 <p class="text-secondary small mt-2">
-    {{ __('Showing the 100 most recent entries. Use TicketFlow > Execution logs for the full, searchable history.', 'ticketflow') }}
+    {{ __('Showing the 100 most recent entries. Use TicketFlow > Execution logs for the full, searchable history.', 'ticketclock') }}
 </p>

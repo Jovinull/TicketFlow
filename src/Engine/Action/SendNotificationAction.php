@@ -27,20 +27,20 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Engine\Action;
+namespace GlpiPlugin\Ticketclock\Engine\Action;
 
 use NotificationEvent;
 use Ticket;
-use GlpiPlugin\Ticketflow\Engine\ActionContext;
-use GlpiPlugin\Ticketflow\Engine\ActionDefinition;
-use GlpiPlugin\Ticketflow\Engine\ActionResult;
-use GlpiPlugin\Ticketflow\Enum\ActionType;
+use GlpiPlugin\Ticketclock\Engine\ActionContext;
+use GlpiPlugin\Ticketclock\Engine\ActionDefinition;
+use GlpiPlugin\Ticketclock\Engine\ActionResult;
+use GlpiPlugin\Ticketclock\Enum\ActionType;
 use Throwable;
 
 /**
@@ -60,7 +60,7 @@ final class SendNotificationAction implements ActionInterface
     public function describe(ActionDefinition $definition): string
     {
         return sprintf(
-            __('send the "%s" notification', 'ticketflow'),
+            __('send the "%s" notification', 'ticketclock'),
             $definition->stringParam('event', 'update'),
         );
     }
@@ -72,7 +72,7 @@ final class SendNotificationAction implements ActionInterface
         if ($context->dry_run) {
             return ActionResult::simulated(
                 ActionType::SendNotification,
-                sprintf(__('The "%s" notification would be raised.', 'ticketflow'), $event),
+                sprintf(__('The "%s" notification would be raised.', 'ticketclock'), $event),
                 ['event' => $event],
             );
         }
@@ -80,7 +80,7 @@ final class SendNotificationAction implements ActionInterface
         try {
             $ticket = new Ticket();
             if (!$ticket->getFromDB($context->ticket->tickets_id)) {
-                return ActionResult::failure(ActionType::SendNotification, __('Ticket not found.', 'ticketflow'));
+                return ActionResult::failure(ActionType::SendNotification, __('Ticket not found.', 'ticketclock'));
             }
 
             NotificationEvent::raiseEvent($event, $ticket);
@@ -90,7 +90,7 @@ final class SendNotificationAction implements ActionInterface
 
         return ActionResult::success(
             ActionType::SendNotification,
-            __('Notification raised.', 'ticketflow'),
+            __('Notification raised.', 'ticketclock'),
             ['event' => $event],
         );
     }

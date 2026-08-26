@@ -27,16 +27,16 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Tests\Unit;
+namespace GlpiPlugin\Ticketclock\Tests\Unit;
 
-use GlpiPlugin\Ticketflow\Engine\Matcher\PendingApprovalMatcher;
-use GlpiPlugin\Ticketflow\Enum\RuleType;
+use GlpiPlugin\Ticketclock\Engine\Matcher\PendingApprovalMatcher;
+use GlpiPlugin\Ticketclock\Enum\RuleType;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -54,7 +54,7 @@ final class PendingApprovalMatcherTest extends TestCase
         return new PendingApprovalMatcher(CalendarFactory::calculator(), 0, $ancestors);
     }
 
-    private function rule(int $delay = 2): \GlpiPlugin\Ticketflow\Engine\RuleDefinition
+    private function rule(int $delay = 2): \GlpiPlugin\Ticketclock\Engine\RuleDefinition
     {
         return DomainFactory::rule(
             type: RuleType::PendingApproval,

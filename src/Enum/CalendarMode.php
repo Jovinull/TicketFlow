@@ -27,13 +27,13 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Enum;
+namespace GlpiPlugin\Ticketclock\Enum;
 
 /**
  * How the calendar used for a rule's clock is chosen.
@@ -52,9 +52,9 @@ enum CalendarMode: string
     public function label(): string
     {
         return match ($this) {
-            self::Entity   => __("Entity's calendar (recommended)", 'ticketflow'),
-            self::Specific => __('Specific calendar', 'ticketflow'),
-            self::None     => __('No calendar (elapsed time)', 'ticketflow'),
+            self::Entity   => __("Entity's calendar (recommended)", 'ticketclock'),
+            self::Specific => __('Specific calendar', 'ticketclock'),
+            self::None     => __('No calendar (elapsed time)', 'ticketclock'),
         };
     }
 

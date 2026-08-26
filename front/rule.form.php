@@ -27,12 +27,12 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
-use GlpiPlugin\Ticketflow\Menu;
-use GlpiPlugin\Ticketflow\Rule;
+use GlpiPlugin\Ticketclock\Menu;
+use GlpiPlugin\Ticketclock\Rule;
 
 include __DIR__ . '/../../../inc/includes.php';
 
@@ -54,9 +54,9 @@ if (isset($_POST['add'])) {
     Html::redirect(Rule::getSearchURL());
 } elseif (isset($_POST['duplicate'])) {
     $rule->check((int) $_POST['id'], CREATE);
-    $newID = $rule->clone(['name' => sprintf(__('%s (copy)', 'ticketflow'), $rule->fields['name'])]);
+    $newID = $rule->clone(['name' => sprintf(__('%s (copy)', 'ticketclock'), $rule->fields['name'])]);
     if ($newID > 0) {
-        Session::addMessageAfterRedirect(htmlescape(__('Rule duplicated. The copy is inactive.', 'ticketflow')), true, INFO);
+        Session::addMessageAfterRedirect(htmlescape(__('Rule duplicated. The copy is inactive.', 'ticketclock')), true, INFO);
         Html::redirect(Rule::getFormURLWithID($newID));
     }
     Html::back();

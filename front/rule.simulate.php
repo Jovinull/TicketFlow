@@ -27,15 +27,15 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 use Glpi\Application\View\TemplateRenderer;
-use GlpiPlugin\Ticketflow\Config;
-use GlpiPlugin\Ticketflow\Engine\RuleEngine;
-use GlpiPlugin\Ticketflow\Menu;
-use GlpiPlugin\Ticketflow\Rule;
+use GlpiPlugin\Ticketclock\Config;
+use GlpiPlugin\Ticketclock\Engine\RuleEngine;
+use GlpiPlugin\Ticketclock\Menu;
+use GlpiPlugin\Ticketclock\Rule;
 
 include __DIR__ . '/../../../inc/includes.php';
 
@@ -45,7 +45,7 @@ $rules_id = (int) ($_GET['id'] ?? $_POST['id'] ?? 0);
 
 $rule = new Rule();
 if ($rules_id <= 0 || !$rule->getFromDB($rules_id)) {
-    Html::displayErrorAndDie(__('Rule not found.', 'ticketflow'));
+    Html::displayErrorAndDie(__('Rule not found.', 'ticketclock'));
 }
 
 // Entity check: a rule the current profile cannot see must not be simulated either.
@@ -66,7 +66,7 @@ if ($run_real) {
 $missing_ticket_right = !Session::haveRight(Ticket::$rightname, UPDATE);
 
 Html::header(
-    __('Simulate a rule', 'ticketflow'),
+    __('Simulate a rule', 'ticketclock'),
     $_SERVER['PHP_SELF'],
     'admin',
     Menu::class,
@@ -87,7 +87,7 @@ $report = $engine->runRule(
     preview_limit: Config::getInt('max_tickets_per_run', 1000),
 );
 
-TemplateRenderer::getInstance()->display('@ticketflow/simulation.html.twig', [
+TemplateRenderer::getInstance()->display('@ticketclock/simulation.html.twig', [
     'rule'        => $rule,
     'definition'  => $definition,
     'report'      => $report,

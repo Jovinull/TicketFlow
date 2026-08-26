@@ -3,7 +3,7 @@
 ## Layout
 
 ```
-ticketflow/
+ticketclock/
 ├── setup.php                 plugin_init / plugin_version / prerequisites
 ├── hook.php                  install / uninstall entry points
 ├── src/
@@ -20,7 +20,7 @@ ticketflow/
 │   ├── Calendar/             deadline arithmetic (GLPI-free + GLPI wrapper)
 │   └── Engine/               matchers, resolver, actions, orchestration
 ├── front/                    legacy-router pages
-├── templates/                Twig, reachable as @ticketflow/*
+├── templates/                Twig, reachable as @ticketclock/*
 ├── locales/                  .pot / .po / .mo
 ├── tools/                    locale extraction and compilation
 ├── tests/Unit/               no database, no GLPI
@@ -28,10 +28,10 @@ ticketflow/
 └── docs/
 ```
 
-`GlpiPlugin\Ticketflow\Foo\Bar` maps to `src/Foo/Bar.php`: GLPI registers a PSR-4
+`GlpiPlugin\Ticketclock\Foo\Bar` maps to `src/Foo/Bar.php`: GLPI registers a PSR-4
 autoloader per plugin over `<plugin>/src/`, using `ucfirst(<folder name>)` as the
 namespace segment (`Plugin::registerPluginAutoloader()`). The folder therefore **must** be
-`ticketflow`.
+`ticketclock`.
 
 ## Environment used to build 0.1
 
@@ -48,12 +48,12 @@ references.
 ## Setting up
 
 ```bash
-git clone https://github.com/Jovinull/ticketflow.git /var/www/glpi/plugins/ticketflow
-cd /var/www/glpi/plugins/ticketflow
+git clone https://github.com/Jovinull/ticketclock.git /var/www/glpi/plugins/ticketclock
+cd /var/www/glpi/plugins/ticketclock
 composer install
 ```
 
-Then install and activate the plugin (interface, or `bin/console plugin:install ticketflow`
+Then install and activate the plugin (interface, or `bin/console plugin:install ticketclock`
 followed by `plugin:activate`).
 
 ## Tests
@@ -90,8 +90,8 @@ official `pluginsGLPI/empty` convention (`tests/bootstrap.php` chains into GLPI'
 
 ```bash
 php bin/console database:install --db-name=glpi_test --no-interaction
-php bin/console plugin:install ticketflow
-php bin/console plugin:activate ticketflow
+php bin/console plugin:install ticketclock
+php bin/console plugin:activate ticketclock
 ```
 
 It creates its own group, calendar, users and tickets. **Never point it at production.**
@@ -117,7 +117,7 @@ value object, in which case `tests/Unit/DomainFactory.php` builds one with named
 ## Conventions
 
 * `declare(strict_types=1)` everywhere; typed properties, typed returns.
-* Code and identifiers in English; user-facing strings via `__('…', 'ticketflow')`.
+* Code and identifiers in English; user-facing strings via `__('…', 'ticketclock')`.
 * Never a numeric literal where GLPI has a constant. `CommonITILActor::ASSIGN`, not `2`.
 * Never compare a translated label. Ids and constants only.
 * Every ticket mutation goes through `ITILFollowup`, `ITILSolution` or `Ticket` — never raw
@@ -128,12 +128,12 @@ value object, in which case `tests/Unit/DomainFactory.php` builds one with named
 ## Translations
 
 ```bash
-php tools/extract-locales.php    # sources  -> locales/ticketflow.pot
+php tools/extract-locales.php    # sources  -> locales/ticketclock.pot
 # translate locales/<lang>.po
 php tools/compile-locales.php    # *.po     -> *.mo
 ```
 
-`extract-locales.php` scans PHP **and** Twig for the `ticketflow` domain, because
+`extract-locales.php` scans PHP **and** Twig for the `ticketclock` domain, because
 `xgettext` does not understand Twig. `compile-locales.php` writes the binary `.mo` GLPI
 loads, so building never depends on `msgfmt` being installed.
 
@@ -191,7 +191,7 @@ vendored in 0.1 to keep the dependency surface at exactly one dev package (PHPUn
 
 ## Debugging
 
-* `files/_log/ticketflow.log` — one summary line per cron run, plus errors.
+* `files/_log/ticketclock.log` — one summary line per cron run, plus errors.
 * *Administration > TicketFlow > Execution logs* — per-ticket outcomes with the reference
   date, deadline and calendar that were actually used.
 * *Administration > TicketFlow > Diagnostics* — what this installation looks like:

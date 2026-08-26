@@ -27,13 +27,13 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Tests\Integration;
+namespace GlpiPlugin\Ticketclock\Tests\Integration;
 
 use Calendar;
 use CalendarSegment;
@@ -41,12 +41,12 @@ use CommonITILActor;
 use Entity;
 use Group;
 use Group_Ticket;
-use GlpiPlugin\Ticketflow\Config;
-use GlpiPlugin\Ticketflow\Engine\RuleEngine;
-use GlpiPlugin\Ticketflow\Enum\ActionType;
-use GlpiPlugin\Ticketflow\Rule;
-use GlpiPlugin\Ticketflow\RuleAction;
-use GlpiPlugin\Ticketflow\RuleGroup;
+use GlpiPlugin\Ticketclock\Config;
+use GlpiPlugin\Ticketclock\Engine\RuleEngine;
+use GlpiPlugin\Ticketclock\Enum\ActionType;
+use GlpiPlugin\Ticketclock\Rule;
+use GlpiPlugin\Ticketclock\RuleAction;
+use GlpiPlugin\Ticketclock\RuleGroup;
 use PHPUnit\Framework\TestCase;
 use Session;
 use Ticket;
@@ -191,7 +191,7 @@ final class EntityCalendarTest extends TestCase
     }
 
     /**
-     * @return array<int, \GlpiPlugin\Ticketflow\Engine\PreviewRow>
+     * @return array<int, \GlpiPlugin\Ticketclock\Engine\PreviewRow>
      */
     private function preview(): array
     {

@@ -81,7 +81,7 @@ calls that a GLPI 10 habit would suggest were removed: they would have failed on
 already spent.
 
 **Namespaced plugin crontasks are supported** (`CronTask.php:426`) and dispatched as
-`sprintf('%s::cron%s', $itemtype, $name)`, so `GlpiPlugin\Ticketflow\Cron::cronProcessRules`
+`sprintf('%s::cron%s', $itemtype, $name)`, so `GlpiPlugin\Ticketclock\Cron::cronProcessRules`
 is found with no extra wiring.
 
 ---
@@ -159,7 +159,7 @@ instead of producing a copy that targets everything and does nothing.
 
 A disposable Docker stack was built to test properly rather than by inspection: MariaDB
 10.11 (matching production) with the **production dump restored**, plus GLPI 11.0.4 from the
-official release tarball and the plugin mounted into `plugins/ticketflow`. Nothing was run
+official release tarball and the plugin mounted into `plugins/ticketclock`. Nothing was run
 against the live instance.
 
 Restoring the dump also corrected two things this document had inferred from tables alone:
@@ -471,7 +471,7 @@ moved to 1.0.0, the schema stayed at 1.1.0 (nothing structural changed), and all
 were green afterwards on every stack. Worth stating plainly because it is the path every
 existing user will take, and it had never been exercised.
 
-**The artefact itself.** `glpi-ticketflow-1.0.0.tar.bz2`, built and installed on a fourth
+**The artefact itself.** `glpi-ticketclock-1.0.0.tar.bz2`, built and installed on a fourth
 throwaway instance: virgin GLPI, the archive unpacked into `plugins/`, nothing from the
 working tree. It installs, activates, and does nothing — execution off, global dry run on,
 the processing task disabled, no rules, and a forced cron pass that writes zero rows. That

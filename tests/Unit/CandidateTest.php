@@ -27,15 +27,15 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Tests\Unit;
+namespace GlpiPlugin\Ticketclock\Tests\Unit;
 
-use GlpiPlugin\Ticketflow\Engine\Candidate;
+use GlpiPlugin\Ticketclock\Engine\Candidate;
 use PHPUnit\Framework\TestCase;
 
 final class CandidateTest extends TestCase

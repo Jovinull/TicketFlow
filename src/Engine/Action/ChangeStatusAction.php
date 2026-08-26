@@ -27,19 +27,19 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Engine\Action;
+namespace GlpiPlugin\Ticketclock\Engine\Action;
 
 use Ticket;
-use GlpiPlugin\Ticketflow\Engine\ActionContext;
-use GlpiPlugin\Ticketflow\Engine\ActionDefinition;
-use GlpiPlugin\Ticketflow\Engine\ActionResult;
-use GlpiPlugin\Ticketflow\Enum\ActionType;
+use GlpiPlugin\Ticketclock\Engine\ActionContext;
+use GlpiPlugin\Ticketclock\Engine\ActionDefinition;
+use GlpiPlugin\Ticketclock\Engine\ActionResult;
+use GlpiPlugin\Ticketclock\Enum\ActionType;
 use Throwable;
 
 /**
@@ -62,7 +62,7 @@ final class ChangeStatusAction implements ActionInterface
         $labels = class_exists(Ticket::class) ? Ticket::getAllStatusArray() : [];
 
         return sprintf(
-            __('change the status to %s', 'ticketflow'),
+            __('change the status to %s', 'ticketclock'),
             $labels[$status] ?? (string) $status,
         );
     }
@@ -71,13 +71,13 @@ final class ChangeStatusAction implements ActionInterface
     {
         $status = $definition->intParam('status');
         if ($status <= 0) {
-            return ActionResult::failure(ActionType::ChangeStatus, __('No target status is configured.', 'ticketflow'));
+            return ActionResult::failure(ActionType::ChangeStatus, __('No target status is configured.', 'ticketclock'));
         }
 
         if ($status === $context->ticket->status) {
             return ActionResult::success(
                 ActionType::ChangeStatus,
-                __('The ticket already has the target status.', 'ticketflow'),
+                __('The ticket already has the target status.', 'ticketclock'),
                 ['status' => $status, 'changed' => false],
             );
         }
@@ -85,7 +85,7 @@ final class ChangeStatusAction implements ActionInterface
         if ($context->dry_run) {
             return ActionResult::simulated(
                 ActionType::ChangeStatus,
-                sprintf(__('The status would change from %1$s to %2$s.', 'ticketflow'), $context->ticket->status, $status),
+                sprintf(__('The status would change from %1$s to %2$s.', 'ticketclock'), $context->ticket->status, $status),
                 ['from' => $context->ticket->status, 'to' => $status],
             );
         }
@@ -103,9 +103,9 @@ final class ChangeStatusAction implements ActionInterface
         return $ok
             ? ActionResult::success(
                 ActionType::ChangeStatus,
-                __('Status updated.', 'ticketflow'),
+                __('Status updated.', 'ticketclock'),
                 ['from' => $context->ticket->status, 'to' => $status, 'changed' => true],
             )
-            : ActionResult::failure(ActionType::ChangeStatus, __('The status could not be updated.', 'ticketflow'));
+            : ActionResult::failure(ActionType::ChangeStatus, __('The status could not be updated.', 'ticketclock'));
     }
 }

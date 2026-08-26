@@ -27,27 +27,27 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Tests\Integration;
+namespace GlpiPlugin\Ticketclock\Tests\Integration;
 
 use Config as CoreConfig;
 use CronTask;
-use GlpiPlugin\Ticketflow\Config;
-use GlpiPlugin\Ticketflow\Cron;
-use GlpiPlugin\Ticketflow\Execution;
-use GlpiPlugin\Ticketflow\Install;
-use GlpiPlugin\Ticketflow\Rule;
-use GlpiPlugin\Ticketflow\Version;
+use GlpiPlugin\Ticketclock\Config;
+use GlpiPlugin\Ticketclock\Cron;
+use GlpiPlugin\Ticketclock\Execution;
+use GlpiPlugin\Ticketclock\Install;
+use GlpiPlugin\Ticketclock\Rule;
+use GlpiPlugin\Ticketclock\Version;
 use PHPUnit\Framework\TestCase;
 use ProfileRight;
 
 use function countElementsInTable;
-use function plugin_version_ticketflow;
+use function plugin_version_ticketclock;
 
 /**
  * The plugin must be installable, and a fresh install must be inert.
@@ -66,8 +66,8 @@ final class InstallationTest extends TestCase
 
     public function testTableNamesFollowTheGlpiPluginConvention(): void
     {
-        self::assertSame('glpi_plugin_ticketflow_rules', Rule::getTable());
-        self::assertSame('glpi_plugin_ticketflow_executions', Execution::getTable());
+        self::assertSame('glpi_plugin_ticketclock_rules', Rule::getTable());
+        self::assertSame('glpi_plugin_ticketclock_executions', Execution::getTable());
     }
 
     public function testSchemaVersionIsRecorded(): void
@@ -231,10 +231,10 @@ final class InstallationTest extends TestCase
      */
     public function testTheSetupConstantsMatchTheVersionClass(): void
     {
-        self::assertSame(Version::VERSION, PLUGIN_TICKETFLOW_VERSION);
-        self::assertSame(Version::MIN_GLPI, PLUGIN_TICKETFLOW_MIN_GLPI);
-        self::assertSame(Version::MAX_GLPI, PLUGIN_TICKETFLOW_MAX_GLPI);
-        self::assertSame(Version::SCHEMA, PLUGIN_TICKETFLOW_SCHEMA_VERSION);
+        self::assertSame(Version::VERSION, PLUGIN_TICKETCLOCK_VERSION);
+        self::assertSame(Version::MIN_GLPI, PLUGIN_TICKETCLOCK_MIN_GLPI);
+        self::assertSame(Version::MAX_GLPI, PLUGIN_TICKETCLOCK_MAX_GLPI);
+        self::assertSame(Version::SCHEMA, PLUGIN_TICKETCLOCK_SCHEMA_VERSION);
     }
 
     /**
@@ -242,7 +242,7 @@ final class InstallationTest extends TestCase
      */
     public function testThePluginReportsItsOwnVersionToGlpi(): void
     {
-        $info = plugin_version_ticketflow();
+        $info = plugin_version_ticketclock();
 
         self::assertSame(Version::VERSION, $info['version']);
         self::assertSame(Version::MIN_GLPI, $info['requirements']['glpi']['min']);

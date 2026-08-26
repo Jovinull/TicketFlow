@@ -27,26 +27,26 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Tests\Integration;
+namespace GlpiPlugin\Ticketclock\Tests\Integration;
 
 use CommonITILActor;
 use Group;
 use Group_Ticket;
 use Group_User;
-use GlpiPlugin\Ticketflow\Config;
-use GlpiPlugin\Ticketflow\Engine\Action\AddFollowupAction;
-use GlpiPlugin\Ticketflow\Engine\RuleEngine;
-use GlpiPlugin\Ticketflow\Enum\ActionType;
-use GlpiPlugin\Ticketflow\Enum\StartEvent;
-use GlpiPlugin\Ticketflow\Rule;
-use GlpiPlugin\Ticketflow\RuleAction;
-use GlpiPlugin\Ticketflow\RuleGroup;
+use GlpiPlugin\Ticketclock\Config;
+use GlpiPlugin\Ticketclock\Engine\Action\AddFollowupAction;
+use GlpiPlugin\Ticketclock\Engine\RuleEngine;
+use GlpiPlugin\Ticketclock\Enum\ActionType;
+use GlpiPlugin\Ticketclock\Enum\StartEvent;
+use GlpiPlugin\Ticketclock\Rule;
+use GlpiPlugin\Ticketclock\RuleAction;
+use GlpiPlugin\Ticketclock\RuleGroup;
 use ITILFollowup;
 use Log;
 use PHPUnit\Framework\TestCase;
@@ -82,7 +82,7 @@ final class LastGroupMessageFlowTest extends TestCase
         ]);
 
         $this->team_member = (int) (new User())->add([
-            'name'        => 'ticketflow_team_' . uniqid(),
+            'name'        => 'ticketclock_team_' . uniqid(),
             'entities_id' => 0,
         ]);
         (new Group_User())->add([
@@ -91,7 +91,7 @@ final class LastGroupMessageFlowTest extends TestCase
         ]);
 
         $this->requester = (int) (new User())->add([
-            'name'        => 'ticketflow_req_' . uniqid(),
+            'name'        => 'ticketclock_req_' . uniqid(),
             'entities_id' => 0,
         ]);
 
@@ -295,7 +295,7 @@ final class LastGroupMessageFlowTest extends TestCase
             'is_assign'   => 1,
         ]);
         $other_member = (int) (new User())->add([
-            'name'        => 'ticketflow_other_' . uniqid(),
+            'name'        => 'ticketclock_other_' . uniqid(),
             'entities_id' => 0,
         ]);
         (new Group_User())->add(['users_id' => $other_member, 'groups_id' => $other_group]);

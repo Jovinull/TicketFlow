@@ -27,24 +27,24 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow;
+namespace GlpiPlugin\Ticketclock;
 
 use CommonDBTM;
 use Glpi\Application\View\TemplateRenderer;
 use Glpi\Features\Clonable;
-use GlpiPlugin\Ticketflow\Engine\RuleDefinition;
-use GlpiPlugin\Ticketflow\Enum\ActionType;
-use GlpiPlugin\Ticketflow\Enum\CalendarMode;
-use GlpiPlugin\Ticketflow\Enum\DelayUnit;
-use GlpiPlugin\Ticketflow\Enum\ResetEvent;
-use GlpiPlugin\Ticketflow\Enum\RuleType;
-use GlpiPlugin\Ticketflow\Enum\StartEvent;
+use GlpiPlugin\Ticketclock\Engine\RuleDefinition;
+use GlpiPlugin\Ticketclock\Enum\ActionType;
+use GlpiPlugin\Ticketclock\Enum\CalendarMode;
+use GlpiPlugin\Ticketclock\Enum\DelayUnit;
+use GlpiPlugin\Ticketclock\Enum\ResetEvent;
+use GlpiPlugin\Ticketclock\Enum\RuleType;
+use GlpiPlugin\Ticketclock\Enum\StartEvent;
 use Session;
 use Ticket;
 
@@ -60,7 +60,7 @@ class Rule extends CommonDBTM
     /** @use Clonable<Rule> */
     use Clonable;
 
-    public static $rightname = 'plugin_ticketflow_rule';
+    public static $rightname = 'plugin_ticketclock_rule';
 
     public $dohistory = true;
 
@@ -83,7 +83,7 @@ class Rule extends CommonDBTM
 
     public static function getTypeName($nb = 0)
     {
-        return _n('TicketFlow rule', 'TicketFlow rules', $nb, 'ticketflow');
+        return _n('TicketFlow rule', 'TicketFlow rules', $nb, 'ticketclock');
     }
 
     public static function getIcon(): string
@@ -93,7 +93,7 @@ class Rule extends CommonDBTM
 
     public static function getMenuName()
     {
-        return __('TicketFlow', 'ticketflow');
+        return __('TicketFlow', 'ticketclock');
     }
 
     // -----------------------------------------------------------------------------
@@ -193,34 +193,34 @@ class Rule extends CommonDBTM
     private function prepareCommonInput(array $input): array|false
     {
         if (isset($input['name']) && trim((string) $input['name']) === '') {
-            Session::addMessageAfterRedirect(htmlescape(__('A rule needs a name.', 'ticketflow')), false, ERROR);
+            Session::addMessageAfterRedirect(htmlescape(__('A rule needs a name.', 'ticketclock')), false, ERROR);
             return false;
         }
 
         if (isset($input['rule_type']) && RuleType::tryFromString((string) $input['rule_type']) === null) {
-            Session::addMessageAfterRedirect(htmlescape(__('Unknown rule type.', 'ticketflow')), false, ERROR);
+            Session::addMessageAfterRedirect(htmlescape(__('Unknown rule type.', 'ticketclock')), false, ERROR);
             return false;
         }
 
         if (isset($input['delay_unit']) && DelayUnit::tryFromString((string) $input['delay_unit']) === null) {
-            Session::addMessageAfterRedirect(htmlescape(__('Unknown delay unit.', 'ticketflow')), false, ERROR);
+            Session::addMessageAfterRedirect(htmlescape(__('Unknown delay unit.', 'ticketclock')), false, ERROR);
             return false;
         }
 
         if (isset($input['start_event']) && StartEvent::tryFromString((string) $input['start_event']) === null) {
-            Session::addMessageAfterRedirect(htmlescape(__('Unknown start event.', 'ticketflow')), false, ERROR);
+            Session::addMessageAfterRedirect(htmlescape(__('Unknown start event.', 'ticketclock')), false, ERROR);
             return false;
         }
 
         if (isset($input['calendar_mode']) && CalendarMode::tryFromString((string) $input['calendar_mode']) === null) {
-            Session::addMessageAfterRedirect(htmlescape(__('Unknown calendar mode.', 'ticketflow')), false, ERROR);
+            Session::addMessageAfterRedirect(htmlescape(__('Unknown calendar mode.', 'ticketclock')), false, ERROR);
             return false;
         }
 
         if (isset($input['delay_value'])) {
             $delay = (int) $input['delay_value'];
             if ($delay < 1) {
-                Session::addMessageAfterRedirect(htmlescape(__('The delay must be at least 1.', 'ticketflow')), false, ERROR);
+                Session::addMessageAfterRedirect(htmlescape(__('The delay must be at least 1.', 'ticketclock')), false, ERROR);
                 return false;
             }
             $input['delay_value'] = $delay;
@@ -281,9 +281,9 @@ class Rule extends CommonDBTM
 
     public function cleanDBonPurge(): void
     {
-        (new RuleGroup())->deleteByCriteria(['plugin_ticketflow_rules_id' => $this->getID()]);
-        (new RuleAction())->deleteByCriteria(['plugin_ticketflow_rules_id' => $this->getID()]);
-        (new Execution())->deleteByCriteria(['plugin_ticketflow_rules_id' => $this->getID()]);
+        (new RuleGroup())->deleteByCriteria(['plugin_ticketclock_rules_id' => $this->getID()]);
+        (new RuleAction())->deleteByCriteria(['plugin_ticketclock_rules_id' => $this->getID()]);
+        (new Execution())->deleteByCriteria(['plugin_ticketclock_rules_id' => $this->getID()]);
     }
 
     /**
@@ -326,31 +326,31 @@ class Rule extends CommonDBTM
 
         $groups = RuleGroup::getGroupNamesForRule($this->getID());
         $group_text = $groups === []
-            ? __('any group', 'ticketflow')
-            : sprintf(__('the group(s) %s', 'ticketflow'), implode(', ', $groups));
+            ? __('any group', 'ticketclock')
+            : sprintf(__('the group(s) %s', 'ticketclock'), implode(', ', $groups));
 
         $status_text = '';
         if ($definition->target_status > 0) {
             $labels = Ticket::getAllStatusArray();
             $status_text = sprintf(
-                __(' and whose status is %s', 'ticketflow'),
+                __(' and whose status is %s', 'ticketclock'),
                 $labels[$definition->target_status] ?? (string) $definition->target_status,
             );
         }
 
         $calendar_text = match ($definition->calendar_mode) {
-            CalendarMode::None     => __('ignoring calendars', 'ticketflow'),
+            CalendarMode::None     => __('ignoring calendars', 'ticketclock'),
             CalendarMode::Specific => sprintf(
-                __('using the calendar "%s"', 'ticketflow'),
+                __('using the calendar "%s"', 'ticketclock'),
                 \Dropdown::getDropdownName('glpi_calendars', $definition->calendars_id),
             ),
-            CalendarMode::Entity   => __("using each entity's calendar", 'ticketflow'),
+            CalendarMode::Entity   => __("using each entity's calendar", 'ticketclock'),
         };
 
         $trigger = match ($definition->type) {
             RuleType::PendingInactivity => $definition->start_event === StartEvent::LastTargetGroupMessage
                 ? sprintf(
-                    __('When the last message on a ticket assigned to %1$s was written by that group%2$s, and %3$d %4$s go by %5$s without anybody answering', 'ticketflow'),
+                    __('When the last message on a ticket assigned to %1$s was written by that group%2$s, and %3$d %4$s go by %5$s without anybody answering', 'ticketclock'),
                     $group_text,
                     $status_text,
                     $definition->delay_value,
@@ -358,7 +358,7 @@ class Rule extends CommonDBTM
                     $calendar_text,
                 )
                 : sprintf(
-                    __('When a ticket assigned to %1$s%2$s stays pending for %3$d %4$s %5$s', 'ticketflow'),
+                    __('When a ticket assigned to %1$s%2$s stays pending for %3$d %4$s %5$s', 'ticketclock'),
                     $group_text,
                     $status_text,
                     $definition->delay_value,
@@ -366,7 +366,7 @@ class Rule extends CommonDBTM
                     $calendar_text,
                 ),
             RuleType::PendingApproval => sprintf(
-                __('When an approval request on a ticket assigned to %1$s stays unanswered for %2$d %3$s %4$s', 'ticketflow'),
+                __('When an approval request on a ticket assigned to %1$s stays unanswered for %2$d %3$s %4$s', 'ticketclock'),
                 $group_text,
                 $definition->delay_value,
                 $definition->delay_unit->label(),
@@ -375,10 +375,10 @@ class Rule extends CommonDBTM
         };
 
         if ($definition->start_event === StartEvent::LastTargetGroupMessage) {
-            $trigger .= __(' (any reply from outside the group stops the rule, and a status change restarts the countdown)', 'ticketflow');
+            $trigger .= __(' (any reply from outside the group stops the rule, and a status change restarts the countdown)', 'ticketclock');
         } elseif ($definition->reset_events !== []) {
             $labels = array_map(static fn(ResetEvent $e): string => $e->label(), $definition->reset_events);
-            $trigger .= sprintf(__(', with the clock restarting on: %s', 'ticketflow'), implode(', ', $labels));
+            $trigger .= sprintf(__(', with the clock restarting on: %s', 'ticketclock'), implode(', ', $labels));
         }
 
         $actions = [];
@@ -387,10 +387,10 @@ class Rule extends CommonDBTM
         }
 
         if ($actions === []) {
-            return $trigger . __(', nothing happens (no action is configured).', 'ticketflow');
+            return $trigger . __(', nothing happens (no action is configured).', 'ticketclock');
         }
 
-        return $trigger . sprintf(__(', then: %s.', 'ticketflow'), implode(' + ', $actions));
+        return $trigger . sprintf(__(', then: %s.', 'ticketclock'), implode(' + ', $actions));
     }
 
     // -----------------------------------------------------------------------------
@@ -419,7 +419,7 @@ class Rule extends CommonDBTM
     {
         $this->initForm($ID, $options);
 
-        TemplateRenderer::getInstance()->display('@ticketflow/rule_form.html.twig', [
+        TemplateRenderer::getInstance()->display('@ticketclock/rule_form.html.twig', [
             'item'            => $this,
             'params'          => $options,
             'rule_types'      => RuleType::options(),
@@ -443,7 +443,7 @@ class Rule extends CommonDBTM
             // id and those ids are neither sequential nor sorted (10 sits between 1 and 2),
             // so merging silently shifts every option onto the wrong value.
             'statuses'         => [0 => __('Any status')] + Ticket::getAllStatusArray(),
-            'target_statuses'  => [0 => __('Not applicable', 'ticketflow')] + Ticket::getAllStatusArray(),
+            'target_statuses'  => [0 => __('Not applicable', 'ticketclock')] + Ticket::getAllStatusArray(),
             'description'     => $ID > 0 ? $this->getHumanDescription() : '',
             'is_destructive'  => $ID > 0 && $this->toDefinition()->isDestructive(),
         ]);
@@ -471,7 +471,7 @@ class Rule extends CommonDBTM
             'id'       => '3',
             'table'    => self::getTable(),
             'field'    => 'rule_type',
-            'name'     => __('Rule type', 'ticketflow'),
+            'name'     => __('Rule type', 'ticketclock'),
             'datatype' => 'specific',
             'searchtype' => ['equals', 'notequals'],
         ];
@@ -480,7 +480,7 @@ class Rule extends CommonDBTM
             'id'       => '4',
             'table'    => self::getTable(),
             'field'    => 'delay_value',
-            'name'     => __('Delay', 'ticketflow'),
+            'name'     => __('Delay', 'ticketclock'),
             'datatype' => 'number',
         ];
 
@@ -488,7 +488,7 @@ class Rule extends CommonDBTM
             'id'       => '5',
             'table'    => self::getTable(),
             'field'    => 'delay_unit',
-            'name'     => __('Delay unit', 'ticketflow'),
+            'name'     => __('Delay unit', 'ticketclock'),
             'datatype' => 'specific',
             'searchtype' => ['equals', 'notequals'],
         ];
@@ -505,7 +505,7 @@ class Rule extends CommonDBTM
             'id'       => '7',
             'table'    => self::getTable(),
             'field'    => 'last_execution_date',
-            'name'     => __('Last run', 'ticketflow'),
+            'name'     => __('Last run', 'ticketclock'),
             'datatype' => 'datetime',
             'massiveaction' => false,
         ];
@@ -529,7 +529,7 @@ class Rule extends CommonDBTM
             'id'       => '9',
             'table'    => self::getTable(),
             'field'    => 'is_dry_run',
-            'name'     => __('Simulation only', 'ticketflow'),
+            'name'     => __('Simulation only', 'ticketclock'),
             'datatype' => 'bool',
         ];
 

@@ -27,20 +27,20 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Tests\Unit;
+namespace GlpiPlugin\Ticketclock\Tests\Unit;
 
-use GlpiPlugin\Ticketflow\Engine\ActionDefinition;
-use GlpiPlugin\Ticketflow\Engine\OccurrenceKey;
-use GlpiPlugin\Ticketflow\Enum\ActionType;
-use GlpiPlugin\Ticketflow\Enum\CalendarMode;
-use GlpiPlugin\Ticketflow\Enum\DelayUnit;
-use GlpiPlugin\Ticketflow\Enum\ResetEvent;
+use GlpiPlugin\Ticketclock\Engine\ActionDefinition;
+use GlpiPlugin\Ticketclock\Engine\OccurrenceKey;
+use GlpiPlugin\Ticketclock\Enum\ActionType;
+use GlpiPlugin\Ticketclock\Enum\CalendarMode;
+use GlpiPlugin\Ticketclock\Enum\DelayUnit;
+use GlpiPlugin\Ticketclock\Enum\ResetEvent;
 use PHPUnit\Framework\TestCase;
 
 final class RuleDefinitionTest extends TestCase

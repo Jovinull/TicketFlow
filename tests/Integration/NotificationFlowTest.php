@@ -27,24 +27,24 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Tests\Integration;
+namespace GlpiPlugin\Ticketclock\Tests\Integration;
 
 use CommonITILActor;
 use Config as CoreConfig;
 use Group;
 use Group_Ticket;
-use GlpiPlugin\Ticketflow\Config;
-use GlpiPlugin\Ticketflow\Engine\RuleEngine;
-use GlpiPlugin\Ticketflow\Enum\ActionType;
-use GlpiPlugin\Ticketflow\Rule;
-use GlpiPlugin\Ticketflow\RuleAction;
-use GlpiPlugin\Ticketflow\RuleGroup;
+use GlpiPlugin\Ticketclock\Config;
+use GlpiPlugin\Ticketclock\Engine\RuleEngine;
+use GlpiPlugin\Ticketclock\Enum\ActionType;
+use GlpiPlugin\Ticketclock\Rule;
+use GlpiPlugin\Ticketclock\RuleAction;
+use GlpiPlugin\Ticketclock\RuleGroup;
 use Notification;
 use PHPUnit\Framework\TestCase;
 use QueuedNotification;
@@ -108,7 +108,7 @@ final class NotificationFlowTest extends TestCase
         // A recipient with a real address: no address, no queue row, and the test would
         // then be measuring the mailbox rather than the plugin.
         $this->requester_id = (int) (new User())->add([
-            'name'         => 'ticketflow_notified_' . $suffix,
+            'name'         => 'ticketclock_notified_' . $suffix,
             'entities_id'  => 0,
             '_profiles_id' => 0,
         ]);
@@ -116,7 +116,7 @@ final class NotificationFlowTest extends TestCase
         (new UserEmail())->add([
             'users_id'    => $this->requester_id,
             'is_default'  => 1,
-            'email'       => 'ticketflow_' . $suffix . '@example.test',
+            'email'       => 'ticketclock_' . $suffix . '@example.test',
         ]);
 
         $this->groups_id = (int) (new Group())->add([
@@ -200,7 +200,7 @@ final class NotificationFlowTest extends TestCase
         ]);
     }
 
-    private function runTheRule(): \GlpiPlugin\Ticketflow\Engine\RunReport
+    private function runTheRule(): \GlpiPlugin\Ticketclock\Engine\RunReport
     {
         $rule = new Rule();
         self::assertTrue($rule->getFromDB($this->rules_id));

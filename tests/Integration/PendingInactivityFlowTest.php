@@ -27,13 +27,13 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Tests\Integration;
+namespace GlpiPlugin\Ticketclock\Tests\Integration;
 
 use Calendar;
 use CalendarSegment;
@@ -42,15 +42,15 @@ use Group;
 use Group_Ticket;
 use ITILFollowup;
 use ITILSolution;
-use GlpiPlugin\Ticketflow\Config;
-use GlpiPlugin\Ticketflow\Engine\Action\AddFollowupAction;
-use GlpiPlugin\Ticketflow\Engine\RuleEngine;
-use GlpiPlugin\Ticketflow\Enum\ActionType;
-use GlpiPlugin\Ticketflow\Enum\ExecutionState;
-use GlpiPlugin\Ticketflow\Execution;
-use GlpiPlugin\Ticketflow\Rule;
-use GlpiPlugin\Ticketflow\RuleAction;
-use GlpiPlugin\Ticketflow\RuleGroup;
+use GlpiPlugin\Ticketclock\Config;
+use GlpiPlugin\Ticketclock\Engine\Action\AddFollowupAction;
+use GlpiPlugin\Ticketclock\Engine\RuleEngine;
+use GlpiPlugin\Ticketclock\Enum\ActionType;
+use GlpiPlugin\Ticketclock\Enum\ExecutionState;
+use GlpiPlugin\Ticketclock\Execution;
+use GlpiPlugin\Ticketclock\Rule;
+use GlpiPlugin\Ticketclock\RuleAction;
+use GlpiPlugin\Ticketclock\RuleGroup;
 use PHPUnit\Framework\TestCase;
 use Session;
 use Ticket;
@@ -98,7 +98,7 @@ final class PendingInactivityFlowTest extends TestCase
         (new Calendar())->updateDurationCache($this->calendars_id);
 
         $this->requester_id = (int) (new User())->add([
-            'name'         => 'ticketflow_requester_' . uniqid(),
+            'name'         => 'ticketclock_requester_' . uniqid(),
             'entities_id'  => 0,
             '_profiles_id' => 0,
         ]);
@@ -223,7 +223,7 @@ final class PendingInactivityFlowTest extends TestCase
 
         $execution = new Execution();
         self::assertTrue($execution->getFromDBByCrit([
-            'plugin_ticketflow_rules_id' => $this->rules_id,
+            'plugin_ticketclock_rules_id' => $this->rules_id,
             'tickets_id'                 => $tickets_id,
         ]));
 

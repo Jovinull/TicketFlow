@@ -27,13 +27,13 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow;
+namespace GlpiPlugin\Ticketclock;
 
 use CommonGLPI;
 use Session;
@@ -43,11 +43,11 @@ use Session;
  */
 class Menu extends CommonGLPI
 {
-    public static $rightname = 'plugin_ticketflow_rule';
+    public static $rightname = 'plugin_ticketclock_rule';
 
     public static function getTypeName($nb = 0)
     {
-        return __('TicketFlow', 'ticketflow');
+        return __('TicketFlow', 'ticketclock');
     }
 
     public static function getMenuName()
@@ -67,44 +67,44 @@ class Menu extends CommonGLPI
     {
         $menu = [
             'title' => self::getMenuName(),
-            'page'  => '/plugins/ticketflow/front/rule.php',
+            'page'  => '/plugins/ticketclock/front/rule.php',
             'icon'  => self::getIcon(),
             'links' => [
-                'search' => '/plugins/ticketflow/front/rule.php',
+                'search' => '/plugins/ticketclock/front/rule.php',
             ],
         ];
 
         if (Session::haveRight(self::$rightname, CREATE)) {
-            $menu['links']['add'] = '/plugins/ticketflow/front/rule.form.php';
+            $menu['links']['add'] = '/plugins/ticketclock/front/rule.form.php';
         }
 
         $menu['options']['rule'] = [
             'title' => Rule::getTypeName(Session::getPluralNumber()),
-            'page'  => '/plugins/ticketflow/front/rule.php',
+            'page'  => '/plugins/ticketclock/front/rule.php',
             'icon'  => Rule::getIcon(),
             'links' => $menu['links'],
         ];
 
         $menu['options']['execution'] = [
             'title' => Execution::getTypeName(Session::getPluralNumber()),
-            'page'  => '/plugins/ticketflow/front/execution.php',
+            'page'  => '/plugins/ticketclock/front/execution.php',
             'icon'  => Execution::getIcon(),
-            'links' => ['search' => '/plugins/ticketflow/front/execution.php'],
+            'links' => ['search' => '/plugins/ticketclock/front/execution.php'],
         ];
 
         if (Session::haveRight(self::$rightname, UPDATE)) {
             $menu['options']['config'] = [
                 'title' => __('Setup'),
-                'page'  => '/plugins/ticketflow/front/config.form.php',
+                'page'  => '/plugins/ticketclock/front/config.form.php',
                 'icon'  => 'ti ti-settings',
-                'links' => ['search' => '/plugins/ticketflow/front/config.form.php'],
+                'links' => ['search' => '/plugins/ticketclock/front/config.form.php'],
             ];
 
             $menu['options']['inspect'] = [
-                'title' => __('Diagnostics', 'ticketflow'),
-                'page'  => '/plugins/ticketflow/front/inspect.php',
+                'title' => __('Diagnostics', 'ticketclock'),
+                'page'  => '/plugins/ticketclock/front/inspect.php',
                 'icon'  => 'ti ti-stethoscope',
-                'links' => ['search' => '/plugins/ticketflow/front/inspect.php'],
+                'links' => ['search' => '/plugins/ticketclock/front/inspect.php'],
             ];
         }
 

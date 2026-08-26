@@ -27,13 +27,13 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow;
+namespace GlpiPlugin\Ticketclock;
 
 use CommonGLPI;
 use Html;
@@ -43,7 +43,7 @@ use Session;
 /**
  * Exposes TicketFlow's right in the standard profile matrix.
  *
- * One right (`plugin_ticketflow_rule`) with the usual READ/UPDATE/CREATE/PURGE bits is
+ * One right (`plugin_ticketclock_rule`) with the usual READ/UPDATE/CREATE/PURGE bits is
  * enough for 0.1: reading covers the rule list and the logs, UPDATE covers editing and
  * the plugin configuration, and manual execution is gated on UPDATE too. Splitting
  * "execute" out would be complexity without a demand behind it yet.
@@ -53,7 +53,7 @@ class Profile extends \Profile
     public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
     {
         if ($item instanceof \Profile && $item->getField('id')) {
-            return self::createTabEntry(__('TicketFlow', 'ticketflow'));
+            return self::createTabEntry(__('TicketFlow', 'ticketclock'));
         }
 
         return '';
@@ -91,7 +91,7 @@ class Profile extends \Profile
             ],
             [
                 'canedit' => $can_edit,
-                'title'   => __('TicketFlow', 'ticketflow'),
+                'title'   => __('TicketFlow', 'ticketclock'),
             ],
         );
 

@@ -27,22 +27,22 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow;
+namespace GlpiPlugin\Ticketclock;
 
 use CommonDBTM;
 use CommonGLPI;
 use Glpi\Application\View\TemplateRenderer;
-use GlpiPlugin\Ticketflow\Calendar\Deadline;
-use GlpiPlugin\Ticketflow\Engine\ActionResult;
-use GlpiPlugin\Ticketflow\Engine\RuleDefinition;
-use GlpiPlugin\Ticketflow\Engine\TicketContext;
-use GlpiPlugin\Ticketflow\Enum\ExecutionState;
+use GlpiPlugin\Ticketclock\Calendar\Deadline;
+use GlpiPlugin\Ticketclock\Engine\ActionResult;
+use GlpiPlugin\Ticketclock\Engine\RuleDefinition;
+use GlpiPlugin\Ticketclock\Engine\TicketContext;
+use GlpiPlugin\Ticketclock\Enum\ExecutionState;
 use RuntimeException;
 use Ticket;
 
@@ -63,11 +63,11 @@ use function Safe\json_encode;
  */
 class Execution extends CommonDBTM
 {
-    public static $rightname = 'plugin_ticketflow_rule';
+    public static $rightname = 'plugin_ticketclock_rule';
 
     public static function getTypeName($nb = 0)
     {
-        return _n('Execution log', 'Execution logs', $nb, 'ticketflow');
+        return _n('Execution log', 'Execution logs', $nb, 'ticketclock');
     }
 
     public static function getIcon(): string
@@ -104,7 +104,7 @@ class Execution extends CommonDBTM
 
         try {
             $DB->insert(self::getTable(), [
-                'plugin_ticketflow_rules_id' => $rule->id,
+                'plugin_ticketclock_rules_id' => $rule->id,
                 'tickets_id'                 => $ticket->tickets_id,
                 'entities_id'                => $ticket->entities_id,
                 'occurrence_key'             => $occurrence_key,
@@ -172,7 +172,7 @@ class Execution extends CommonDBTM
         $now = $_SESSION['glpi_currenttime'] ?? date('Y-m-d H:i:s');
 
         $DB->insert(self::getTable(), [
-            'plugin_ticketflow_rules_id' => $rule->id,
+            'plugin_ticketclock_rules_id' => $rule->id,
             'tickets_id'                 => $ticket->tickets_id,
             'entities_id'                => $ticket->entities_id,
             'occurrence_key'             => $occurrence_key,
@@ -299,7 +299,7 @@ class Execution extends CommonDBTM
             return '';
         }
 
-        $count = countElementsInTable(self::getTable(), ['plugin_ticketflow_rules_id' => $item->getID()]);
+        $count = countElementsInTable(self::getTable(), ['plugin_ticketclock_rules_id' => $item->getID()]);
 
         return self::createTabEntry(self::getTypeName(2), $count, $item::class);
     }
@@ -321,7 +321,7 @@ class Execution extends CommonDBTM
         $rows = [];
         $iterator = $DB->request([
             'FROM'  => self::getTable(),
-            'WHERE' => ['plugin_ticketflow_rules_id' => $rule->getID()],
+            'WHERE' => ['plugin_ticketclock_rules_id' => $rule->getID()],
             'ORDER' => 'id DESC',
             'LIMIT' => 100,
         ]);
@@ -333,7 +333,7 @@ class Execution extends CommonDBTM
             $rows[] = $row;
         }
 
-        TemplateRenderer::getInstance()->display('@ticketflow/execution_list.html.twig', [
+        TemplateRenderer::getInstance()->display('@ticketclock/execution_list.html.twig', [
             'rows'   => $rows,
             'states' => ExecutionState::options(),
             'rule'   => $rule,
@@ -368,26 +368,26 @@ class Execution extends CommonDBTM
             'id'         => '4',
             'table'      => self::getTable(),
             'field'      => 'state',
-            'name'       => __('Result', 'ticketflow'),
+            'name'       => __('Result', 'ticketclock'),
             'datatype'   => 'specific',
             'searchtype' => ['equals', 'notequals'],
         ], [
             'id'       => '5',
             'table'    => self::getTable(),
             'field'    => 'reference_date',
-            'name'     => __('Reference date', 'ticketflow'),
+            'name'     => __('Reference date', 'ticketclock'),
             'datatype' => 'datetime',
         ], [
             'id'       => '6',
             'table'    => self::getTable(),
             'field'    => 'deadline_date',
-            'name'     => __('Deadline', 'ticketflow'),
+            'name'     => __('Deadline', 'ticketclock'),
             'datatype' => 'datetime',
         ], [
             'id'       => '7',
             'table'    => self::getTable(),
             'field'    => 'triggered_at',
-            'name'     => __('Triggered at', 'ticketflow'),
+            'name'     => __('Triggered at', 'ticketclock'),
             'datatype' => 'datetime',
         ], [
             'id'       => '8',

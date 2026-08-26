@@ -27,23 +27,23 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Tests\Unit;
+namespace GlpiPlugin\Ticketclock\Tests\Unit;
 
-use GlpiPlugin\Ticketflow\Engine\Action\ActionInterface;
-use GlpiPlugin\Ticketflow\Engine\ActionContext;
-use GlpiPlugin\Ticketflow\Engine\ActionDefinition;
-use GlpiPlugin\Ticketflow\Engine\ActionExecutor;
-use GlpiPlugin\Ticketflow\Engine\ActionResult;
-use GlpiPlugin\Ticketflow\Engine\MessageRenderer;
-use GlpiPlugin\Ticketflow\Enum\ActionType;
-use GlpiPlugin\Ticketflow\Enum\DelayUnit;
-use GlpiPlugin\Ticketflow\Calendar\Deadline;
+use GlpiPlugin\Ticketclock\Engine\Action\ActionInterface;
+use GlpiPlugin\Ticketclock\Engine\ActionContext;
+use GlpiPlugin\Ticketclock\Engine\ActionDefinition;
+use GlpiPlugin\Ticketclock\Engine\ActionExecutor;
+use GlpiPlugin\Ticketclock\Engine\ActionResult;
+use GlpiPlugin\Ticketclock\Engine\MessageRenderer;
+use GlpiPlugin\Ticketclock\Enum\ActionType;
+use GlpiPlugin\Ticketclock\Enum\DelayUnit;
+use GlpiPlugin\Ticketclock\Calendar\Deadline;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 

@@ -27,17 +27,17 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow;
+namespace GlpiPlugin\Ticketclock;
 
 use CommonDBTM;
 use CronTask;
-use GlpiPlugin\Ticketflow\Engine\RuleEngine;
+use GlpiPlugin\Ticketclock\Engine\RuleEngine;
 use Toolbox;
 
 /**
@@ -58,7 +58,7 @@ class Cron extends CommonDBTM
 
     public static function getTypeName($nb = 0)
     {
-        return __('TicketFlow', 'ticketflow');
+        return __('TicketFlow', 'ticketclock');
     }
 
     /**
@@ -68,10 +68,10 @@ class Cron extends CommonDBTM
     {
         return match ($name) {
             self::TASK_PROCESS => [
-                'description' => __('TicketFlow: evaluate rules and run their actions', 'ticketflow'),
+                'description' => __('TicketFlow: evaluate rules and run their actions', 'ticketclock'),
             ],
             self::TASK_PURGE => [
-                'description' => __('TicketFlow: purge old execution logs', 'ticketflow'),
+                'description' => __('TicketFlow: purge old execution logs', 'ticketclock'),
             ],
             default => null,
         };
@@ -102,10 +102,10 @@ class Cron extends CommonDBTM
         );
 
         $task->log($summary);
-        Toolbox::logInFile('ticketflow', $summary . "\n");
+        Toolbox::logInFile('ticketclock', $summary . "\n");
 
         foreach ($report->errors as $error) {
-            Toolbox::logInFile('ticketflow', 'ERROR ' . $error . "\n");
+            Toolbox::logInFile('ticketclock', 'ERROR ' . $error . "\n");
         }
 
         if ($report->errors !== [] && $report->executed === 0 && $report->simulated === 0) {
@@ -139,7 +139,7 @@ class Cron extends CommonDBTM
             self::TASK_PROCESS,
             HOUR_TIMESTAMP,
             [
-                'comment'   => __('Evaluates TicketFlow rules and executes their actions.', 'ticketflow'),
+                'comment'   => __('Evaluates TicketFlow rules and executes their actions.', 'ticketclock'),
                 // Off by default: installing the plugin must never start acting on tickets.
                 'state'     => CronTask::STATE_DISABLE,
                 'mode'      => CronTask::MODE_EXTERNAL,
@@ -154,7 +154,7 @@ class Cron extends CommonDBTM
             self::TASK_PURGE,
             DAY_TIMESTAMP,
             [
-                'comment'   => __('Deletes TicketFlow execution logs older than the configured retention.', 'ticketflow'),
+                'comment'   => __('Deletes TicketFlow execution logs older than the configured retention.', 'ticketclock'),
                 'state'     => CronTask::STATE_WAITING,
                 'allowmode' => CronTask::MODE_INTERNAL | CronTask::MODE_EXTERNAL,
             ],

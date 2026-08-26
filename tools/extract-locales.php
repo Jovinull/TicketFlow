@@ -27,14 +27,14 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
 /**
- * Extracts translatable strings into locales/ticketflow.pot.
+ * Extracts translatable strings into locales/ticketclock.pot.
  *
  * GLPI plugins are normally scanned with xgettext, but xgettext does not understand Twig
  * and is not always installed. This walks both PHP and Twig sources looking for the plugin
@@ -44,7 +44,7 @@ declare(strict_types=1);
  *     php tools/extract-locales.php
  */
 
-const DOMAIN = 'ticketflow';
+const DOMAIN = 'ticketclock';
 
 $root = dirname(__DIR__);
 $targets = ['src', 'front', 'templates', 'setup.php', 'hook.php'];
@@ -84,11 +84,11 @@ sort($files);
 $str = "'((?:[^'\\\\]|\\\\.)*)'";
 
 $patterns = [
-    // __('text', 'ticketflow')
+    // __('text', 'ticketclock')
     'single' => "/\b__\(\s*{$str}\s*,\s*'" . DOMAIN . "'\s*\)/",
-    // _n('one', 'many', $nb, 'ticketflow')
+    // _n('one', 'many', $nb, 'ticketclock')
     'plural' => "/\b_n\(\s*{$str}\s*,\s*{$str}\s*,[^,]+,\s*'" . DOMAIN . "'\s*\)/",
-    // _x('context', 'text', 'ticketflow') and _sx(...)
+    // _x('context', 'text', 'ticketclock') and _sx(...)
     'context' => "/\b_s?x\(\s*{$str}\s*,\s*{$str}\s*,\s*'" . DOMAIN . "'\s*\)/",
 ];
 

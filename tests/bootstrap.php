@@ -27,7 +27,7 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
@@ -98,7 +98,7 @@ if (!($DB instanceof DBmysql) || !$DB->connected) {
 // true -- without this marker every Ticket::update() is refused and the suite would be
 // testing a situation that never happens in production. Session::isCron() additionally
 // requires a CLI context, which a PHPUnit run always is.
-$_SESSION['glpicronuserrunning'] = 'cron_ticketflow_tests';
+$_SESSION['glpicronuserrunning'] = 'cron_ticketclock_tests';
 
 // The engine writes followups and solutions; core attributes them to the session user when
 // none is given, and logs under this name.
@@ -112,10 +112,10 @@ $_SESSION['glpi_use_mode']    = Session::NORMAL_MODE;
 // engine instead of a missing profile.
 $_SESSION['glpiactiveprofile'] = [
     'id'        => 0,
-    'name'      => 'ticketflow-tests',
+    'name'      => 'ticketclock-tests',
     'interface' => 'central',
 ] + array_fill_keys(
-    ['ticket', 'group', 'calendar', 'entity', 'config', 'profile', 'user', GlpiPlugin\Ticketflow\Rule::$rightname],
+    ['ticket', 'group', 'calendar', 'entity', 'config', 'profile', 'user', GlpiPlugin\Ticketclock\Rule::$rightname],
     ALLSTANDARDRIGHT | READNOTE | UPDATENOTE | UNLOCK,
 );
 

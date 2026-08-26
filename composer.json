@@ -1,5 +1,5 @@
 {
-    "name": "pluginsglpi/ticketflow",
+    "name": "jovinull/ticketclock",
     "description": "Time-based automation engine for GLPI tickets: business-day deadlines, conversation-aware clocks, configurable conditions and actions.",
     "type": "glpi-plugin",
     "license": "MIT",
@@ -10,10 +10,10 @@
             "role": "Developer"
         }
     ],
-    "homepage": "https://github.com/Jovinull/ticketflow",
+    "homepage": "https://github.com/Jovinull/ticketclock",
     "support": {
-        "issues": "https://github.com/Jovinull/ticketflow/issues",
-        "source": "https://github.com/Jovinull/ticketflow"
+        "issues": "https://github.com/Jovinull/ticketclock/issues",
+        "source": "https://github.com/Jovinull/ticketclock"
     },
     "require": {
         "php": ">=8.2"
@@ -31,8 +31,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "GlpiPlugin\\Ticketflow\\": "src/",
-            "GlpiPlugin\\Ticketflow\\Tests\\": "tests/"
+            "GlpiPlugin\\Ticketclock\\": "src/",
+            "GlpiPlugin\\Ticketclock\\Tests\\": "tests/"
         }
     },
     "scripts": {

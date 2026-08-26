@@ -27,31 +27,31 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Engine;
+namespace GlpiPlugin\Ticketclock\Engine;
 
 use Dropdown;
 use Glpi\Error\ErrorHandler;
-use GlpiPlugin\Ticketflow\Calendar\BusinessTimeCalculator;
-use GlpiPlugin\Ticketflow\Calendar\Deadline;
-use GlpiPlugin\Ticketflow\Calendar\GlpiCalendarEngine;
-use GlpiPlugin\Ticketflow\Config;
-use GlpiPlugin\Ticketflow\Engine\Action\AddFollowupAction;
-use GlpiPlugin\Ticketflow\Engine\Action\AddSolutionAction;
-use GlpiPlugin\Ticketflow\Engine\Action\ChangeStatusAction;
-use GlpiPlugin\Ticketflow\Engine\Action\CloseTicketAction;
-use GlpiPlugin\Ticketflow\Engine\Action\SendNotificationAction;
-use GlpiPlugin\Ticketflow\Engine\Matcher\MatcherInterface;
-use GlpiPlugin\Ticketflow\Engine\Matcher\PendingApprovalMatcher;
-use GlpiPlugin\Ticketflow\Engine\Matcher\PendingInactivityMatcher;
-use GlpiPlugin\Ticketflow\Enum\ExecutionState;
-use GlpiPlugin\Ticketflow\Execution;
-use GlpiPlugin\Ticketflow\Rule;
+use GlpiPlugin\Ticketclock\Calendar\BusinessTimeCalculator;
+use GlpiPlugin\Ticketclock\Calendar\Deadline;
+use GlpiPlugin\Ticketclock\Calendar\GlpiCalendarEngine;
+use GlpiPlugin\Ticketclock\Config;
+use GlpiPlugin\Ticketclock\Engine\Action\AddFollowupAction;
+use GlpiPlugin\Ticketclock\Engine\Action\AddSolutionAction;
+use GlpiPlugin\Ticketclock\Engine\Action\ChangeStatusAction;
+use GlpiPlugin\Ticketclock\Engine\Action\CloseTicketAction;
+use GlpiPlugin\Ticketclock\Engine\Action\SendNotificationAction;
+use GlpiPlugin\Ticketclock\Engine\Matcher\MatcherInterface;
+use GlpiPlugin\Ticketclock\Engine\Matcher\PendingApprovalMatcher;
+use GlpiPlugin\Ticketclock\Engine\Matcher\PendingInactivityMatcher;
+use GlpiPlugin\Ticketclock\Enum\ExecutionState;
+use GlpiPlugin\Ticketclock\Execution;
+use GlpiPlugin\Ticketclock\Rule;
 use Throwable;
 
 /**
@@ -157,7 +157,7 @@ final readonly class RuleEngine
         $report->preview_limit = max($preview_limit, 0);
         $matcher = $this->matcherFor($rule);
         if ($matcher === null) {
-            $report->errors[] = sprintf(__('No matcher supports rule type "%s".', 'ticketflow'), $rule->type->value);
+            $report->errors[] = sprintf(__('No matcher supports rule type "%s".', 'ticketclock'), $rule->type->value);
             return $report;
         }
 

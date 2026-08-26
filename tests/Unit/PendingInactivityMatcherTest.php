@@ -27,17 +27,17 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Tests\Unit;
+namespace GlpiPlugin\Ticketclock\Tests\Unit;
 
-use GlpiPlugin\Ticketflow\Engine\Matcher\PendingInactivityMatcher;
-use GlpiPlugin\Ticketflow\Enum\ResetEvent;
-use GlpiPlugin\Ticketflow\Enum\RuleType;
+use GlpiPlugin\Ticketclock\Engine\Matcher\PendingInactivityMatcher;
+use GlpiPlugin\Ticketclock\Enum\ResetEvent;
+use GlpiPlugin\Ticketclock\Enum\RuleType;
 use PHPUnit\Framework\TestCase;
 
 /**

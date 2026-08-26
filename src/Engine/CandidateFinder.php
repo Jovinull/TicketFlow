@@ -27,19 +27,19 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Engine;
+namespace GlpiPlugin\Ticketclock\Engine;
 
 use CommonITILActor;
 use CommonITILValidation;
-use GlpiPlugin\Ticketflow\Engine\Action\AddFollowupAction;
-use GlpiPlugin\Ticketflow\Enum\RuleType;
-use GlpiPlugin\Ticketflow\Enum\StartEvent;
+use GlpiPlugin\Ticketclock\Engine\Action\AddFollowupAction;
+use GlpiPlugin\Ticketclock\Enum\RuleType;
+use GlpiPlugin\Ticketclock\Enum\StartEvent;
 use ITILFollowup;
 use Ticket;
 use TicketValidation;

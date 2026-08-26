@@ -27,13 +27,13 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Enum;
+namespace GlpiPlugin\Ticketclock\Enum;
 
 /**
  * What a rule does once its deadline is crossed.
@@ -49,11 +49,11 @@ enum ActionType: string
     public function label(): string
     {
         return match ($this) {
-            self::AddFollowup      => __('Add a followup', 'ticketflow'),
-            self::AddSolution      => __('Solve the ticket (add a solution)', 'ticketflow'),
-            self::ChangeStatus     => __('Change the status', 'ticketflow'),
-            self::CloseTicket      => __('Close the ticket', 'ticketflow'),
-            self::SendNotification => __('Send a notification', 'ticketflow'),
+            self::AddFollowup      => __('Add a followup', 'ticketclock'),
+            self::AddSolution      => __('Solve the ticket (add a solution)', 'ticketclock'),
+            self::ChangeStatus     => __('Change the status', 'ticketclock'),
+            self::CloseTicket      => __('Close the ticket', 'ticketclock'),
+            self::SendNotification => __('Send a notification', 'ticketclock'),
         };
     }
 

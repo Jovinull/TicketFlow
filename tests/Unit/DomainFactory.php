@@ -27,25 +27,25 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Tests\Unit;
+namespace GlpiPlugin\Ticketclock\Tests\Unit;
 
-use GlpiPlugin\Ticketflow\Engine\ActionDefinition;
-use GlpiPlugin\Ticketflow\Engine\MessageContext;
-use GlpiPlugin\Ticketflow\Engine\RuleDefinition;
-use GlpiPlugin\Ticketflow\Engine\TicketContext;
-use GlpiPlugin\Ticketflow\Engine\ValidationContext;
-use GlpiPlugin\Ticketflow\Enum\ActionType;
-use GlpiPlugin\Ticketflow\Enum\CalendarMode;
-use GlpiPlugin\Ticketflow\Enum\DelayUnit;
-use GlpiPlugin\Ticketflow\Enum\ResetEvent;
-use GlpiPlugin\Ticketflow\Enum\RuleType;
-use GlpiPlugin\Ticketflow\Enum\StartEvent;
+use GlpiPlugin\Ticketclock\Engine\ActionDefinition;
+use GlpiPlugin\Ticketclock\Engine\MessageContext;
+use GlpiPlugin\Ticketclock\Engine\RuleDefinition;
+use GlpiPlugin\Ticketclock\Engine\TicketContext;
+use GlpiPlugin\Ticketclock\Engine\ValidationContext;
+use GlpiPlugin\Ticketclock\Enum\ActionType;
+use GlpiPlugin\Ticketclock\Enum\CalendarMode;
+use GlpiPlugin\Ticketclock\Enum\DelayUnit;
+use GlpiPlugin\Ticketclock\Enum\ResetEvent;
+use GlpiPlugin\Ticketclock\Enum\RuleType;
+use GlpiPlugin\Ticketclock\Enum\StartEvent;
 
 /**
  * Builders for the value objects the matchers consume.

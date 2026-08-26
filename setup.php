@@ -27,16 +27,16 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 use Glpi\Plugin\Hooks;
-use GlpiPlugin\Ticketflow\Execution;
-use GlpiPlugin\Ticketflow\Menu;
-use GlpiPlugin\Ticketflow\Profile;
-use GlpiPlugin\Ticketflow\Rule;
-use GlpiPlugin\Ticketflow\Version;
+use GlpiPlugin\Ticketclock\Execution;
+use GlpiPlugin\Ticketclock\Menu;
+use GlpiPlugin\Ticketclock\Profile;
+use GlpiPlugin\Ticketclock\Rule;
+use GlpiPlugin\Ticketclock\Version;
 
 use function Safe\define;
 
@@ -55,18 +55,18 @@ require_once __DIR__ . '/src/Version.php';
 // the supported GLPI range on the GitHub release page. A constant reference here reads
 // better but greps to nothing, and the release quietly loses that line.
 //
-// GlpiPlugin\Ticketflow\Version stays the source of truth for code -- the unit suite uses
+// GlpiPlugin\Ticketclock\Version stays the source of truth for code -- the unit suite uses
 // it without loading this file at all -- and a test asserts the two never drift apart.
-define('PLUGIN_TICKETFLOW_VERSION', '1.0.0');
-define('PLUGIN_TICKETFLOW_MIN_GLPI', '11.0.0');
-define('PLUGIN_TICKETFLOW_MAX_GLPI', '11.0.99');
-define('PLUGIN_TICKETFLOW_SCHEMA_VERSION', '1.1.0');
+define('PLUGIN_TICKETCLOCK_VERSION', '1.0.0');
+define('PLUGIN_TICKETCLOCK_MIN_GLPI', '11.0.0');
+define('PLUGIN_TICKETCLOCK_MAX_GLPI', '11.0.99');
+define('PLUGIN_TICKETCLOCK_SCHEMA_VERSION', '1.1.0');
 
 /**
  * Init hooks of the plugin.
  * REQUIRED
  */
-function plugin_init_ticketflow(): void
+function plugin_init_ticketclock(): void
 {
     /** @var array<string, mixed> $PLUGIN_HOOKS */
     global $PLUGIN_HOOKS;
@@ -79,22 +79,22 @@ function plugin_init_ticketflow(): void
     Plugin::registerClass(Execution::class);
 
     // Refresh the plugin rights when the user switches profile.
-    $PLUGIN_HOOKS[Hooks::CHANGE_PROFILE]['ticketflow'] = Profile::onChangeProfile(...);
+    $PLUGIN_HOOKS[Hooks::CHANGE_PROFILE]['ticketclock'] = Profile::onChangeProfile(...);
 
-    if (!Plugin::isPluginActive('ticketflow')) {
+    if (!Plugin::isPluginActive('ticketclock')) {
         return;
     }
 
     if (Session::haveRight(Rule::$rightname, READ)) {
-        $PLUGIN_HOOKS['menu_toadd']['ticketflow'] = ['admin' => Menu::class];
+        $PLUGIN_HOOKS['menu_toadd']['ticketclock'] = ['admin' => Menu::class];
     }
 
     if (Session::haveRight(Rule::$rightname, UPDATE)) {
-        $PLUGIN_HOOKS['config_page']['ticketflow'] = 'front/config.form.php';
+        $PLUGIN_HOOKS['config_page']['ticketclock'] = 'front/config.form.php';
     }
 
     // Keep plugin data consistent when referenced core objects are purged.
-    $PLUGIN_HOOKS[Hooks::ITEM_PURGE]['ticketflow'] = [
+    $PLUGIN_HOOKS[Hooks::ITEM_PURGE]['ticketclock'] = [
         'Ticket'   => Execution::onCoreItemPurged(...),
         'Group'    => Rule::onCoreItemPurged(...),
         'Calendar' => Rule::onCoreItemPurged(...),
@@ -114,14 +114,14 @@ function plugin_init_ticketflow(): void
  *      requirements: array{glpi: array{min: string, max: string}}
  * }
  */
-function plugin_version_ticketflow(): array
+function plugin_version_ticketclock(): array
 {
     return [
         'name'         => 'TicketFlow',
         'version'      => Version::VERSION,
         'author'       => 'Felipe Jovino',
         'license'      => 'MIT',
-        'homepage'     => 'https://github.com/Jovinull/ticketflow',
+        'homepage'     => 'https://github.com/Jovinull/ticketclock',
         'requirements' => [
             'glpi' => [
                 'min' => Version::MIN_GLPI,
@@ -134,7 +134,7 @@ function plugin_version_ticketflow(): array
 /**
  * Check pre-requisites before install.
  */
-function plugin_ticketflow_check_prerequisites(): bool
+function plugin_ticketclock_check_prerequisites(): bool
 {
     return true;
 }
@@ -144,7 +144,7 @@ function plugin_ticketflow_check_prerequisites(): bool
  *
  * @param bool $verbose Whether to display a message on failure.
  */
-function plugin_ticketflow_check_config(bool $verbose = false): bool
+function plugin_ticketclock_check_config(bool $verbose = false): bool
 {
     return true;
 }

@@ -27,17 +27,17 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow;
+namespace GlpiPlugin\Ticketclock;
 
 use CommonDBChild;
-use GlpiPlugin\Ticketflow\Engine\ActionDefinition;
-use GlpiPlugin\Ticketflow\Enum\ActionType;
+use GlpiPlugin\Ticketclock\Engine\ActionDefinition;
+use GlpiPlugin\Ticketclock\Enum\ActionType;
 
 use function Safe\json_encode;
 
@@ -51,10 +51,10 @@ use function Safe\json_encode;
  */
 class RuleAction extends CommonDBChild
 {
-    public static $rightname = 'plugin_ticketflow_rule';
+    public static $rightname = 'plugin_ticketclock_rule';
 
     public static $itemtype = Rule::class;
-    public static $items_id = 'plugin_ticketflow_rules_id';
+    public static $items_id = 'plugin_ticketclock_rules_id';
 
     public $dohistory = true;
 
@@ -65,7 +65,7 @@ class RuleAction extends CommonDBChild
 
     public static function getTypeName($nb = 0)
     {
-        return _n('Action', 'Actions', $nb, 'ticketflow');
+        return _n('Action', 'Actions', $nb, 'ticketclock');
     }
 
     /**
@@ -83,7 +83,7 @@ class RuleAction extends CommonDBChild
         $out = [];
         $iterator = $DB->request([
             'FROM'  => self::getTable(),
-            'WHERE' => ['plugin_ticketflow_rules_id' => $rules_id],
+            'WHERE' => ['plugin_ticketclock_rules_id' => $rules_id],
             'ORDER' => ['ranking ASC', 'id ASC'],
         ]);
 
@@ -177,7 +177,7 @@ class RuleAction extends CommonDBChild
             return;
         }
 
-        (new self())->deleteByCriteria(['plugin_ticketflow_rules_id' => $rules_id]);
+        (new self())->deleteByCriteria(['plugin_ticketclock_rules_id' => $rules_id]);
 
         $followup = (array) ($payload['add_followup'] ?? []);
         if (!empty($followup['enabled'])) {
@@ -215,7 +215,7 @@ class RuleAction extends CommonDBChild
     private static function insert(int $rules_id, ActionType $type, int $ranking, array $params): void
     {
         (new self())->add([
-            'plugin_ticketflow_rules_id' => $rules_id,
+            'plugin_ticketclock_rules_id' => $rules_id,
             'action_type'                => $type->value,
             'ranking'                    => $ranking,
             'params'                     => json_encode($params, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),

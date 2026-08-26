@@ -27,13 +27,13 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Enum;
+namespace GlpiPlugin\Ticketclock\Enum;
 
 /**
  * The kind of situation a rule watches.
@@ -52,8 +52,8 @@ enum RuleType: string
     public function label(): string
     {
         return match ($this) {
-            self::PendingInactivity => __('Pending without answer', 'ticketflow'),
-            self::PendingApproval   => __('Approval without answer', 'ticketflow'),
+            self::PendingInactivity => __('Pending without answer', 'ticketclock'),
+            self::PendingApproval   => __('Approval without answer', 'ticketclock'),
         };
     }
 

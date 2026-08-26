@@ -27,16 +27,16 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Engine;
+namespace GlpiPlugin\Ticketclock\Engine;
 
-use GlpiPlugin\Ticketflow\Engine\Action\ActionInterface;
-use GlpiPlugin\Ticketflow\Enum\ActionType;
+use GlpiPlugin\Ticketclock\Engine\Action\ActionInterface;
+use GlpiPlugin\Ticketclock\Enum\ActionType;
 use Throwable;
 
 /**
@@ -86,7 +86,7 @@ final readonly class ActionExecutor
             if ($handler === null) {
                 $results[] = ActionResult::failure(
                     $definition->type,
-                    sprintf(__('No handler is registered for action "%s".', 'ticketflow'), $definition->type->value),
+                    sprintf(__('No handler is registered for action "%s".', 'ticketclock'), $definition->type->value),
                 );
                 $success = false;
                 break;

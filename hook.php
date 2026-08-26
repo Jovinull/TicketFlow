@@ -27,14 +27,14 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-use GlpiPlugin\Ticketflow\Install;
-use GlpiPlugin\Ticketflow\Version;
+use GlpiPlugin\Ticketclock\Install;
+use GlpiPlugin\Ticketclock\Version;
 
 /**
  * Plugin install / upgrade process.
@@ -42,7 +42,7 @@ use GlpiPlugin\Ticketflow\Version;
  * GLPI calls this both for a first install and for an upgrade; Install::install() reads
  * the stored schema version and applies whatever migrations are missing.
  */
-function plugin_ticketflow_install(): bool
+function plugin_ticketclock_install(): bool
 {
     $migration = new Migration(Version::VERSION);
 
@@ -56,7 +56,7 @@ function plugin_ticketflow_install(): bool
  * Core data is never touched: TicketFlow only ever read from it, and the followups and
  * solutions it created belong to the tickets now, not to the plugin.
  */
-function plugin_ticketflow_uninstall(): bool
+function plugin_ticketclock_uninstall(): bool
 {
     return Install::uninstall();
 }

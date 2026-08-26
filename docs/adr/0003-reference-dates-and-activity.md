@@ -59,7 +59,7 @@ Verified on production data: **74 of 74** currently-pending tickets have a non-n
 ## Consequence to watch
 
 Followups TicketFlow writes must never be read back as activity. They carry the marker
-`<!-- ticketflow-generated -->`, filtered out of every followup query, and their ids are
+`<!-- ticketclock-generated -->`, filtered out of every followup query, and their ids are
 recorded on the execution row.
 
 Related trap, found in core: `Glpi\Features\ParentStatus::updateParentStatus()` **reopens a

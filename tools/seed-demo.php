@@ -27,17 +27,17 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
-// Run from a GLPI root: `php plugins/ticketflow/tools/seed-demo.php`.
+// Run from a GLPI root: `php plugins/ticketclock/tools/seed-demo.php`.
 // GLPI_ROOT lets a container that keeps GLPI elsewhere point this at it.
 $glpi_root = getenv('GLPI_ROOT') ?: dirname(__DIR__, 3);
 chdir($glpi_root);
 require_once $glpi_root . '/vendor/autoload.php';
 (new Glpi\Kernel\Kernel())->boot();
-Plugin::load('ticketflow', true);
+Plugin::load('ticketclock', true);
 
 $_SESSION['glpicronuserrunning'] = 'cron_demo_seed';
 $_SESSION['glpi_currenttime']    = date('Y-m-d H:i:s');
@@ -190,7 +190,7 @@ $common = [
     '_reset_events_defined' => 1,
 ];
 
-$first = (new GlpiPlugin\Ticketflow\Rule())->add($common + [
+$first = (new GlpiPlugin\Ticketclock\Rule())->add($common + [
     'name'          => 'Pending without an answer from Software Engineering',
     'comment'       => 'The clock starts on the last message, and only while that message came from the group. Any reply from somebody else stops the rule.',
     'ranking'       => 10,
@@ -213,7 +213,7 @@ $first = (new GlpiPlugin\Ticketflow\Rule())->add($common + [
     ],
 ]);
 
-$second = (new GlpiPlugin\Ticketflow\Rule())->add($common + [
+$second = (new GlpiPlugin\Ticketclock\Rule())->add($common + [
     'name'          => 'Approval left undecided for two business days',
     'comment'       => 'Reminder only. Never changes the ticket status.',
     'ranking'       => 20,
@@ -232,8 +232,8 @@ $second = (new GlpiPlugin\Ticketflow\Rule())->add($common + [
 
 // A rule is always created inactive, on purpose. Arm the first one so the demo has
 // something to show; the second stays inactive, which is also worth showing.
-(new GlpiPlugin\Ticketflow\Rule())->update(['id' => $first, 'is_active' => 1]);
+(new GlpiPlugin\Ticketclock\Rule())->update(['id' => $first, 'is_active' => 1]);
 
-$report = (new GlpiPlugin\Ticketflow\Engine\RuleEngine())->runAll();
+$report = (new GlpiPlugin\Ticketclock\Engine\RuleEngine())->runAll();
 echo 'group ' . $eng . ', tickets ' . implode(',', array_column($made, 0))
     . ", rules $first,$second — " . json_encode($report->counters()) . "\n";

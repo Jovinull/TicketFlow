@@ -27,13 +27,13 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
-use GlpiPlugin\Ticketflow\Config;
-use GlpiPlugin\Ticketflow\Menu;
-use GlpiPlugin\Ticketflow\Rule;
+use GlpiPlugin\Ticketclock\Config;
+use GlpiPlugin\Ticketclock\Menu;
+use GlpiPlugin\Ticketclock\Rule;
 
 include __DIR__ . '/../../../inc/includes.php';
 
@@ -55,12 +55,12 @@ if (isset($_POST['update'])) {
         'system_users_id'       => max(0, (int) ($_POST['system_users_id'] ?? 0)),
     ]);
 
-    Session::addMessageAfterRedirect(htmlescape(__('Configuration saved.', 'ticketflow')), true, INFO);
+    Session::addMessageAfterRedirect(htmlescape(__('Configuration saved.', 'ticketclock')), true, INFO);
     Html::back();
 }
 
 Html::header(
-    __('TicketFlow', 'ticketflow'),
+    __('TicketFlow', 'ticketclock'),
     $_SERVER['PHP_SELF'],
     'admin',
     Menu::class,

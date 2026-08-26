@@ -27,13 +27,13 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
-use GlpiPlugin\Ticketflow\Execution;
-use GlpiPlugin\Ticketflow\Menu;
-use GlpiPlugin\Ticketflow\Rule;
+use GlpiPlugin\Ticketclock\Execution;
+use GlpiPlugin\Ticketclock\Menu;
+use GlpiPlugin\Ticketclock\Rule;
 
 include __DIR__ . '/../../../inc/includes.php';
 

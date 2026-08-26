@@ -8,9 +8,9 @@
 -->
 <root>
    <name>TicketFlow</name>
-   <key>ticketflow</key>
+   <key>ticketclock</key>
    <state>stable</state>
-   <logo>https://raw.githubusercontent.com/Jovinull/ticketflow/main/ticketflow.png</logo>
+   <logo>https://raw.githubusercontent.com/Jovinull/ticketclock/main/ticketclock.png</logo>
    <description>
       <short>
          <en>Time-based automation for tickets: business-day deadlines, configurable conditions and actions.</en>
@@ -99,17 +99,17 @@ Instalação nova não faz nada: execução desligada, simulação global ligada
       </long>
    </description>
    <screenshots>
-      <screenshot>https://raw.githubusercontent.com/Jovinull/ticketflow/main/docs/screenshots/01-rule-form.png</screenshot>
-      <screenshot>https://raw.githubusercontent.com/Jovinull/ticketflow/main/docs/screenshots/02-simulation.png</screenshot>
-      <screenshot>https://raw.githubusercontent.com/Jovinull/ticketflow/main/docs/screenshots/03-execution-log.png</screenshot>
-      <screenshot>https://raw.githubusercontent.com/Jovinull/ticketflow/main/docs/screenshots/04-diagnostics.png</screenshot>
-      <screenshot>https://raw.githubusercontent.com/Jovinull/ticketflow/main/docs/screenshots/05-rule-list.png</screenshot>
-      <screenshot>https://raw.githubusercontent.com/Jovinull/ticketflow/main/docs/screenshots/06-configuration.png</screenshot>
+      <screenshot>https://raw.githubusercontent.com/Jovinull/ticketclock/main/docs/screenshots/01-rule-form.png</screenshot>
+      <screenshot>https://raw.githubusercontent.com/Jovinull/ticketclock/main/docs/screenshots/02-simulation.png</screenshot>
+      <screenshot>https://raw.githubusercontent.com/Jovinull/ticketclock/main/docs/screenshots/03-execution-log.png</screenshot>
+      <screenshot>https://raw.githubusercontent.com/Jovinull/ticketclock/main/docs/screenshots/04-diagnostics.png</screenshot>
+      <screenshot>https://raw.githubusercontent.com/Jovinull/ticketclock/main/docs/screenshots/05-rule-list.png</screenshot>
+      <screenshot>https://raw.githubusercontent.com/Jovinull/ticketclock/main/docs/screenshots/06-configuration.png</screenshot>
    </screenshots>
-   <homepage>https://github.com/Jovinull/ticketflow</homepage>
-   <download>https://github.com/Jovinull/ticketflow/releases</download>
-   <issues>https://github.com/Jovinull/ticketflow/issues</issues>
-   <readme>https://github.com/Jovinull/ticketflow/blob/main/README.md</readme>
+   <homepage>https://github.com/Jovinull/ticketclock</homepage>
+   <download>https://github.com/Jovinull/ticketclock/releases</download>
+   <issues>https://github.com/Jovinull/ticketclock/issues</issues>
+   <readme>https://github.com/Jovinull/ticketclock/blob/main/README.md</readme>
    <authors>
       <author>Felipe Jovino</author>
    </authors>
@@ -117,7 +117,7 @@ Instalação nova não faz nada: execução desligada, simulação global ligada
       <version>
          <num>1.0.0</num>
          <compatibility>~11.0.0</compatibility>
-         <download_url>https://github.com/Jovinull/ticketflow/releases/download/1.0.0/glpi-ticketflow-1.0.0.tar.bz2</download_url>
+         <download_url>https://github.com/Jovinull/ticketclock/releases/download/1.0.0/glpi-ticketclock-1.0.0.tar.bz2</download_url>
       </version>
    </versions>
    <langs>

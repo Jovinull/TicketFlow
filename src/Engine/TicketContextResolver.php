@@ -27,13 +27,13 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Engine;
+namespace GlpiPlugin\Ticketclock\Engine;
 
 use CommonITILActor;
 use CommonITILValidation;
@@ -48,8 +48,8 @@ use Search;
 use Ticket;
 use Ticket_User;
 use TicketValidation;
-use GlpiPlugin\Ticketflow\Engine\Action\AddFollowupAction;
-use GlpiPlugin\Ticketflow\Enum\ResetEvent;
+use GlpiPlugin\Ticketclock\Engine\Action\AddFollowupAction;
+use GlpiPlugin\Ticketclock\Enum\ResetEvent;
 
 use function Safe\strtotime;
 

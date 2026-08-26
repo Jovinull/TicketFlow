@@ -25,7 +25,7 @@
  # -------------------------------------------------------------------------
  # @copyright Copyright (C) 2026 Felipe Jovino.
  # @license   MIT https://opensource.org/licenses/mit-license.php
- # @link      https://github.com/Jovinull/ticketflow
+ # @link      https://github.com/Jovinull/ticketclock
  # -------------------------------------------------------------------------
  #}
 
@@ -33,28 +33,28 @@
     <div class="card-header">
         <h3 class="card-title">
             <i class="ti ti-player-play me-1"></i>
-            {{ was_real ? __('Manual run', 'ticketflow') : __('Simulation', 'ticketflow') }}
+            {{ was_real ? __('Manual run', 'ticketclock') : __('Simulation', 'ticketclock') }}
             — {{ rule.fields['name'] }}
         </h3>
     </div>
 
     <div class="card-body">
         <div class="alert alert-info">
-            <div class="fw-bold">{{ __('What this rule does', 'ticketflow') }}</div>
+            <div class="fw-bold">{{ __('What this rule does', 'ticketclock') }}</div>
             <div>{{ description }}</div>
         </div>
 
         {% if not was_real %}
             <div class="alert alert-secondary d-flex align-items-start">
                 <i class="ti ti-eye me-2 mt-1"></i>
-                <div>{{ __('Nothing was modified: no followup, no solution, no status change and no operational notification was produced.', 'ticketflow') }}</div>
+                <div>{{ __('Nothing was modified: no followup, no solution, no status change and no operational notification was produced.', 'ticketclock') }}</div>
             </div>
         {% endif %}
 
         {% if missing_ticket_right|default(false) %}
             <div class="alert alert-warning d-flex align-items-start">
                 <i class="ti ti-alert-triangle me-2 mt-1"></i>
-                <div>{{ __('You do not have the update right on tickets. A manual run acts as you, not as the scheduler, so ticket changes may be refused here even though the automatic action would succeed.', 'ticketflow') }}</div>
+                <div>{{ __('You do not have the update right on tickets. A manual run acts as you, not as the scheduler, so ticket changes may be refused here even though the automatic action would succeed.', 'ticketclock') }}</div>
             </div>
         {% endif %}
 
@@ -68,12 +68,12 @@
 
         <div class="row row-cards mb-3">
             {% set tiles = {
-                (__('Tickets analysed', 'ticketflow')): counters.analyzed,
-                (__('Match the conditions', 'ticketflow')): counters.matched,
-                (__('Past the deadline', 'ticketflow')): counters.expired,
-                (was_real ? __('Executed', 'ticketflow') : __('Would be processed now', 'ticketflow')): (was_real ? counters.executed : counters.simulated),
-                (__('Already processed', 'ticketflow')): counters.already_processed,
-                (__('Failed', 'ticketflow')): counters.failed,
+                (__('Tickets analysed', 'ticketclock')): counters.analyzed,
+                (__('Match the conditions', 'ticketclock')): counters.matched,
+                (__('Past the deadline', 'ticketclock')): counters.expired,
+                (was_real ? __('Executed', 'ticketclock') : __('Would be processed now', 'ticketclock')): (was_real ? counters.executed : counters.simulated),
+                (__('Already processed', 'ticketclock')): counters.already_processed,
+                (__('Failed', 'ticketclock')): counters.failed,
             } %}
             {% for label, value in tiles %}
                 <div class="col-6 col-md-4 col-xl-2">
@@ -89,7 +89,7 @@
 
         {% if report.errors|length > 0 %}
             <div class="alert alert-danger">
-                <div class="fw-bold">{{ __('Errors', 'ticketflow') }}</div>
+                <div class="fw-bold">{{ __('Errors', 'ticketclock') }}</div>
                 <ul class="mb-0">
                     {% for error in report.errors %}<li>{{ error }}</li>{% endfor %}
                 </ul>
@@ -97,7 +97,7 @@
         {% endif %}
 
         {% if report.preview|length == 0 %}
-            <p class="text-secondary">{{ __('No ticket currently matches this rule.', 'ticketflow') }}</p>
+            <p class="text-secondary">{{ __('No ticket currently matches this rule.', 'ticketclock') }}</p>
         {% else %}
             <div class="table-responsive">
                 <table class="table table-hover">
@@ -107,12 +107,12 @@
                             <th>{{ __('Title') }}</th>
                             <th>{{ __('Entity') }}</th>
                             <th>{{ __('Status') }}</th>
-                            <th>{{ __('Assigned groups', 'ticketflow') }}</th>
-                            <th>{{ __('Reference date', 'ticketflow') }}</th>
-                            <th>{{ __('Deadline', 'ticketflow') }}</th>
-                            <th>{{ __('Overdue', 'ticketflow') }}</th>
+                            <th>{{ __('Assigned groups', 'ticketclock') }}</th>
+                            <th>{{ __('Reference date', 'ticketclock') }}</th>
+                            <th>{{ __('Deadline', 'ticketclock') }}</th>
+                            <th>{{ __('Overdue', 'ticketclock') }}</th>
                             <th>{{ __('Calendar') }}</th>
-                            <th>{{ __('Outcome', 'ticketflow') }}</th>
+                            <th>{{ __('Outcome', 'ticketclock') }}</th>
                             <th>{{ __('Actions') }}</th>
                         </tr>
                     </thead>
@@ -137,7 +137,7 @@
                                 {{ row.deadline_date|date('Y-m-d H:i') }}
                                 {% if row.used_elapsed_fallback %}
                                     <i class="ti ti-alert-triangle text-warning ms-1"
-                                       title="{{ __('No usable calendar: computed as plain elapsed time.', 'ticketflow') }}"></i>
+                                       title="{{ __('No usable calendar: computed as plain elapsed time.', 'ticketclock') }}"></i>
                                 {% endif %}
                             </td>
                             <td>
@@ -150,13 +150,13 @@
                             <td>{{ row.calendar_name|default('—') }}</td>
                             <td>
                                 {% if row.reason == 'would_execute' %}
-                                    <span class="badge bg-warning">{{ __('Would be processed', 'ticketflow') }}</span>
+                                    <span class="badge bg-warning">{{ __('Would be processed', 'ticketclock') }}</span>
                                 {% elseif row.reason == 'executed' %}
-                                    <span class="badge bg-success">{{ __('Executed', 'ticketflow') }}</span>
+                                    <span class="badge bg-success">{{ __('Executed', 'ticketclock') }}</span>
                                 {% elseif row.reason == 'failed' %}
-                                    <span class="badge bg-danger">{{ __('Failed', 'ticketflow') }}</span>
+                                    <span class="badge bg-danger">{{ __('Failed', 'ticketclock') }}</span>
                                 {% else %}
-                                    <span class="badge bg-secondary">{{ __('Still within the deadline', 'ticketflow') }}</span>
+                                    <span class="badge bg-secondary">{{ __('Still within the deadline', 'ticketclock') }}</span>
                                 {% endif %}
                             </td>
                             <td class="small text-secondary">{{ row.actions|join(', ') }}</td>
@@ -168,7 +168,7 @@
 
             {% if report.preview_omitted > 0 %}
                 <p class="text-secondary">
-                    {{ __('%d more matching tickets are not listed here. Raise "Maximum candidates per run" to see them all.', 'ticketflow')|format(report.preview_omitted) }}
+                    {{ __('%d more matching tickets are not listed here. Raise "Maximum candidates per run" to see them all.', 'ticketclock')|format(report.preview_omitted) }}
                 </p>
             {% endif %}
         {% endif %}
@@ -176,19 +176,19 @@
 
     <div class="card-footer d-flex flex-row-reverse">
         <a class="btn btn-outline-secondary ms-2"
-           href="{{ config('root_doc') }}/plugins/ticketflow/front/rule.form.php?id={{ rule.fields['id'] }}">
+           href="{{ config('root_doc') }}/plugins/ticketclock/front/rule.form.php?id={{ rule.fields['id'] }}">
             <i class="ti ti-arrow-left"></i>
-            <span>{{ __('Back to the rule', 'ticketflow') }}</span>
+            <span>{{ __('Back to the rule', 'ticketclock') }}</span>
         </a>
 
         {% if can_run and not was_real %}
-            <form method="post" action="{{ config('root_doc') }}/plugins/ticketflow/front/rule.simulate.php"
-                  onsubmit="return confirm('{{ __('This will really execute the rule on the tickets listed above. Continue?', 'ticketflow')|e('js') }}');">
+            <form method="post" action="{{ config('root_doc') }}/plugins/ticketclock/front/rule.simulate.php"
+                  onsubmit="return confirm('{{ __('This will really execute the rule on the tickets listed above. Continue?', 'ticketclock')|e('js') }}');">
                 <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token() }}" />
                 <input type="hidden" name="id" value="{{ rule.fields['id'] }}" />
                 <button class="btn btn-danger" type="submit" name="run_real" value="1">
                     <i class="ti ti-player-play"></i>
-                    <span>{{ __('Run for real now', 'ticketflow') }}</span>
+                    <span>{{ __('Run for real now', 'ticketclock') }}</span>
                 </button>
             </form>
         {% endif %}

@@ -27,13 +27,13 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Enum;
+namespace GlpiPlugin\Ticketclock\Enum;
 
 /**
  * What starts the clock.
@@ -55,16 +55,16 @@ enum StartEvent: string
     public function label(): string
     {
         return match ($this) {
-            self::PendingStart => __('When the ticket entered the status', 'ticketflow'),
-            self::LastTargetGroupMessage => __('Last message, when written by the target group', 'ticketflow'),
+            self::PendingStart => __('When the ticket entered the status', 'ticketclock'),
+            self::LastTargetGroupMessage => __('Last message, when written by the target group', 'ticketclock'),
         };
     }
 
     public function helper(): string
     {
         return match ($this) {
-            self::PendingStart => __('The countdown runs from the moment the ticket entered the selected status.', 'ticketflow'),
-            self::LastTargetGroupMessage => __('The rule only applies while the most recent message on the ticket was written by a member of one of the target groups. The countdown runs from that message, and stops as soon as anybody else replies.', 'ticketflow'),
+            self::PendingStart => __('The countdown runs from the moment the ticket entered the selected status.', 'ticketclock'),
+            self::LastTargetGroupMessage => __('The rule only applies while the most recent message on the ticket was written by a member of one of the target groups. The countdown runs from that message, and stops as soon as anybody else replies.', 'ticketclock'),
         };
     }
 

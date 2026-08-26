@@ -7,7 +7,7 @@ Usage, from inside a container that has chromium and can reach the instance:
              --disable-crash-reporter --disable-crashpad --hide-scrollbars \
              --remote-debugging-port=9222 --user-data-dir=/tmp/chrome-prof about:blank &
     python3 seed-screenshots.py http://127.0.0.1 /tmp/shots \
-        '[["01-rule-form.png", "/plugins/ticketflow/front/rule.form.php?id=1", true]]'
+        '[["01-rule-form.png", "/plugins/ticketclock/front/rule.form.php?id=1", true]]'
 
 Seed the instance with `tools/seed-demo.php` first, and only ever on a demo database:
 these screens show ticket titles, group names and user names.

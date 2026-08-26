@@ -140,7 +140,7 @@ tickets that most needed processing.
 ## 5. Data model
 
 ```
-glpi_plugin_ticketflow_rules
+glpi_plugin_ticketclock_rules
     id, entities_id, is_recursive, name, comment, is_active, ranking,
     rule_type, target_status, pendingreasons_id,
     delay_value, delay_unit, calendar_mode, calendars_id,
@@ -148,16 +148,16 @@ glpi_plugin_ticketflow_rules
     last_execution_date, date_creation, date_mod
         KEY active_type (is_active, rule_type)   ← the loop that runs every cron tick
 
-glpi_plugin_ticketflow_rulegroups
-    plugin_ticketflow_rules_id, groups_id
+glpi_plugin_ticketclock_rulegroups
+    plugin_ticketclock_rules_id, groups_id
         UNIQUE (rules_id, groups_id)
 
-glpi_plugin_ticketflow_ruleactions
-    plugin_ticketflow_rules_id, action_type, ranking, params (JSON)
+glpi_plugin_ticketclock_ruleactions
+    plugin_ticketclock_rules_id, action_type, ranking, params (JSON)
         KEY rule_ranking (rules_id, ranking)
 
-glpi_plugin_ticketflow_executions
-    plugin_ticketflow_rules_id, tickets_id, entities_id,
+glpi_plugin_ticketclock_executions
+    plugin_ticketclock_rules_id, tickets_id, entities_id,
     occurrence_key, claim_key, state,
     reference_date, deadline_date, calendars_id, calendar_name,
     delay_value, delay_unit, used_elapsed_fallback, itilvalidations_id,
@@ -240,7 +240,7 @@ execution is closed as `skipped: state_changed` and nothing is modified.
 A followup TicketFlow writes must never be read back as "somebody answered".
 
 Two independent mechanisms: generated content carries the marker
-`<!-- ticketflow-generated -->`, which `TicketContextResolver` filters out of every
+`<!-- ticketclock-generated -->`, which `TicketContextResolver` filters out of every
 followup query; and the created followup's id is recorded on the execution row, so the
 plugin's own writes are traceable after the fact.
 

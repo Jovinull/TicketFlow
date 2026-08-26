@@ -19,7 +19,7 @@ Two GLPI automatic actions, registered by `CronTask::register()` on install:
 
 GLPI dispatches a plugin task as `sprintf('%s::cron%s', $itemtype, $name)`
 (`CronTask.php:882`) and discovers namespaced plugin itemtypes (`CronTask.php:426`), so
-`GlpiPlugin\Ticketflow\Cron::cronProcessRules()` is found without any extra registration.
+`GlpiPlugin\Ticketclock\Cron::cronProcessRules()` is found without any extra registration.
 
 `Cron` is an entry point and nothing more: it calls the engine, reports the volume, writes
 one summary line. It contains no business logic.

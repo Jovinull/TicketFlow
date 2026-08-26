@@ -27,21 +27,21 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Tests\Integration;
+namespace GlpiPlugin\Ticketclock\Tests\Integration;
 
 use Group;
-use GlpiPlugin\Ticketflow\Config;
-use GlpiPlugin\Ticketflow\Enum\ActionType;
-use GlpiPlugin\Ticketflow\Enum\StartEvent;
-use GlpiPlugin\Ticketflow\Rule;
-use GlpiPlugin\Ticketflow\RuleAction;
-use GlpiPlugin\Ticketflow\RuleGroup;
+use GlpiPlugin\Ticketclock\Config;
+use GlpiPlugin\Ticketclock\Enum\ActionType;
+use GlpiPlugin\Ticketclock\Enum\StartEvent;
+use GlpiPlugin\Ticketclock\Rule;
+use GlpiPlugin\Ticketclock\RuleAction;
+use GlpiPlugin\Ticketclock\RuleGroup;
 use PHPUnit\Framework\TestCase;
 use Session;
 use Ticket;
@@ -88,7 +88,7 @@ final class RuleFormTest extends TestCase
 
         $_SESSION['glpiactiveprofile'] = [
             'id'                     => 0,
-            'name'                   => 'ticketflow-tests',
+            'name'                   => 'ticketclock-tests',
             'interface'              => 'central',
             Rule::$rightname         => ALLSTANDARDRIGHT,
             'ticket'                 => ALLSTANDARDRIGHT,
@@ -293,8 +293,8 @@ final class RuleFormTest extends TestCase
         ob_start();
         try {
             \Glpi\Application\View\TemplateRenderer::getInstance()->display(
-                '@ticketflow/inspect.html.twig',
-                ['report' => \GlpiPlugin\Ticketflow\Inspector::report()],
+                '@ticketclock/inspect.html.twig',
+                ['report' => \GlpiPlugin\Ticketclock\Inspector::report()],
             );
         } catch (Throwable $e) {
             ob_end_clean();

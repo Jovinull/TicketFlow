@@ -27,13 +27,13 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow;
+namespace GlpiPlugin\Ticketclock;
 
 use CommonDBChild;
 use Dropdown;
@@ -47,16 +47,16 @@ use Dropdown;
  */
 class RuleGroup extends CommonDBChild
 {
-    public static $rightname = 'plugin_ticketflow_rule';
+    public static $rightname = 'plugin_ticketclock_rule';
 
     public static $itemtype = Rule::class;
-    public static $items_id = 'plugin_ticketflow_rules_id';
+    public static $items_id = 'plugin_ticketclock_rules_id';
 
     public $dohistory = true;
 
     public static function getTypeName($nb = 0)
     {
-        return _n('Target group', 'Target groups', $nb, 'ticketflow');
+        return _n('Target group', 'Target groups', $nb, 'ticketclock');
     }
 
     /**
@@ -75,7 +75,7 @@ class RuleGroup extends CommonDBChild
         $iterator = $DB->request([
             'SELECT' => 'groups_id',
             'FROM'   => self::getTable(),
-            'WHERE'  => ['plugin_ticketflow_rules_id' => $rules_id],
+            'WHERE'  => ['plugin_ticketclock_rules_id' => $rules_id],
             'ORDER'  => 'groups_id',
         ]);
 
@@ -123,14 +123,14 @@ class RuleGroup extends CommonDBChild
 
         foreach (array_diff($current, $wanted) as $obsolete) {
             $link->deleteByCriteria([
-                'plugin_ticketflow_rules_id' => $rules_id,
+                'plugin_ticketclock_rules_id' => $rules_id,
                 'groups_id'                  => $obsolete,
             ]);
         }
 
         foreach (array_diff($wanted, $current) as $missing) {
             (new self())->add([
-                'plugin_ticketflow_rules_id' => $rules_id,
+                'plugin_ticketclock_rules_id' => $rules_id,
                 'groups_id'                  => $missing,
             ]);
         }

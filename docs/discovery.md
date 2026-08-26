@@ -39,8 +39,8 @@ $psr4_autoloader->addPsr4(NS_PLUG . ucfirst($plugin_key) . '\\', $psr4_dir);
 ```
 
 `NS_PLUG` is `GlpiPlugin\` (`src/autoload/constants.php:63`). With the plugin directory
-named `ticketflow`, the namespace is therefore exactly **`GlpiPlugin\Ticketflow\`** mapped to
-`plugins/ticketflow/src/`. No custom autoloader and no Composer autoload file is needed —
+named `ticketclock`, the namespace is therefore exactly **`GlpiPlugin\Ticketclock\`** mapped to
+`plugins/ticketclock/src/`. No custom autoloader and no Composer autoload file is needed —
 this is the same mechanism the official `pluginsGLPI/example` plugin relies on.
 
 Twig templates are picked up automatically:
@@ -50,7 +50,7 @@ Twig templates are picked up automatically:
 $loader->addPath(Plugin::getPhpDir($plugin_key . '/templates'), $plugin_key);
 ```
 
-so `plugins/ticketflow/templates/foo.html.twig` is addressable as `@ticketflow/foo.html.twig`.
+so `plugins/ticketclock/templates/foo.html.twig` is addressable as `@ticketclock/foo.html.twig`.
 
 Front controllers use the classic legacy router (`front/*.php` + `include('.../inc/includes.php')`),
 which is still the supported and dominant pattern for plugins in GLPI 11 — the official
@@ -75,7 +75,7 @@ widely-tested path and renders its views with Twig.
 | Pending state | `PendingReason`, `PendingReason_Item` | |
 | Approvals | `TicketValidation` / `CommonITILValidation`, `ITIL_ValidationStep` | statuses `NONE 1 / WAITING 2 / ACCEPTED 3 / REFUSED 4` (`CommonITILValidation.php:62-65`) |
 | Rights | `ProfileRight::addProfileRights()` / `deleteProfileRights()` | |
-| Global config | `Config::setConfigurationValues('plugin:ticketflow', …)` | no bespoke config table needed |
+| Global config | `Config::setConfigurationValues('plugin:ticketclock', …)` | no bespoke config table needed |
 | Views | `Glpi\Application\View\TemplateRenderer` + `templates/components/form/fields_macros.html.twig` | |
 | Listing/search | `Search::show()` + `rawSearchOptions()` | gives filtering, sorting, CSV export, entity restriction for free |
 | Notifications | `NotificationEvent::raiseEvent()` | optional action |
@@ -275,8 +275,8 @@ Each candidate produces an **occurrence key** that identifies the current cycle:
 | `pending_inactivity` | `pi:<tickets_id>:<begin_waiting_date>` |
 | `pending_approval` | `pa:<ticketvalidations_id>:<submission_date>` |
 
-`glpi_plugin_ticketflow_executions` carries
-`UNIQUE KEY (plugin_ticketflow_rules_id, tickets_id, occurrence_key)`.
+`glpi_plugin_ticketclock_executions` carries
+`UNIQUE KEY (plugin_ticketclock_rules_id, tickets_id, occurrence_key)`.
 
 The engine **claims** an occurrence by inserting a row with `state = processing`. A duplicate
 key error means another worker/cron already owns it, and the candidate is skipped. This gives
@@ -300,7 +300,7 @@ The engine never treats "the timeline moved" as activity, and never uses `date_m
 * `validation_answered` — a validation row left `WAITING`.
 
 TicketFlow's own generated followups are excluded from all of these: every generated followup
-is prefixed with the marker `<!-- ticketflow-generated -->` **and** its id is recorded on the
+is prefixed with the marker `<!-- ticketclock-generated -->` **and** its id is recorded on the
 execution row. This is what prevents the plugin from resetting its own clock (§18 of the brief).
 
 ## 11. Hooks

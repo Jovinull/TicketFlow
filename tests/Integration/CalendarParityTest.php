@@ -27,20 +27,20 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Tests\Integration;
+namespace GlpiPlugin\Ticketclock\Tests\Integration;
 
 use Calendar;
 use CalendarSegment;
 use Calendar_Holiday;
-use GlpiPlugin\Ticketflow\Calendar\CalendarDefinition;
-use GlpiPlugin\Ticketflow\Calendar\GlpiCalendarEngine;
-use GlpiPlugin\Ticketflow\Calendar\InMemoryCalendarEngine;
+use GlpiPlugin\Ticketclock\Calendar\CalendarDefinition;
+use GlpiPlugin\Ticketclock\Calendar\GlpiCalendarEngine;
+use GlpiPlugin\Ticketclock\Calendar\InMemoryCalendarEngine;
 use Holiday;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;

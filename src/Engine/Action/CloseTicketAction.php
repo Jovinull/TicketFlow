@@ -27,19 +27,19 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Engine\Action;
+namespace GlpiPlugin\Ticketclock\Engine\Action;
 
 use Ticket;
-use GlpiPlugin\Ticketflow\Engine\ActionContext;
-use GlpiPlugin\Ticketflow\Engine\ActionDefinition;
-use GlpiPlugin\Ticketflow\Engine\ActionResult;
-use GlpiPlugin\Ticketflow\Enum\ActionType;
+use GlpiPlugin\Ticketclock\Engine\ActionContext;
+use GlpiPlugin\Ticketclock\Engine\ActionDefinition;
+use GlpiPlugin\Ticketclock\Engine\ActionResult;
+use GlpiPlugin\Ticketclock\Enum\ActionType;
 use Throwable;
 
 /**
@@ -60,7 +60,7 @@ final class CloseTicketAction implements ActionInterface
 
     public function describe(ActionDefinition $definition): string
     {
-        return __('close the ticket', 'ticketflow');
+        return __('close the ticket', 'ticketclock');
     }
 
     public function execute(ActionDefinition $definition, ActionContext $context): ActionResult
@@ -70,13 +70,13 @@ final class CloseTicketAction implements ActionInterface
         if ($context->ticket->status === $closed) {
             return ActionResult::success(
                 ActionType::CloseTicket,
-                __('The ticket is already closed.', 'ticketflow'),
+                __('The ticket is already closed.', 'ticketclock'),
                 ['changed' => false],
             );
         }
 
         if ($context->dry_run) {
-            return ActionResult::simulated(ActionType::CloseTicket, __('The ticket would be closed.', 'ticketflow'));
+            return ActionResult::simulated(ActionType::CloseTicket, __('The ticket would be closed.', 'ticketclock'));
         }
 
         try {
@@ -91,7 +91,7 @@ final class CloseTicketAction implements ActionInterface
         }
 
         return $ok
-            ? ActionResult::success(ActionType::CloseTicket, __('Ticket closed.', 'ticketflow'), ['changed' => true])
-            : ActionResult::failure(ActionType::CloseTicket, __('The ticket could not be closed.', 'ticketflow'));
+            ? ActionResult::success(ActionType::CloseTicket, __('Ticket closed.', 'ticketclock'), ['changed' => true])
+            : ActionResult::failure(ActionType::CloseTicket, __('The ticket could not be closed.', 'ticketclock'));
     }
 }

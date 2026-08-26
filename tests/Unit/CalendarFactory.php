@@ -27,17 +27,17 @@
  * -------------------------------------------------------------------------
  * @copyright Copyright (C) 2026 Felipe Jovino.
  * @license   MIT https://opensource.org/licenses/mit-license.php
- * @link      https://github.com/Jovinull/ticketflow
+ * @link      https://github.com/Jovinull/ticketclock
  * -------------------------------------------------------------------------
  */
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketflow\Tests\Unit;
+namespace GlpiPlugin\Ticketclock\Tests\Unit;
 
-use GlpiPlugin\Ticketflow\Calendar\BusinessTimeCalculator;
-use GlpiPlugin\Ticketflow\Calendar\CalendarDefinition;
-use GlpiPlugin\Ticketflow\Calendar\InMemoryCalendarEngine;
+use GlpiPlugin\Ticketclock\Calendar\BusinessTimeCalculator;
+use GlpiPlugin\Ticketclock\Calendar\CalendarDefinition;
+use GlpiPlugin\Ticketclock\Calendar\InMemoryCalendarEngine;
 
 /**
  * Calendars the tests share.

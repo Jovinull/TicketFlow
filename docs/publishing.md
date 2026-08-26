@@ -30,28 +30,28 @@ They are separate, and the second depends on the first.
 |---|---|---|
 | Publicly accessible git repository | tutorial · *Publishing your plugin* | ⚠️ **you must create it** — nothing else blocks |
 | Open source licence | same | ✅ MIT, `LICENSE` at the root |
-| Directory name alphanumeric only, never changes | guidelines · *Directories structure* | ✅ `ticketflow` |
+| Directory name alphanumeric only, never changes | guidelines · *Directories structure* | ✅ `ticketclock` |
 | `setup.php` and `hook.php` at the root | requirements | ✅ |
-| `plugin_version_ticketflow()` and `plugin_init_ticketflow()` | requirements | ✅ |
+| `plugin_version_ticketclock()` and `plugin_init_ticketclock()` | requirements | ✅ |
 | `README.md` and `LICENSE` | guidelines | ✅ |
 
 ### 2.2 The XML manifest
 
-The catalog reads one file. Ours is [`ticketflow.xml`](../ticketflow.xml).
+The catalog reads one file. Ours is [`ticketclock.xml`](../ticketclock.xml).
 
 | Requirement | Status |
 |---|---|
 | Well-formed XML | ✅ verified with `DOMDocument::load()` |
-| `<key>` matches the directory name exactly — lowercase, no spaces, no accents | ✅ `ticketflow`, asserted against the directory name |
+| `<key>` matches the directory name exactly — lowercase, no spaces, no accents | ✅ `ticketclock`, asserted against the directory name |
 | `<name>`, `<state>`, `<logo>`, `<description><short>/<long>`, `<homepage>`, `<download>`, `<issues>`, `<readme>`, `<authors>`, `<versions>`, `<langs>`, `<license>` | ✅ all present |
 | `<compatibility>` is a **Composer** version constraint | ✅ `~11.0.0` |
 | `<download_url>` per version, pointing at a downloadable archive | ✅ declared; the release must exist before submitting |
 | Descriptions in several languages, screenshots recommended | ✅ en / fr / pt-BR · ✅ six screenshots |
-| A logo image | ✅ `ticketflow.png`, 128×128 RGBA |
+| A logo image | ✅ `ticketclock.png`, 128×128 RGBA |
 
 Two things only you can do:
 
-1. **Submit the *raw* URL**, not the repository page. `https://github.com/…/blob/main/ticketflow.xml` is rejected; `https://raw.githubusercontent.com/…/refs/heads/main/ticketflow.xml` is right.
+1. **Submit the *raw* URL**, not the repository page. `https://github.com/…/blob/main/ticketclock.xml` is rejected; `https://raw.githubusercontent.com/…/refs/heads/main/ticketclock.xml` is right.
 2. **Every URL in the manifest must resolve.** The CI checks this on any PR that touches the
    manifest, and a `<download_url>` for a release that does not exist yet is the one
    tolerated exception.
@@ -61,7 +61,7 @@ Two things only you can do:
 > The archive must contain a directory named after the plugin's technical name, with all
 > files inside it.
 
-✅ The repository ships the plugin as `ticketflow/`, so `tar czf glpi-ticketflow-1.0.0.tar.bz2 ticketflow/` produces exactly the required shape.
+✅ The repository ships the plugin as `ticketclock/`, so `tar czf glpi-ticketclock-1.0.0.tar.bz2 ticketclock/` produces exactly the required shape.
 
 ### 2.4 Technical requirements for the Marketplace
 
@@ -114,7 +114,7 @@ with per-ticket cost flat between 1k and 30k.
 
 ### Screenshots
 
-`ticketflow.xml` carries six, in `docs/screenshots/`: the rule form, a dry run, the
+`ticketclock.xml` carries six, in `docs/screenshots/`: the rule form, a dry run, the
 execution log, diagnostics, the rule list and the configuration screen.
 
 They were captured on a **demo instance seeded on purpose** — a fresh database, an invented
@@ -134,7 +134,7 @@ a one-line change once CI has run green at least once.
 
 ## 4. What is left, and it is not code
 
-1. **Create the public repository** at `github.com/Jovinull/ticketflow` and push. Every URL
+1. **Create the public repository** at `github.com/Jovinull/ticketclock` and push. Every URL
    in the manifest, the headers and the docs already points there.
 2. **Cut the `1.0.0` tag.** `.github/workflows/release.yml` calls the official release
    workflow, which builds and attaches the archive.
@@ -150,7 +150,7 @@ anything, and both were worth checking rather than assuming:
 
 | It greps for | To get | Ours |
 |---|---|---|
-| `function plugin_version_<key>` | the plugin key, which becomes the archive name | `ticketflow` |
+| `function plugin_version_<key>` | the plugin key, which becomes the archive name | `ticketclock` |
 | `PLUGIN_<KEY>_MIN_GLPI` / `_MAX_GLPI`, **quoted literal** | the "Compatible GLPI" line on the release page | `11.0.0` / `11.0.99` |
 
 The second one did not match at first: the constants were named `…_MIN_GLPI_VERSION` and
@@ -158,12 +158,12 @@ held class constants, so the grep returned nothing and the step degraded silentl
 release would simply have shipped without that line. Fixed, and pinned by a test.
 
 The archive it produces is `glpi-<key>-<tag>.tar.bz2`, so tag `1.0.0` yields
-`glpi-ticketflow-1.0.0.tar.bz2` — exactly what `<download_url>` in the manifest already
+`glpi-ticketclock-1.0.0.tar.bz2` — exactly what `<download_url>` in the manifest already
 points at.
 
 ### The archive, verified
 
-`glpi-ticketflow-1.0.0.tar.bz2` was built and installed on a *fourth* throwaway instance —
+`glpi-ticketclock-1.0.0.tar.bz2` was built and installed on a *fourth* throwaway instance —
 a virgin GLPI 11.0.4, the archive unpacked into `plugins/`, nothing from the working tree.
 It installs, activates, and lands inert exactly as designed:
 
@@ -214,8 +214,8 @@ actually download rather than against the source tree.
 # a GLPI development checkout, with dev dependencies (that is where the tools live)
 git clone --branch 11.0.4 https://github.com/glpi-project/glpi.git
 cd glpi && composer install
-cp -r /path/to/ticketflow plugins/ticketflow
-cd plugins/ticketflow
+cp -r /path/to/ticketclock plugins/ticketclock
+cd plugins/ticketclock
 
 ../../vendor/bin/parallel-lint --exclude ./vendor/ --no-progress .
 PHP_CS_FIXER_IGNORE_ENV=1 php ../../vendor/bin/php-cs-fixer check --config=.php-cs-fixer.php
