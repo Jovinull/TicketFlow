@@ -5,6 +5,65 @@ All notable changes to TicketFlow are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] — 2026-08-31
+
+Security release. Everything here came out of GLPI's pre-publication security review and two
+independent reviews of the fixes it prompted. Nothing in it changes what the plugin does; all
+of it changes what it refuses to do.
+
+**Anyone running 1.0.0 should upgrade.** Two of these are reachable by an operator who was
+never given helpdesk rights, on a screen the plugin's own right already granted them.
+
+### Fixed
+
+- **The diagnostics page reported the whole instance, not the reader's entities.** Entity
+  names, per-entity ticket counts, group workloads and pending/approval volumes were
+  aggregated with no entity restriction, on a page gated only by this plugin's UPDATE right
+  — which `Profile::installRights()` grants to every profile holding `config`, including the
+  administrator of a single subsidiary. Every query is now narrowed with
+  `getEntitiesRestrictCriteria()`; the two link tables with no `entities_id` of their own
+  join the ticket and restrict on that.
+- **A manual run could reach outside the operator's entities.** A recursive rule stored on a
+  parent entity is readable from every child. `CandidateFinder` resolved the rule's entity
+  plus all descendants without consulting the session, which is correct for the scheduled run
+  and a way out of the entity tree for the "Run for real" button: an operator confined to one
+  child could act on tickets in a sibling entity. The manual caller now goes through
+  `RuleEngine::forOperator()`, which intersects the rule's scope with
+  `Session::getActiveEntities()`. The dry run is narrowed too; its preview lists ticket ids
+  and titles.
+- **A manual run did not check ticket permissions at all.** `CommonDBTM::add()` and
+  `update()` never call `can()`; authorization in GLPI lives in the controller. So the
+  plugin's own right was the only gate on code that adds followups, writes solutions and
+  closes tickets. `OperatorAuthorization` now asks, per action, the question core would ask:
+  `canAddFollowups()` for a followup, `canSolve()` for a solution, `can(UPDATE)` plus
+  `isAllowedStatus()` for a status change or a hard close. Refusals are recorded as failed
+  actions in the execution log rather than passing silently.
+- **The status transition matrix was bypassed.** `Ticket::update()` does not enforce it —
+  core applies it when building the status dropdown — so a profile that denies a transition
+  simply never sees it offered. The manual run offered it anyway.
+- The acting user could be set to an id that resolves to no user, or to a deleted one. It is
+  the author written into ticket history, so an unresolvable id is now refused rather than
+  stored.
+- Unreadable JSON in an action's stored parameters decoded to `[]` and the action ran anyway.
+  It is now dropped. `Execution::claim()` treated every database error as "another cron got
+  here first"; only a duplicate key means that now, and a real failure surfaces.
+- The diagnostics entity table stopped at 200 rows without saying so.
+
+### Changed
+
+- The policy that authorizes a manual run is deliberately **not** applied to the scheduled
+  run. Core's capability methods apply the profile's status matrix, and a cron run carries no
+  profile at all, so `isAllowedStatus()` answers false for everything: sharing one check
+  between the two callers stops the plugin solving anything, on every installation.
+- `thecodingmachine/safe` is no longer a dependency. It was declared dev-only while fourteen
+  runtime files imported from it, and the plugin worked only because GLPI core requires the
+  same package — the release archive shipped without it and ran on the host application's
+  copy. Re-declaring it would not have helped either, since GLPI never loads a plugin's own
+  `vendor/autoload.php`.
+- Install-time `CREATE TABLE` statements pass their table names through `$DB->quoteName()`.
+- `.gitattributes` keeps development tooling out of the archives GitHub generates from a tag,
+  so a source download matches what the release ships.
+
 ## [1.0.0] — 2026-08-26
 
 First public release. The two entries below it are the development history that led here.
