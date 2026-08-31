@@ -48,6 +48,7 @@ use Search;
 use Ticket;
 use Ticket_User;
 use TicketValidation;
+use GlpiPlugin\Ticketclock\Config;
 use GlpiPlugin\Ticketclock\Engine\Action\AddFollowupAction;
 use GlpiPlugin\Ticketclock\Enum\ResetEvent;
 use GlpiPlugin\Ticketclock\Support\Time;
@@ -272,15 +273,18 @@ final class TicketContextResolver
         /** @var \DBmysql $DB */
         global $DB;
 
+        $where = [
+            'itemtype' => Ticket::class,
+            'items_id' => $ids,
+            ['NOT' => ['content' => ['LIKE', '%' . AddFollowupAction::MARKER . '%']]],
+        ];
+        $this->excludeAutomaticReplies($where);
+
         $out = [];
         $iterator = $DB->request([
             'SELECT' => ['items_id', 'users_id', 'date'],
             'FROM'   => ITILFollowup::getTable(),
-            'WHERE'  => [
-                'itemtype' => Ticket::class,
-                'items_id' => $ids,
-                ['NOT' => ['content' => ['LIKE', '%' . AddFollowupAction::MARKER . '%']]],
-            ],
+            'WHERE'  => $where,
             'ORDER'  => 'date ASC',
         ]);
 
@@ -349,7 +353,8 @@ final class TicketContextResolver
      *
      * Public only: a private note is invisible to the requester, so it cannot be the
      * message that put the ball in their court. TicketFlow's own generated followups are
-     * excluded here too, exactly as in loadFollowups().
+     * excluded here too, exactly as in loadFollowups(), and so is anything carrying one of
+     * the configured automatic-reply marks.
      *
      * @param list<int> $ids
      * @return array<int, array<string, mixed>>
@@ -359,16 +364,20 @@ final class TicketContextResolver
         /** @var \DBmysql $DB */
         global $DB;
 
+        $where = [
+            'itemtype'   => Ticket::class,
+            'items_id'   => $ids,
+            'is_private' => 0,
+            ['NOT' => ['content' => ['LIKE', '%' . AddFollowupAction::MARKER . '%']]],
+        ];
+
+        $this->excludeAutomaticReplies($where);
+
         $out = [];
         $iterator = $DB->request([
             'SELECT' => ['id', 'items_id', 'users_id', 'date'],
             'FROM'   => ITILFollowup::getTable(),
-            'WHERE'  => [
-                'itemtype'   => Ticket::class,
-                'items_id'   => $ids,
-                'is_private' => 0,
-                ['NOT' => ['content' => ['LIKE', '%' . AddFollowupAction::MARKER . '%']]],
-            ],
+            'WHERE'  => $where,
             'ORDER'  => ['items_id ASC', 'date ASC', 'id ASC'],
         ]);
 
@@ -378,6 +387,29 @@ final class TicketContextResolver
         }
 
         return $out;
+    }
+
+    /**
+     * Drops the configured automatic-reply marks from a followup query.
+     *
+     * Applied to both followup queries, and that is the point. One decides who sent the last
+     * message; the other feeds the reset events, so an out of office reply would restart the
+     * clock even where it did not win the "last message" comparison. Filtering only one of
+     * them fixes half the bug and leaves the half that is harder to notice.
+     *
+     * Done in SQL rather than afterwards in PHP because both queries pick or order rows: a
+     * row removed after the fact has already influenced the answer.
+     *
+     * @param array<int|string, mixed> $where modified in place
+     */
+    private function excludeAutomaticReplies(array &$where): void
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        foreach (Config::ignoredMessageMarks() as $mark) {
+            $where[] = ['NOT' => ['content' => ['LIKE', '%' . $DB->escape($mark) . '%']]];
+        }
     }
 
     /**

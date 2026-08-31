@@ -67,7 +67,40 @@ final class Config
         'system_users_id'       => '0',
         'log_dry_runs'          => '1',
         'log_retention_days'    => '90',
+        'ignored_message_marks' => self::DEFAULT_IGNORED_MARKS,
     ];
+
+    /**
+     * Text that marks a followup as machinery answering, not a person.
+     *
+     * An out of office reply arrives through the mail collector as an ordinary public
+     * followup signed by the requester, and the engine reads it as an answer. On a rule
+     * whose clock runs while the last message came from your own team, that silences the
+     * rule: the ticket is never chased, never solved, and nothing is logged, so it rots
+     * without anybody finding out.
+     *
+     * Substrings rather than regular expressions, on purpose. They are matched in SQL before
+     * the latest message is picked, which is the only place the exclusion can work; a regex
+     * would have to be applied in PHP afterwards, by which point the wrong row has already
+     * won. They also cannot be made to backtrack, and an administrator editing this field
+     * cannot break the engine with a bad pattern.
+     *
+     * The default covers what the common mail systems put in an automatic reply, in the
+     * languages this plugin ships. It is a starting point and is meant to be edited: local
+     * gateways word these differently, and the Diagnostics screen shows how many recent
+     * followups each mark catches so the list can be tuned against real traffic.
+     */
+    public const DEFAULT_IGNORED_MARKS = "Out of Office\n"
+        . "Out of the Office\n"
+        . "Automatic reply\n"
+        . "Auto-Reply\n"
+        . "Autoreply\n"
+        . "Absence du bureau\n"
+        . "Réponse automatique\n"
+        . "Resposta automática\n"
+        . "Ausência temporária\n"
+        . "Automatische Antwort\n"
+        . "Respuesta automática";
 
     /** @var array<string, string>|null */
     private static ?array $cache = null;
@@ -154,6 +187,28 @@ final class Config
             CoreConfig::setConfigurationValues(self::CONTEXT, $clean);
             self::$cache = null;
         }
+    }
+
+    /**
+     * The marks currently configured, empty ones dropped.
+     *
+     * @return list<string>
+     */
+    public static function ignoredMessageMarks(): array
+    {
+        $raw = self::get('ignored_message_marks');
+
+        // explode on normalised newlines rather than preg_split: the separator is a literal,
+        // so there is nothing a regex buys here beyond a function that can fail.
+        $marks = [];
+        foreach (explode("\n", str_replace(["\r\n", "\r"], "\n", $raw)) as $line) {
+            $line = trim($line);
+            if ($line !== '') {
+                $marks[] = $line;
+            }
+        }
+
+        return $marks;
     }
 
     private static function userExists(int $users_id): bool

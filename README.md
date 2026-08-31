@@ -204,6 +204,21 @@ a fixed whitelist of names, each escaped before it reaches the timeline.
 An unknown placeholder is **left visible** rather than blanked, so a typo shows up in the
 dry run instead of producing a hole in a customer-facing message.
 
+### Automatic replies
+
+An out-of-office reply reaches GLPI through the mail collector as an ordinary public followup
+signed by the requester, which is exactly what the engine looks for when it decides who is
+holding the ticket. Left alone it reads as an answer, and a rule waiting on the requester
+goes quiet for good: the ticket is never chased, never solved, and nothing is written
+anywhere.
+
+*Setup > TicketFlow > Configuration > Ignore messages containing* holds one substring per
+line, matched case-insensitively against the followup body. Anything carrying one of them is
+neither treated as an answer nor allowed to restart the clock. The shipped list covers the
+usual wording in English, French, Portuguese, German and Spanish; local mail gateways word
+these differently, so it is meant to be edited. Leaving it empty counts every message, which
+is the old behaviour.
+
 ## Idempotency
 
 Each match belongs to an **occurrence**, identified by the cycle it belongs to:
