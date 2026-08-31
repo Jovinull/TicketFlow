@@ -162,6 +162,38 @@ class Rule extends CommonDBTM
         ], ['id' => $rules_id, ['NOT' => ['last_error' => null]]]);
     }
 
+    /**
+     * Whether the operator administers this rule, rather than merely inheriting it.
+     *
+     * A real run writes to the rule row -- it records why the rule was refused, or clears an
+     * earlier record -- so it needs more than being able to see the rule. A recursive rule
+     * stored on a parent entity is visible from every child by design; that is what
+     * `is_recursive` is for. It is not a rule those children own.
+     *
+     * Stated here rather than left to `CommonDBTM::check($id, UPDATE)`, and that is the whole
+     * reason this method exists. Core changed the answer inside the range this plugin
+     * supports:
+     *
+     *     GLPI 11.0.0 - 11.0.4   canUpdateItem() -> checkEntity(true)   ancestor accepted
+     *     GLPI 11.0.5 and later  canUpdateItem() -> checkEntity()       ancestor refused
+     *
+     * So through 11.0.4 the item check alone lets a child-entity operator run and stamp
+     * metadata onto a parent's rule, and from 11.0.5 it does not. A guarantee that flips with
+     * the host's patch level is not a guarantee. The plugin states its own policy, and the
+     * test asserts that policy rather than which core method happens to be called.
+     *
+     * `haveAccessToEntity()` without the recursive flag is the direct-access test: the rule's
+     * entity has to be one of the session's own, not an ancestor of one.
+     */
+    public static function checkOperatorAdministersRule(self $rule): void
+    {
+        if (!Session::haveAccessToEntity((int) ($rule->fields['entities_id'] ?? -1))) {
+            throw new AccessDeniedHttpException(
+                'A real run writes to the rule, and this rule belongs to an entity outside your own.',
+            );
+        }
+    }
+
     public static function checkOperatorMayActOnTickets(): void
     {
         // haveRight() plus an explicit throw rather than Session::checkRight(), which also

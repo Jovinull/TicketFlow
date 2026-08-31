@@ -56,16 +56,13 @@ $rule->check($rules_id, READ);
 $run_real = isset($_POST['run_real']);
 if ($run_real) {
     Session::checkRight(Rule::$rightname, UPDATE);
-    // On this rule, not merely somewhere. `check()` is the item-level test, and GLPI 11
-    // splits the two directions: `canViewItem()` uses `checkEntity(true)`, which accepts an
-    // ancestor of the session's entities, so a recursive rule stored on a parent entity is
-    // visible from every child; `canUpdateItem()` uses `checkEntity()` without recursion, so
-    // it is not editable from there. A real run writes the refusal record onto the rule row,
-    // and writing to a rule is not something a reader gets to do.
-    //
-    // Easy to get backwards, so ManualRunAuthorizationTest pins it rather than leaving the
-    // guarantee resting on this comment.
+    // On this rule, not merely somewhere: the item-level test, which also applies whatever
+    // entity rules core applies to editing anything.
     $rule->check($rules_id, UPDATE);
+    // And the plugin's own policy on top, because the line above does not answer the same
+    // question on every supported GLPI: `canUpdateItem()` accepted an ancestor entity up to
+    // 11.0.4 and stopped at 11.0.5. See the method.
+    Rule::checkOperatorAdministersRule($rule);
     // ... and the rights the run will actually exercise on tickets. See the method.
     Rule::checkOperatorMayActOnTickets();
 }

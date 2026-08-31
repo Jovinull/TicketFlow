@@ -39,6 +39,7 @@ use Calendar;
 use CalendarSegment;
 use CommonITILActor;
 use Entity;
+use Glpi\Exception\Http\AccessDeniedHttpException;
 use Group;
 use Group_Ticket;
 use GlpiPlugin\Ticketclock\Config;
@@ -300,15 +301,15 @@ final class ManualRunAuthorizationTest extends TestCase
     /**
      * A rule inherited from a parent entity may be read, but not run for real.
      *
-     * This one is pinned rather than argued, because the argument is easy to get backwards.
-     * GLPI 11 splits the two: `canViewItem()` calls `checkEntity(true)`, which accepts an
-     * ancestor of the session's entities, so a recursive rule stored on the parent is visible
-     * from every child. `canUpdateItem()` calls `checkEntity()` without recursion, so it is
-     * not editable from there. `check($id, UPDATE)` therefore refuses it, and a real run --
-     * which writes the refusal record onto the rule row -- is refused with it.
+     * Asserted against the plugin's own guard, not against whichever core method it happens
+     * to sit next to. `CommonDBTM::canUpdateItem()` answered this differently inside the
+     * range the plugin supports -- `checkEntity(true)` up to GLPI 11.0.4, `checkEntity()`
+     * from 11.0.5 -- so an earlier version of this test passed on the CI's GLPI while the
+     * behaviour it claimed to protect was absent on 11.0.0 through 11.0.4. Testing the
+     * policy instead of the mechanism is what makes the result mean something on all of them.
      *
-     * If a future GLPI aligns the two, this test goes red instead of the plugin quietly
-     * widening who may act on somebody else's rule.
+     * Why the policy: a real run writes to the rule row. Being able to see a rule is not the
+     * same as administering it, and a recursive rule is visible from every child by design.
      */
     public function testAnInheritedRuleIsReadableButNotRunnableForReal(): void
     {
@@ -334,17 +335,24 @@ final class ManualRunAuthorizationTest extends TestCase
             $rule = new Rule();
             self::assertTrue($rule->getFromDB($inherited));
             self::assertTrue($rule->can($inherited, READ), 'an inherited rule must stay visible');
-            self::assertFalse(
-                $rule->can($inherited, UPDATE),
+
+            $refused = false;
+            try {
+                Rule::checkOperatorAdministersRule($rule);
+            } catch (AccessDeniedHttpException) {
+                $refused = true;
+            }
+            self::assertTrue(
+                $refused,
                 'a child entity could run and stamp metadata onto a rule it only inherits',
             );
 
+            // The other direction matters as much: a guard that also blocked the operator's
+            // own rule would be a regression wearing a fix's clothes.
             $mine = new Rule();
             self::assertTrue($mine->getFromDB($own));
-            self::assertTrue(
-                $mine->can($own, UPDATE),
-                'the check must not also block a rule the operator actually owns',
-            );
+            Rule::checkOperatorAdministersRule($mine);
+            self::addToAssertionCount(1);
         } finally {
             $_SESSION['glpishowallentities'] = 1;
             Session::changeActiveEntities(0, true);
