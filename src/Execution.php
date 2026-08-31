@@ -118,13 +118,29 @@ class Execution extends CommonDBTM
                 'triggered_at'               => $_SESSION['glpi_currenttime'] ?? date('Y-m-d H:i:s'),
                 'date_creation'              => $_SESSION['glpi_currenttime'] ?? date('Y-m-d H:i:s'),
             ]);
-        } catch (RuntimeException) {
-            // Lost the race on the unique index, or a genuine DB error. Either way this
-            // occurrence is not ours to process; a real error is still visible in the logs.
-            return null;
+        } catch (RuntimeException $e) {
+            // The unique index is the concurrency guard. Do not turn an outage, a missing
+            // table or a storage failure into "already processed": that hides work that was
+            // never done and makes recovery needlessly difficult.
+            if (self::isDuplicateKeyError($e)) {
+                return null;
+            }
+
+            throw $e;
         }
 
         return (int) $DB->insertId();
+    }
+
+    private static function isDuplicateKeyError(RuntimeException $e): bool
+    {
+        // Two literals, so no PCRE: str_contains cannot fail, which keeps the concurrency
+        // guard from depending on a regex engine answering correctly under load. Verified
+        // against the real message MariaDB produces through GLPI's DBmysql wrapper:
+        // "MySQL query error: Duplicate entry '...' for key 'claim_key' (1062) in SQL query".
+        $message = $e->getMessage();
+
+        return str_contains($message, 'Duplicate entry') || str_contains($message, '(1062)');
     }
 
     /**

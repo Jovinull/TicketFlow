@@ -35,7 +35,9 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Ticketclock\Engine;
 
+use Glpi\Error\ErrorHandler;
 use GlpiPlugin\Ticketclock\Enum\ActionType;
+use RuntimeException;
 
 /**
  * One configured action of a rule, decoupled from its database row.
@@ -88,12 +90,16 @@ final readonly class ActionDefinition
             return null;
         }
 
-        $params = [];
-        if (isset($row['params']) && is_string($row['params']) && $row['params'] !== '') {
-            $decoded = json_decode($row['params'], true);
-            if (is_array($decoded)) {
-                $params = $decoded;
-            }
+        $raw_params = $row['params'] ?? null;
+        if (!is_string($raw_params) || $raw_params === '') {
+            self::reportInvalidParameters($row, 'missing JSON object');
+            return null;
+        }
+
+        $params = json_decode($raw_params, true);
+        if (!is_array($params) || json_last_error() !== JSON_ERROR_NONE) {
+            self::reportInvalidParameters($row, json_last_error_msg());
+            return null;
         }
 
         return new self(
@@ -102,5 +108,25 @@ final readonly class ActionDefinition
             (int) ($row['ranking'] ?? 0),
             $params,
         );
+    }
+
+    /** @param array<string, mixed> $row */
+    private static function reportInvalidParameters(array $row, string $reason): void
+    {
+        $message = sprintf(
+            'TicketFlow ignored action #%d because its stored JSON parameters are invalid: %s.',
+            (int) ($row['id'] ?? 0),
+            $reason,
+        );
+
+        // Logging must not turn a corrupt, privilegedly-written row into a fatal that stops
+        // every remaining rule in the cron pass. GLPI has this logger in production; the
+        // error_log fallback keeps the unit-only, GLPI-free test harness usable.
+        if (class_exists(ErrorHandler::class)) {
+            ErrorHandler::logCaughtException(new RuntimeException($message));
+            return;
+        }
+
+        error_log($message);
     }
 }

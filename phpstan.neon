@@ -45,6 +45,12 @@ parameters:
                 - src/Execution.php
                 - src/Engine/ActionDefinition.php
         -
+            # The last-resort logger, used only when GLPI's ErrorHandler is absent (the
+            # GLPI-free unit harness). A logging call that raised because it could not log
+            # would replace a recoverable warning with a fatal, which is backwards.
+            message: '#Function error_log is unsafe to use#'
+            path: src/Engine/ActionDefinition.php
+        -
             # Both results are checked: null from preg_replace_callback() raises rather than
             # posting an empty followup, false from preg_match_all() returns no placeholders
             # rather than reading an unset $matches.

@@ -161,6 +161,18 @@ final class RuleDefinitionTest extends TestCase
         self::assertNull(ActionDefinition::fromRow(['id' => 1, 'action_type' => 'teleport_ticket']));
     }
 
+    public function testCorruptedActionParametersAreDiscardedRatherThanDefaulted(): void
+    {
+        $definition = ActionDefinition::fromRow([
+            'id'          => 9,
+            'action_type' => 'close_ticket',
+            'ranking'     => 20,
+            'params'      => '{not valid JSON',
+        ]);
+
+        self::assertNull($definition);
+    }
+
     public function testOccurrenceKeysAreStableCompactAndDistinct(): void
     {
         $key = OccurrenceKey::forPendingInactivity(7657, '2026-08-03 10:00:00');
