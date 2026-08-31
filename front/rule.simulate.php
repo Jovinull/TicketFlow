@@ -75,7 +75,7 @@ Html::header(
     'rule',
 );
 
-$engine     = new RuleEngine();
+$engine     = RuleEngine::forOperator();
 $definition = $rule->toDefinition();
 
 // A manual run still honours the safety switches, the idempotency claim and the

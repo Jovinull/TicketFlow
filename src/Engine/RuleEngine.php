@@ -53,6 +53,7 @@ use GlpiPlugin\Ticketclock\Enum\ExecutionState;
 use GlpiPlugin\Ticketclock\Execution;
 use GlpiPlugin\Ticketclock\Rule;
 use Throwable;
+use Session;
 
 /**
  * Coordinates one run: candidates in, actions and audit rows out.
@@ -70,6 +71,22 @@ final readonly class RuleEngine
 {
     /** @var list<MatcherInterface> */
     private array $matchers;
+
+    /**
+     * An engine narrowed to the entities the logged-in operator may act in.
+     *
+     * The scheduled run deliberately uses the rule's own scope: it has no session, and it
+     * must act on what the rule was configured for. A manual run is the opposite case.
+     * A recursive rule stored on a parent entity is readable from every child, so without
+     * this an operator confined to one branch could open that rule, press "Run for real"
+     * and reach tickets in a sibling entity. Named rather than a flag, because the
+     * difference between the two callers is the whole point.
+     */
+    public static function forOperator(): self
+    {
+        // array_values because getActiveEntities() is keyed, and the finder wants a list.
+        return new self(new CandidateFinder(array_values(array_map(intval(...), Session::getActiveEntities()))));
+    }
 
     private ActionExecutor $executor;
 

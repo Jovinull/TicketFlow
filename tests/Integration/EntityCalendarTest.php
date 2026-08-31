@@ -72,6 +72,7 @@ final class EntityCalendarTest extends TestCase
     private int $child_entity = 0;
     private int $calendars_id = 0;
     private int $root_calendar_before = 0;
+    private int $root_strategy_before = 0;
     private int $sibling_entity = 0;
 
     protected function setUp(): void
@@ -88,6 +89,9 @@ final class EntityCalendarTest extends TestCase
         $root = new Entity();
         self::assertTrue($root->getFromDB(0));
         $this->root_calendar_before = (int) $root->fields['calendars_id'];
+        // Restored verbatim in tearDown. Writing a hardcoded 0 back would silently destroy a
+        // strategy the instance had configured, on an instance the test does not own.
+        $this->root_strategy_before = (int) ($root->fields['calendars_strategy'] ?? 0);
         $root->update(['id' => 0, 'calendars_id' => 0, 'calendars_strategy' => 0]);
 
         $suffix = uniqid();
@@ -159,7 +163,7 @@ final class EntityCalendarTest extends TestCase
         (new Entity())->update([
             'id'                 => 0,
             'calendars_id'       => $this->root_calendar_before,
-            'calendars_strategy' => 0,
+            'calendars_strategy' => $this->root_strategy_before,
         ]);
 
         // These used to be left behind. Every run added a few entities, and once the
@@ -371,5 +375,73 @@ final class EntityCalendarTest extends TestCase
             $about_config,
             'the entity calendar must be read through its strategy field, not the deprecated one',
         );
+    }
+    /**
+     * A manual run must not reach outside the entities the operator may see.
+     *
+     * `is_recursive` means a rule stored on a parent entity is readable from every child.
+     * The scheduled run correctly uses the rule's own scope, because it has no session and
+     * must do what the rule was configured for. Reusing that scope for the manual button
+     * let an operator confined to one child open the parent's rule, press "Run for real",
+     * and act on tickets belonging to a sibling entity they have no access to.
+     */
+    public function testAManualRunCannotReachASiblingEntityTheOperatorCannotSee(): void
+    {
+        $sibling = $this->sibling_entity = (int) (new Entity())->add([
+            'name'        => 'TicketFlow sibling ' . uniqid(),
+            'entities_id' => $this->parent_entity,
+        ]);
+        self::assertGreaterThan(0, $sibling);
+        Session::changeActiveEntities(0, true);
+
+        $mine     = $this->createPendingTicket($this->child_entity, '2026-08-03 09:00:00');
+        $not_mine = $this->createPendingTicket($sibling, '2026-08-03 09:00:00');
+
+        // The rule lives on the parent and is recursive, so both children inherit it.
+        (new Rule())->update([
+            'id'           => $this->rules_id,
+            'entities_id'  => $this->parent_entity,
+            'is_recursive' => 1,
+        ]);
+
+        $before = [
+            $_SESSION['glpiactiveentities'],
+            $_SESSION['glpiactive_entity'],
+            $_SESSION['glpishowallentities'] ?? null,
+        ];
+
+        try {
+            unset($_SESSION['glpishowallentities']);
+            $_SESSION['glpiactiveentities']        = [$this->child_entity];
+            $_SESSION['glpiactive_entity']         = $this->child_entity;
+            $_SESSION['glpiactiveentities_string'] = "'" . $this->child_entity . "'";
+
+            $rule = new Rule();
+            self::assertTrue(
+                $rule->can($this->rules_id, READ),
+                'the operator must be able to read the inherited rule, or the test proves nothing',
+            );
+            self::assertTrue($rule->getFromDB($this->rules_id));
+
+            $seen = [];
+            $report = RuleEngine::forOperator()->runRule($rule->toDefinition(), preview_limit: 100);
+            foreach ($report->preview as $row) {
+                $seen[(int) $row->tickets_id] = true;
+            }
+
+            self::assertArrayHasKey($mine, $seen, 'a ticket in the operator\'s own entity must still be reached');
+            self::assertArrayNotHasKey(
+                $not_mine,
+                $seen,
+                'a manual run reached a ticket in a sibling entity the operator cannot see',
+            );
+        } finally {
+            [$_SESSION['glpiactiveentities'], $_SESSION['glpiactive_entity'], $show] = [$before[0], $before[1], $before[2]];
+            $_SESSION['glpiactiveentities_string'] = "'" . implode("','", $before[0]) . "'";
+            if ($show !== null) {
+                $_SESSION['glpishowallentities'] = $show;
+            }
+            Session::changeActiveEntities(0, true);
+        }
     }
 }

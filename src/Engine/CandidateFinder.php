@@ -64,8 +64,14 @@ use GlpiPlugin\Ticketclock\Support\Time;
  * query — and with OFFSET the rows behind it shift up, so the next page would silently skip
  * them. A cursor is anchored to a value that does not move.
  */
-final class CandidateFinder
+final readonly class CandidateFinder
 {
+    /**
+     * @param list<int>|null $limit_entities entities the caller may act in, or null for the
+     *                                       scheduled run, which has no session to narrow to
+     */
+    public function __construct(private ?array $limit_entities = null) {}
+
     /**
      * @return list<Candidate>
      */
@@ -264,12 +270,23 @@ final class CandidateFinder
     private function entityScope(RuleDefinition $rule): array
     {
         if (!$rule->is_recursive) {
-            return [$rule->entities_id];
+            $scope = [$rule->entities_id];
+        } else {
+            $sons  = getSonsOf('glpi_entities', $rule->entities_id);
+            $scope = array_values(array_map(intval(...), $sons));
         }
 
-        $sons = getSonsOf('glpi_entities', $rule->entities_id);
+        if ($this->limit_entities === null) {
+            return $scope;
+        }
 
-        return array_values(array_map(intval(...), $sons));
+        // A manual run is narrowed to what the operator may see. A recursive rule stored on
+        // a parent entity is readable from every child -- that is what `is_recursive` means
+        // -- so without this an operator confined to one branch could open such a rule,
+        // press "Run for real", and act on tickets in a sibling entity they have no access
+        // to at all. The rule's own scope stays the ceiling; the session is a second, lower
+        // one. An empty intersection means the run touches nothing, which is correct.
+        return array_values(array_intersect($scope, $this->limit_entities));
     }
 
     /**
