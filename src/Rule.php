@@ -145,6 +145,8 @@ class Rule extends CommonDBTM
             $fields = array_replace($fields, $overrides);
         }
 
+        $problems = [];
+
         return new RuleDefinition(
             (int) ($fields['id'] ?? 0),
             (string) ($fields['name'] ?? ''),
@@ -161,9 +163,10 @@ class Rule extends CommonDBTM
             CalendarMode::tryFromString((string) ($fields['calendar_mode'] ?? '')) ?? CalendarMode::Entity,
             (int) ($fields['calendars_id'] ?? 0),
             ResetEvent::decodeList(isset($fields['reset_events']) ? (string) $fields['reset_events'] : null),
-            RuleAction::getDefinitionsForRule((int) ($fields['id'] ?? 0)),
+            RuleAction::getDefinitionsForRule((int) ($fields['id'] ?? 0), $problems),
             (bool) ($fields['is_dry_run'] ?? false),
             StartEvent::tryFromString((string) ($fields['start_event'] ?? '')) ?? StartEvent::PendingStart,
+            $problems ?? [],
         );
     }
 

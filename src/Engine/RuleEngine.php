@@ -176,6 +176,24 @@ final readonly class RuleEngine
 
         $report = new RunReport();
         $report->preview_limit = max($preview_limit, 0);
+
+        // Refused before anything is read, let alone written. A rule whose stored actions
+        // cannot all be read is not the rule somebody configured, and running the survivors
+        // would give a wrong outcome on every ticket it touches without saying so. One rule
+        // stops until the row is fixed; the rest of the pass is unaffected, because runAll()
+        // asks each rule separately and merges what comes back.
+        if ($rule->unusable !== []) {
+            foreach ($rule->unusable as $problem) {
+                $report->errors[] = sprintf(
+                    __('Rule "%1$s" was not run: %2$s', 'ticketclock'),
+                    $rule->name,
+                    $problem,
+                );
+            }
+
+            return $report;
+        }
+
         $matcher = $this->matcherFor($rule);
         if ($matcher === null) {
             $report->errors[] = sprintf(__('No matcher supports rule type "%s".', 'ticketclock'), $rule->type->value);

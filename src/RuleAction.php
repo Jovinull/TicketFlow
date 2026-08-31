@@ -67,9 +67,11 @@ class RuleAction extends CommonDBChild
     }
 
     /**
+     * @param list<string>|null $problems filled with one message per row that could not be
+     *                                     turned into an action, in the order they were read
      * @return list<ActionDefinition>
      */
-    public static function getDefinitionsForRule(int $rules_id): array
+    public static function getDefinitionsForRule(int $rules_id, ?array &$problems = null): array
     {
         /** @var \DBmysql $DB */
         global $DB;
@@ -86,9 +88,18 @@ class RuleAction extends CommonDBChild
         ]);
 
         foreach ($iterator as $row) {
-            $definition = ActionDefinition::fromRow($row);
+            $definition = ActionDefinition::fromRow($row, $problem);
             if ($definition !== null) {
                 $out[] = $definition;
+                continue;
+            }
+
+            // Collected by reference rather than thrown, because the two callers need
+            // opposite things from the same query. The engine must refuse a rule it cannot
+            // read in full; the rule form must still open, since a corrupt row is exactly
+            // what somebody needs the form for.
+            if ($problem !== null) {
+                $problems[] = $problem;
             }
         }
 

@@ -81,24 +81,41 @@ final readonly class ActionDefinition
     }
 
     /**
-     * @param array<string, mixed> $row A glpi_plugin_ticketclock_ruleactions row.
+     * @param array<string, mixed> $row     A glpi_plugin_ticketclock_ruleactions row.
+     * @param string|null          $problem set when the row cannot be turned into an action,
+     *                                      so the caller can decide what that means. The rule
+     *                                      engine refuses the whole rule; the rule form
+     *                                      ignores it, because a corrupt row is precisely
+     *                                      what somebody needs to open the form to fix.
      */
-    public static function fromRow(array $row): ?self
+    public static function fromRow(array $row, ?string &$problem = null): ?self
     {
+        $problem = null;
+        $id      = (int) ($row['id'] ?? 0);
+
         $type = ActionType::tryFromString(isset($row['action_type']) ? (string) $row['action_type'] : null);
         if ($type === null) {
+            // Treated exactly like unreadable parameters, because the outcome is the same: an
+            // action the administrator configured that this code will not carry out. A rule
+            // reading "add a followup, then close" would quietly become "add a followup".
+            $problem = sprintf(
+                __('Action #%1$d has an action type this version does not know: "%2$s".', 'ticketclock'),
+                $id,
+                (string) ($row['action_type'] ?? ''),
+            );
+
             return null;
         }
 
         $raw_params = $row['params'] ?? null;
         if (!is_string($raw_params) || $raw_params === '') {
-            self::reportInvalidParameters($row, 'missing JSON object');
+            $problem = self::reportInvalidParameters($row, 'missing JSON object');
             return null;
         }
 
         $params = json_decode($raw_params, true);
         if (!is_array($params) || json_last_error() !== JSON_ERROR_NONE) {
-            self::reportInvalidParameters($row, json_last_error_msg());
+            $problem = self::reportInvalidParameters($row, json_last_error_msg());
             return null;
         }
 
@@ -110,23 +127,32 @@ final readonly class ActionDefinition
         );
     }
 
-    /** @param array<string, mixed> $row */
-    private static function reportInvalidParameters(array $row, string $reason): void
+    /**
+     * @param array<string, mixed> $row
+     * @return string the message handed back to the caller, so the same words reach both the
+     *                server log and whoever is looking at the run
+     */
+    private static function reportInvalidParameters(array $row, string $reason): string
     {
         $message = sprintf(
-            'TicketFlow ignored action #%d because its stored JSON parameters are invalid: %s.',
+            __('Action #%1$d has unreadable stored parameters: %2$s.', 'ticketclock'),
             (int) ($row['id'] ?? 0),
             $reason,
         );
 
-        // Logging must not turn a corrupt, privilegedly-written row into a fatal that stops
-        // every remaining rule in the cron pass. GLPI has this logger in production; the
-        // error_log fallback keeps the unit-only, GLPI-free test harness usable.
+        // Logged as well as reported. The run report tells whoever triggered the run; the
+        // server log is what somebody has weeks later when they are working out why a rule
+        // stopped. Logging must not raise: a corrupt row written by a privileged user is not
+        // a reason to take down every remaining rule in the pass. GLPI has this logger in
+        // production; the error_log fallback keeps the GLPI-free unit harness usable.
         if (class_exists(ErrorHandler::class)) {
             ErrorHandler::logCaughtException(new RuntimeException($message));
-            return;
+
+            return $message;
         }
 
         error_log($message);
+
+        return $message;
     }
 }

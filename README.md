@@ -290,6 +290,15 @@ either of them.
 
 ## Troubleshooting
 
+**A rule reports "was not run".** Its stored actions could not all be read: a row with
+unreadable JSON parameters, or an action type this version does not know. The engine refuses
+the rule rather than running the actions that survived, because a rule configured as "add a
+followup, then close" quietly becoming "add a followup" is a wrong outcome on every ticket it
+touches, and one nobody would notice. The message names the rule and the action row. Opening
+the rule and saving it again rewrites the actions from the form, which is the usual fix. Only
+that rule stops; the rest of the run is unaffected.
+
+
 **Nothing happens.** Check *Diagnostics*. In order: is execution enabled, is global dry run
 off, is the rule active, is the rule in simulation-only mode, is the `ProcessRules` task
 scheduled?

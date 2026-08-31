@@ -1,0 +1,254 @@
+<?php
+
+/**
+ * -------------------------------------------------------------------------
+ * TicketFlow plugin for GLPI
+ * -------------------------------------------------------------------------
+ *
+ * MIT License
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ * -------------------------------------------------------------------------
+ * @copyright Copyright (C) 2026 Felipe Jovino.
+ * @license   MIT https://opensource.org/licenses/mit-license.php
+ * @link      https://github.com/Jovinull/ticketclock
+ * -------------------------------------------------------------------------
+ */
+
+declare(strict_types=1);
+
+namespace GlpiPlugin\Ticketclock\Tests\Integration;
+
+use Calendar;
+use CalendarSegment;
+use CommonITILActor;
+use Group;
+use Group_Ticket;
+use GlpiPlugin\Ticketclock\Config;
+use GlpiPlugin\Ticketclock\Engine\RuleEngine;
+use GlpiPlugin\Ticketclock\Rule;
+use GlpiPlugin\Ticketclock\RuleAction;
+use GlpiPlugin\Ticketclock\RuleGroup;
+use ITILFollowup;
+use PHPUnit\Framework\TestCase;
+use Session;
+use Ticket;
+
+/**
+ * A rule the engine cannot read in full must not run at all.
+ *
+ * Unreadable stored parameters used to decode to an empty array and the action ran anyway;
+ * once that was fixed the action was dropped instead, and the rule carried on with whatever
+ * survived. Both are wrong in the same way. A rule configured as "add a followup, then
+ * close" silently becomes "add a followup", the execution is recorded as an ordinary run,
+ * and the only trace is a line in the server log. That is a wrong outcome on every ticket
+ * the rule touches, for as long as nobody audits by hand.
+ *
+ * Refusing costs one rule until somebody fixes the row. Continuing costs correctness, and
+ * hides it.
+ */
+final class UnreadableRuleTest extends TestCase
+{
+    private int $groups_id = 0;
+    private int $rules_id = 0;
+    private int $healthy_rules_id = 0;
+    private int $calendars_id = 0;
+    private int $tickets_id = 0;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $_SESSION['glpi_currenttime'] = date('Y-m-d H:i:s');
+        Session::changeActiveEntities(0, true);
+
+        $suffix = uniqid();
+
+        $this->calendars_id = (int) (new Calendar())->add([
+            'name' => 'TicketFlow unreadable calendar ' . $suffix, 'entities_id' => 0, 'is_recursive' => 1,
+        ]);
+        for ($day = 1; $day <= 5; $day++) {
+            (new CalendarSegment())->add([
+                'calendars_id' => $this->calendars_id, 'entities_id' => 0,
+                'day' => $day, 'begin' => '00:00:00', 'end' => '23:59:59',
+            ]);
+        }
+        (new Calendar())->updateDurationCache($this->calendars_id);
+
+        $this->groups_id = (int) (new Group())->add([
+            'name' => 'TicketFlow unreadable group ' . $suffix,
+            'entities_id' => 0, 'is_recursive' => 1, 'is_assign' => 1,
+        ]);
+
+        $this->rules_id        = $this->createRule('TicketFlow unreadable rule');
+        $this->healthy_rules_id = $this->createRule('TicketFlow healthy rule');
+
+        Config::set(['execution_enabled' => 1, 'dry_run_global' => 0]);
+
+        $ticket = new Ticket();
+        $this->tickets_id = (int) $ticket->add([
+            'name' => 'TicketFlow unreadable ticket', 'content' => 'waiting',
+            'entities_id' => 0, 'status' => Ticket::INCOMING,
+        ]);
+        (new Group_Ticket())->add([
+            'tickets_id' => $this->tickets_id, 'groups_id' => $this->groups_id,
+            'type' => CommonITILActor::ASSIGN,
+        ]);
+        $ticket->update(['id' => $this->tickets_id, 'status' => Ticket::WAITING]);
+
+        /** @var \DBmysql $DB */
+        global $DB;
+        $DB->update(Ticket::getTable(), [
+            'begin_waiting_date' => date('Y-m-d H:i:s', strtotime('-30 days')),
+        ], ['id' => $this->tickets_id]);
+    }
+
+    protected function tearDown(): void
+    {
+        Config::set(['execution_enabled' => 0, 'dry_run_global' => 1]);
+
+        foreach ([[Ticket::class, $this->tickets_id], [Rule::class, $this->rules_id],
+            [Rule::class, $this->healthy_rules_id], [Group::class, $this->groups_id],
+            [Calendar::class, $this->calendars_id]] as [$class, $id]) {
+            if ($id > 0) {
+                (new $class())->delete(['id' => $id], true);
+            }
+        }
+
+        parent::tearDown();
+    }
+
+    public function testARuleWithUnreadableParametersTouchesNothing(): void
+    {
+        $this->corruptTheActionOf($this->rules_id);
+
+        $report = (new RuleEngine())->runRule($this->rule($this->rules_id));
+
+        self::assertSame(0, $report->analyzed, 'the rule was evaluated despite being unreadable');
+        self::assertSame(0, $this->followupsOnTicket(), 'the rule acted on a ticket it should have refused');
+    }
+
+    public function testTheRefusalSaysWhichRuleAndWhy(): void
+    {
+        $this->corruptTheActionOf($this->rules_id);
+
+        $report = (new RuleEngine())->runRule($this->rule($this->rules_id));
+        $errors = implode(' | ', $report->errors);
+
+        self::assertNotSame('', $errors, 'the rule was refused without saying so anywhere');
+        self::assertStringContainsString('TicketFlow unreadable rule', $errors, 'the message must name the rule');
+        self::assertStringContainsString('unreadable', $errors, 'the message must say what was wrong');
+    }
+
+    /**
+     * An unknown action type is the same defect wearing different clothes: an action the
+     * administrator configured that this code will not carry out.
+     */
+    public function testAnUnknownActionTypeIsRefusedToo(): void
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+        $DB->update(RuleAction::getTable(), ['action_type' => 'summon_a_technician'], [
+            'plugin_ticketclock_rules_id' => $this->rules_id,
+        ]);
+
+        $report = (new RuleEngine())->runRule($this->rule($this->rules_id));
+
+        self::assertSame(0, $this->followupsOnTicket());
+        self::assertStringContainsString('summon_a_technician', implode(' | ', $report->errors));
+    }
+
+    /**
+     * The refusal has to be local. One corrupt row must not become an outage for every other
+     * rule in the same cron pass.
+     */
+    public function testOtherRulesInTheSamePassStillRun(): void
+    {
+        $this->corruptTheActionOf($this->rules_id);
+
+        $report = (new RuleEngine())->runAll();
+
+        self::assertGreaterThan(0, $report->executed, 'a healthy rule was stopped by an unrelated corrupt one');
+        self::assertNotSame([], $report->errors, 'the corrupt rule was skipped without a word');
+    }
+
+    /**
+     * And the way out has to stay open. The rule form reads the same rows, and a corrupt row
+     * is exactly what somebody needs the form for.
+     */
+    public function testTheRuleFormStillOpensOnACorruptRule(): void
+    {
+        $this->corruptTheActionOf($this->rules_id);
+
+        $values = RuleAction::getFormValues($this->rules_id);
+
+        self::assertArrayHasKey('add_followup', $values);
+        self::assertArrayHasKey('final', $values);
+    }
+
+    private function createRule(string $name): int
+    {
+        $rule = new Rule();
+        $rules_id = (int) $rule->add([
+            'name' => $name, 'entities_id' => 0, 'is_recursive' => 1,
+            'rule_type' => 'pending_inactivity', 'target_status' => Ticket::WAITING,
+            'delay_value' => 1, 'delay_unit' => 'business_days',
+            'calendar_mode' => 'specific', 'calendars_id' => $this->calendars_id,
+            'reset_events' => 'requester_followup',
+        ]);
+        $rule->update(['id' => $rules_id, 'is_active' => 1]);
+        RuleGroup::setGroupsForRule($rules_id, [$this->groups_id]);
+        RuleAction::setActionsForRule($rules_id, [
+            'add_followup' => ['enabled' => 1, 'content' => 'Please answer.'],
+        ]);
+
+        return $rules_id;
+    }
+
+    /**
+     * Written straight to the column: there is no supported way to store this, which is the
+     * point. It models a botched migration, a restored backup, or somebody with database
+     * access being helpful.
+     */
+    private function corruptTheActionOf(int $rules_id): void
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $DB->update(RuleAction::getTable(), ['params' => '{"content": "unterminated'], [
+            'plugin_ticketclock_rules_id' => $rules_id,
+        ]);
+    }
+
+    private function rule(int $rules_id): \GlpiPlugin\Ticketclock\Engine\RuleDefinition
+    {
+        $rule = new Rule();
+        self::assertTrue($rule->getFromDB($rules_id));
+
+        return $rule->toDefinition();
+    }
+
+    private function followupsOnTicket(): int
+    {
+        return countElementsInTable(ITILFollowup::getTable(), [
+            'itemtype' => Ticket::class,
+            'items_id' => $this->tickets_id,
+        ]);
+    }
+}
