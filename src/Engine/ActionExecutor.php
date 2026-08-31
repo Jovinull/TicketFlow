@@ -99,7 +99,7 @@ final readonly class ActionExecutor
                 // Asked before the action runs, not inside it: the scheduled run must not
                 // hit this at all. See OperatorAuthorization for why the two callers cannot
                 // share one check.
-                $this->authorization?->authorize($definition->type, $context->ticket->tickets_id);
+                $this->authorization?->authorize($definition, $context->ticket->tickets_id);
 
                 $result = $handler->execute($definition, $context);
             } catch (OperatorNotAllowed $e) {

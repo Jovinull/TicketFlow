@@ -64,20 +64,29 @@ final readonly class OperatorAuthorization
     /**
      * @throws OperatorNotAllowed when the operator could not do this by hand
      */
-    public function authorize(ActionType $type, int $tickets_id): void
+    public function authorize(ActionDefinition $definition, int $tickets_id): void
     {
         $ticket = new Ticket();
         if (!$ticket->getFromDB($tickets_id)) {
             throw new OperatorNotAllowed(__('The ticket no longer exists.', 'ticketclock'));
         }
 
+        $type = $definition->type;
+
         $allowed = match ($type) {
             ActionType::AddFollowup => $ticket->canAddFollowups(),
             ActionType::AddSolution => $ticket->canSolve(),
-            // Changing status, closing, and raising a notification about somebody's ticket
-            // are all edits of the ticket as far as core is concerned.
-            ActionType::ChangeStatus,
-            ActionType::CloseTicket,
+            // Editing the ticket, plus the transition itself. `Ticket::update()` does not
+            // enforce the profile's status matrix -- core applies it when it builds the
+            // status dropdown, so by hand an operator is simply never offered a transition
+            // their profile denies. Without this the manual run would hand them one.
+            ActionType::ChangeStatus => $ticket->can($tickets_id, UPDATE)
+                && $this->transitionAllowed($ticket, $definition->intParam('status')),
+            ActionType::CloseTicket => $ticket->can($tickets_id, UPDATE)
+                && $this->transitionAllowed($ticket, Ticket::CLOSED),
+            // No transition of its own. UPDATE rather than READ on purpose: raising the
+            // event sends the ticket's content out to whoever the notification targets, so
+            // it is treated as acting on the ticket rather than merely looking at it.
             ActionType::SendNotification => $ticket->can($tickets_id, UPDATE),
         };
 
@@ -88,5 +97,20 @@ final readonly class OperatorAuthorization
                 $tickets_id,
             ));
         }
+    }
+
+    /**
+     * Whether the operator's profile permits this ticket to move to that status.
+     *
+     * A target of 0 means the rule stores no status, which the action itself rejects with a
+     * clearer message than an authorization failure would give.
+     */
+    private function transitionAllowed(Ticket $ticket, int $target): bool
+    {
+        if ($target <= 0) {
+            return true;
+        }
+
+        return Ticket::isAllowedStatus((int) $ticket->fields['status'], $target);
     }
 }

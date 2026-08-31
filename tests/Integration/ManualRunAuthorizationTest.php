@@ -42,6 +42,7 @@ use Group;
 use Group_Ticket;
 use GlpiPlugin\Ticketclock\Config;
 use GlpiPlugin\Ticketclock\Engine\RuleEngine;
+use GlpiPlugin\Ticketclock\Enum\ActionType;
 use GlpiPlugin\Ticketclock\Rule;
 use GlpiPlugin\Ticketclock\RuleAction;
 use GlpiPlugin\Ticketclock\RuleGroup;
@@ -185,7 +186,11 @@ final class ManualRunAuthorizationTest extends TestCase
         self::assertSame(1, $report->executed);
     }
 
-    private function becomeOperator(int $followup_rights): void
+    /**
+     * @param array<int, array<int, int>> $status_matrix core's own shape; empty means the
+     *                                                   profile denies no transition
+     */
+    private function becomeOperator(int $followup_rights, array $status_matrix = []): void
     {
         // A manual run is not a cron run; Session::isCron() would answer yes to every right.
         unset($_SESSION['glpicronuserrunning']);
@@ -193,7 +198,7 @@ final class ManualRunAuthorizationTest extends TestCase
         // Shaped like GLPI's own central profiles, which carry an empty status matrix.
         $_SESSION['glpiactiveprofile'] = [
             'id' => 4, 'name' => 'ticketclock-operator', 'interface' => 'central',
-            'ticket_status' => [],
+            'ticket_status' => $status_matrix,
             'ticket'        => ALLSTANDARDRIGHT,
             'followup'      => $followup_rights,
         ];
@@ -213,5 +218,44 @@ final class ManualRunAuthorizationTest extends TestCase
             'itemtype' => Ticket::class,
             'items_id' => $this->tickets_id,
         ]);
+    }
+    /**
+     * `Ticket::update()` does not enforce the profile's status matrix; core applies it when
+     * it builds the status dropdown, so by hand an operator is never offered a transition
+     * their profile denies. The manual run used to hand them one anyway.
+     */
+    public function testAnOperatorCannotMakeATransitionTheirProfileDenies(): void
+    {
+        RuleAction::setActionsForRule($this->rules_id, [
+            'final' => ['type' => ActionType::ChangeStatus->value, 'status' => Ticket::CLOSED],
+        ]);
+
+        // Same shape core stores: status id => target id => allowed.
+        $this->becomeOperator(followup_rights: ITILFollowup::ADDALLITEM, status_matrix: [
+            Ticket::WAITING => [Ticket::CLOSED => 0],
+        ]);
+
+        $report = RuleEngine::forOperator()->runRule($this->rule());
+
+        $ticket = new Ticket();
+        self::assertTrue($ticket->getFromDB($this->tickets_id));
+        self::assertSame(Ticket::WAITING, (int) $ticket->fields['status'], 'the ticket was moved to a status the profile denies');
+        self::assertSame(1, $report->failed);
+    }
+
+    public function testTheSameTransitionIsAllowedWhenTheProfilePermitsIt(): void
+    {
+        RuleAction::setActionsForRule($this->rules_id, [
+            'final' => ['type' => ActionType::ChangeStatus->value, 'status' => Ticket::CLOSED],
+        ]);
+
+        $this->becomeOperator(followup_rights: ITILFollowup::ADDALLITEM);
+
+        $report = RuleEngine::forOperator()->runRule($this->rule());
+
+        $ticket = new Ticket();
+        self::assertTrue($ticket->getFromDB($this->tickets_id));
+        self::assertSame(Ticket::CLOSED, (int) $ticket->fields['status']);
+        self::assertSame(1, $report->executed);
     }
 }
