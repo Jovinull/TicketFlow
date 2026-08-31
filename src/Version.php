@@ -61,7 +61,7 @@ final class Version
      * schema, and {@see Install} compares this against what the database reports to decide
      * which migrations are missing.
      */
-    public const SCHEMA = '1.1.0';
+    public const SCHEMA = '1.2.0';
 
     private function __construct() {}
 }

@@ -251,4 +251,83 @@ final class UnreadableRuleTest extends TestCase
             'items_id' => $this->tickets_id,
         ]);
     }
+    /**
+     * The half of #8 that stopping the run does not answer.
+     *
+     * A refusal happens before any ticket is chosen, so there is no execution row to carry
+     * the reason, and inventing one would put a record with no ticket into a log that is
+     * otherwise strictly one row per ticket. The problem belongs to the rule, so it is kept
+     * on the rule -- which is also where somebody would look.
+     */
+    public function testTheReasonIsKeptOnTheRuleAndNotOnlyInTheLog(): void
+    {
+        $this->corruptTheActionOf($this->rules_id);
+
+        (new RuleEngine())->runRule($this->rule($this->rules_id));
+
+        $rule = new Rule();
+        self::assertTrue($rule->getFromDB($this->rules_id));
+        self::assertNotEmpty($rule->fields['last_error'], 'the reason survived only in the run report');
+        self::assertNotEmpty($rule->fields['last_error_date'], 'no timestamp to tell when it started');
+        self::assertStringContainsString('unreadable', (string) $rule->fields['last_error']);
+    }
+
+    /**
+     * Counted apart from `failed`, which counts tickets whose actions were attempted and did
+     * not work. A refused rule attempted nothing.
+     */
+    public function testTheRunReportCountsTheRefusalSeparately(): void
+    {
+        $this->corruptTheActionOf($this->rules_id);
+
+        $report = (new RuleEngine())->runRule($this->rule($this->rules_id));
+
+        self::assertSame(1, $report->refused);
+        self::assertSame(0, $report->failed, 'a refusal is not a failed ticket');
+    }
+
+    /**
+     * A stale error is worse than none: it sends somebody looking for a problem that is gone.
+     */
+    public function testTheReasonIsClearedOnceTheRuleRunsAgain(): void
+    {
+        $this->corruptTheActionOf($this->rules_id);
+        (new RuleEngine())->runRule($this->rule($this->rules_id));
+
+        // What an administrator does: reopen the rule and save it, which rewrites the actions.
+        RuleAction::setActionsForRule($this->rules_id, [
+            'add_followup' => ['enabled' => 1, 'content' => 'Please answer.'],
+        ]);
+        (new RuleEngine())->runRule($this->rule($this->rules_id));
+
+        $rule = new Rule();
+        self::assertTrue($rule->getFromDB($this->rules_id));
+        self::assertEmpty($rule->fields['last_error'], 'the rule still claims to be broken after it ran');
+        self::assertEmpty($rule->fields['last_error_date']);
+    }
+
+    /**
+     * And it has to be on the screen, not just in the column. Somebody opening a rule that
+     * stopped working should not have to search the log to find out why.
+     */
+    public function testTheRuleFormShowsWhyItIsNotRunning(): void
+    {
+        $this->corruptTheActionOf($this->rules_id);
+        (new RuleEngine())->runRule($this->rule($this->rules_id));
+
+        $rule = new Rule();
+        self::assertTrue($rule->getFromDB($this->rules_id));
+
+        ob_start();
+        try {
+            $rule->showForm($this->rules_id);
+        } catch (\Throwable $e) {
+            ob_end_clean();
+            self::fail('showForm() threw: ' . $e->getMessage());
+        }
+        $html = (string) ob_get_clean();
+
+        self::assertStringContainsString('not running', $html, 'the form said nothing about the refusal');
+        self::assertStringContainsString('unreadable', $html, 'the form did not say what was wrong');
+    }
 }

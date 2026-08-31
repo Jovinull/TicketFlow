@@ -183,16 +183,31 @@ final readonly class RuleEngine
         // stops until the row is fixed; the rest of the pass is unaffected, because runAll()
         // asks each rule separately and merges what comes back.
         if ($rule->unusable !== []) {
+            $report->refused++;
+
+            $messages = [];
             foreach ($rule->unusable as $problem) {
-                $report->errors[] = sprintf(
+                $messages[] = sprintf(
                     __('Rule "%1$s" was not run: %2$s', 'ticketclock'),
                     $rule->name,
                     $problem,
                 );
             }
 
+            $report->errors = array_merge($report->errors, $messages);
+
+            // Kept on the rule, not only in this report. A scheduled run has nobody reading
+            // its report, and the file log is not the plugin's audit trail: without this the
+            // only way to learn why a rule went quiet is to know the log exists and go
+            // looking. The rule's own screen is where somebody will look.
+            Rule::recordRefusal($rule->id, implode(' ', $rule->unusable));
+
             return $report;
         }
+
+        // A rule that runs is a rule that is no longer broken. Cheap: the UPDATE is guarded
+        // on the column being set, so it matches nothing in the normal case.
+        Rule::clearRefusal($rule->id);
 
         $matcher = $this->matcherFor($rule);
         if ($matcher === null) {

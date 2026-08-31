@@ -294,9 +294,14 @@ either of them.
 unreadable JSON parameters, or an action type this version does not know. The engine refuses
 the rule rather than running the actions that survived, because a rule configured as "add a
 followup, then close" quietly becoming "add a followup" is a wrong outcome on every ticket it
-touches, and one nobody would notice. The message names the rule and the action row. Opening
-the rule and saving it again rewrites the actions from the form, which is the usual fix. Only
-that rule stops; the rest of the run is unaffected.
+touches, and one nobody would notice.
+
+The reason is kept on the rule, not only in the log. Opening the rule shows it at the top of
+the form, and *Administration > TicketFlow > Rules* can be searched and filtered on **Why it
+is not running**, so a whole instance can be checked at once. Saving the rule rewrites its
+actions from the form, which is the usual fix, and the message clears the next time the rule
+runs. Only that rule stops; the rest of the run is unaffected, and the run summary counts it
+under `refused`.
 
 
 **Nothing happens.** Check *Diagnostics*. In order: is execution enabled, is global dry run

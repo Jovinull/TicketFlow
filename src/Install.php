@@ -61,6 +61,7 @@ final class Install
     private const MIGRATIONS = [
         '1.0.0' => 'migrateTo100',
         '1.1.0' => 'migrateTo110',
+        '1.2.0' => 'migrateTo120',
     ];
 
     public static function install(Migration $migration): bool
@@ -190,6 +191,8 @@ final class Install
                     `reset_events`        VARCHAR(255) DEFAULT NULL,
                     `is_dry_run`          TINYINT NOT NULL DEFAULT 0,
                     `last_execution_date` TIMESTAMP NULL DEFAULT NULL,
+                    `last_error`          TEXT DEFAULT NULL,
+                    `last_error_date`     TIMESTAMP NULL DEFAULT NULL,
                     `date_creation`       TIMESTAMP NULL DEFAULT NULL,
                     `date_mod`            TIMESTAMP NULL DEFAULT NULL,
                     PRIMARY KEY (`id`),
@@ -293,6 +296,35 @@ final class Install
             // which would not match what a fresh install creates.
             "varchar(50) NOT NULL DEFAULT '" . StartEvent::PendingStart->value . "'",
             ['after' => 'pendingreasons_id'],
+        );
+        $migration->migrationOneTable(Rule::getTable());
+    }
+
+    /**
+     * Adds `last_error` and `last_error_date`: why a rule stopped running, kept on the rule.
+     *
+     * The engine refuses a rule whose stored actions cannot all be read, which is correct but
+     * used to leave the reason in the server log and nowhere else. A refusal happens before
+     * any ticket is chosen, so there is no execution to attach it to and inventing one would
+     * put a row with no ticket into a log that is otherwise one row per ticket. The problem
+     * belongs to the rule, so it is stored on the rule.
+     *
+     * Nullable with no default, so every existing rule upgrades as "nothing wrong", which is
+     * true until the engine next looks at it.
+     */
+    private static function migrateTo120(Migration $migration): void
+    {
+        $migration->addField(
+            Rule::getTable(),
+            'last_error',
+            'text',
+            ['after' => 'last_execution_date'],
+        );
+        $migration->addField(
+            Rule::getTable(),
+            'last_error_date',
+            'timestamp',
+            ['after' => 'last_error'],
         );
         $migration->migrationOneTable(Rule::getTable());
     }

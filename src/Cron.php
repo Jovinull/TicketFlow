@@ -90,7 +90,7 @@ class Cron extends CommonDBTM
         $task->addVolume($report->volume());
 
         $summary = sprintf(
-            'TicketFlow: analyzed=%d matched=%d expired=%d executed=%d failed=%d skipped=%d already=%d simulated=%d',
+            'TicketFlow: analyzed=%d matched=%d expired=%d executed=%d failed=%d skipped=%d already=%d simulated=%d refused=%d',
             $report->analyzed,
             $report->matched,
             $report->expired,
@@ -99,6 +99,7 @@ class Cron extends CommonDBTM
             $report->skipped,
             $report->already_processed,
             $report->simulated,
+            $report->refused,
         );
 
         $task->log($summary);

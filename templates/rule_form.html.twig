@@ -52,6 +52,23 @@
                 </div>
             {% endif %}
 
+            {% if last_error is not empty %}
+                {# Louder than the destructive notice below, because this rule is not running
+                   at all. Saving the form rewrites the actions from these fields, which is
+                   the usual way out, so the message says so rather than leaving somebody to
+                   guess. #}
+                <div class="alert alert-danger d-flex align-items-start" role="alert">
+                    <i class="ti ti-alert-octagon me-2 mt-1"></i>
+                    <div>
+                        <strong>{{ __('This rule is not running.', 'ticketclock') }}</strong>
+                        <div>{{ last_error }}</div>
+                        <div class="text-secondary small mt-1">
+                            {{ __('Recorded %s. Saving this form rewrites the rule\'s actions, which usually fixes it.', 'ticketclock')|format(last_error_date|date('Y-m-d H:i')) }}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
             {% if is_destructive %}
                 <div class="alert alert-warning d-flex align-items-start" role="alert">
                     <i class="ti ti-alert-triangle me-2 mt-1"></i>

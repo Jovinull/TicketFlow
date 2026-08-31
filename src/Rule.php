@@ -112,6 +112,56 @@ class Rule extends CommonDBTM
      * configured acting user, and is reached only by an administrator who enabled the
      * automatic action.
      */
+    /**
+     * Records why the engine would not run this rule, where somebody will find it.
+     *
+     * A refusal happens before any ticket is chosen, so there is no execution to attach the
+     * reason to, and inventing one would put a row carrying no ticket into a log that is
+     * otherwise strictly one row per ticket. The problem belongs to the rule: it is the rule
+     * that is unusable, on every ticket, until somebody edits it. So it is kept on the rule
+     * and shown on the rule's own screen and in its list.
+     *
+     * Written straight to the table rather than through update(): this runs from cron, where
+     * a history entry and a notification for every pass would be noise, and the value is
+     * bookkeeping about the rule rather than a change somebody made to it.
+     */
+    public static function recordRefusal(int $rules_id, string $reason): void
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        if ($rules_id <= 0) {
+            return;
+        }
+
+        $DB->update(self::getTable(), [
+            'last_error'      => $reason,
+            'last_error_date' => $_SESSION['glpi_currenttime'] ?? date('Y-m-d H:i:s'),
+        ], ['id' => $rules_id]);
+    }
+
+    /**
+     * Clears a recorded refusal once the rule runs again.
+     *
+     * Guarded on the column already being set, so the normal case is an UPDATE matching no
+     * rows rather than a write per rule per pass. A stale error is worse than none: it sends
+     * somebody looking for a problem that was fixed.
+     */
+    public static function clearRefusal(int $rules_id): void
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        if ($rules_id <= 0) {
+            return;
+        }
+
+        $DB->update(self::getTable(), [
+            'last_error'      => null,
+            'last_error_date' => null,
+        ], ['id' => $rules_id, ['NOT' => ['last_error' => null]]]);
+    }
+
     public static function checkOperatorMayActOnTickets(): void
     {
         // haveRight() plus an explicit throw rather than Session::checkRight(), which also
@@ -483,6 +533,8 @@ class Rule extends CommonDBTM
             'target_statuses'  => [0 => __('Not applicable', 'ticketclock')] + Ticket::getAllStatusArray(),
             'description'     => $ID > 0 ? $this->getHumanDescription() : '',
             'is_destructive'  => $ID > 0 && $this->toDefinition()->isDestructive(),
+            'last_error'      => (string) ($this->fields['last_error'] ?? ''),
+            'last_error_date' => (string) ($this->fields['last_error_date'] ?? ''),
         ]);
 
         return true;
@@ -576,6 +628,27 @@ class Rule extends CommonDBTM
             'field'    => 'comment',
             'name'     => __('Comments'),
             'datatype' => 'text',
+        ];
+
+        // Searchable so an administrator can list every rule the engine is refusing, rather
+        // than opening them one by one. `id` 17 and 18 continue the plugin's own block; 80 is
+        // core's conventional slot for the entity and stays last.
+        $tab[] = [
+            'id'            => '17',
+            'table'         => self::getTable(),
+            'field'         => 'last_error',
+            'name'          => __('Why it is not running', 'ticketclock'),
+            'datatype'      => 'text',
+            'massiveaction' => false,
+        ];
+
+        $tab[] = [
+            'id'            => '18',
+            'table'         => self::getTable(),
+            'field'         => 'last_error_date',
+            'name'          => __('Refused at', 'ticketclock'),
+            'datatype'      => 'datetime',
+            'massiveaction' => false,
         ];
 
         $tab[] = [
