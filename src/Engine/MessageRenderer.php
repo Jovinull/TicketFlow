@@ -35,8 +35,7 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Ticketclock\Engine;
 
-use function Safe\preg_match_all;
-use function Safe\preg_replace_callback;
+use RuntimeException;
 
 /**
  * Fills `{{placeholder}}` slots in a rule's message.
@@ -89,10 +88,14 @@ final class MessageRenderer
      */
     public function render(string $template, bool $escape = true): string
     {
-        return (string) preg_replace_callback(
+        // Not cast to string: preg_replace_callback() answers null on a PCRE failure such as
+        // the backtrack limit, and casting that to a string would post an empty followup
+        // onto somebody's ticket without a word of explanation. An exception is recorded
+        // against the ticket in the execution log, which is the outcome that can be acted on.
+        $rendered = preg_replace_callback(
             self::PATTERN,
             function (array $matches) use ($escape): string {
-                $name = strtolower((string) $matches[1]);
+                $name = strtolower($matches[1]);
                 if (!array_key_exists($name, $this->values)) {
                     return $matches[0];
                 }
@@ -103,6 +106,12 @@ final class MessageRenderer
             },
             $template,
         );
+
+        if ($rendered === null) {
+            throw new RuntimeException('The message template could not be rendered (PCRE failure).');
+        }
+
+        return $rendered;
     }
 
     /**
@@ -113,12 +122,15 @@ final class MessageRenderer
     public function unknownPlaceholders(string $template): array
     {
         $found = [];
-        if (preg_match_all(self::PATTERN, $template, $matches) === 0) {
+        // A PCRE failure answers false, not 0, and leaves $matches unset -- reporting "no
+        // unknown placeholders" for a template nobody managed to read would be a lie.
+        $count = preg_match_all(self::PATTERN, $template, $matches);
+        if ($count === false || $count === 0) {
             return [];
         }
 
         foreach ($matches[1] as $name) {
-            $name = strtolower((string) $name);
+            $name = strtolower($name);
             if (!array_key_exists($name, $this->values) && !in_array($name, $found, true)) {
                 $found[] = $name;
             }

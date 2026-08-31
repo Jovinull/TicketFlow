@@ -36,8 +36,7 @@ declare(strict_types=1);
 namespace GlpiPlugin\Ticketclock\Calendar;
 
 use GlpiPlugin\Ticketclock\Enum\DelayUnit;
-
-use function Safe\strtotime;
+use GlpiPlugin\Ticketclock\Support\Time;
 
 /**
  * Turns "5 business days after this date" into an actual timestamp.
@@ -79,7 +78,7 @@ final readonly class BusinessTimeCalculator
 
         return new Deadline(
             $reference,
-            date('Y-m-d H:i:s', strtotime($reference) + $seconds),
+            date('Y-m-d H:i:s', Time::stamp($reference) + $seconds),
             $value,
             $unit,
             $fallback_used ? 0 : $calendars_id,

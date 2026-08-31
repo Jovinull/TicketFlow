@@ -35,7 +35,7 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Ticketclock\Calendar;
 
-use function Safe\strtotime;
+use GlpiPlugin\Ticketclock\Support\Time;
 
 /**
  * A dependency-free port of \Calendar::computeEndDate() (GLPI 11.0.4, src/Calendar.php:412).
@@ -144,7 +144,7 @@ final class InMemoryCalendarEngine implements CalendarEngineInterface
             }
             $first = $calendar->firstWorkingHour((int) date('w', $actualtime));
             if ($first !== null) {
-                $actualtime = strtotime(date('Y-m-d', $actualtime) . ' ' . $first);
+                $actualtime = Time::stamp(date('Y-m-d', $actualtime) . ' ' . $first);
             }
         }
 
@@ -162,7 +162,7 @@ final class InMemoryCalendarEngine implements CalendarEngineInterface
         // Never land after the last working hour of the day we ended on.
         $last = $calendar->lastWorkingHour((int) date('w', $actualtime));
         if ($last !== null && $last < date('H:i:s', $actualtime)) {
-            $actualtime = strtotime(date('Y-m-d', $actualtime) . ' ' . $last);
+            $actualtime = Time::stamp(date('Y-m-d', $actualtime) . ' ' . $last);
         }
 
         return date('Y-m-d H:i:s', $actualtime);
@@ -210,7 +210,7 @@ final class InMemoryCalendarEngine implements CalendarEngineInterface
             }
 
             $actualtime = $this->shift($actualtime, 86400, $negative);
-            $actualtime = strtotime(date('Y-m-d', $actualtime) . ($negative ? ' 23:59:59' : ' 00:00:00'));
+            $actualtime = Time::stamp(date('Y-m-d', $actualtime) . ($negative ? ' 23:59:59' : ' 00:00:00'));
         }
 
         return date('Y-m-d H:i:s', $actualtime);

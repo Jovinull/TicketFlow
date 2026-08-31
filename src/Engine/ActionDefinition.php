@@ -37,8 +37,6 @@ namespace GlpiPlugin\Ticketclock\Engine;
 
 use GlpiPlugin\Ticketclock\Enum\ActionType;
 
-use function Safe\json_decode;
-
 /**
  * One configured action of a rule, decoupled from its database row.
  */

@@ -46,9 +46,6 @@ use GlpiPlugin\Ticketclock\Enum\ExecutionState;
 use RuntimeException;
 use Ticket;
 
-use function Safe\json_decode;
-use function Safe\json_encode;
-
 /**
  * The audit trail, and the mutual-exclusion mechanism, in one table.
  *
@@ -229,9 +226,12 @@ class Execution extends CommonDBTM
      */
     private static function encodeResults(array $results): string
     {
+        // JSON_THROW_ON_ERROR rather than a wrapper library: the return type here is
+        // `string`, so a silent `false` would surface as a TypeError with no clue about
+        // what could not be encoded. The exception names the offending data.
         return json_encode(
             array_map(static fn(ActionResult $r): array => $r->toArray(), $results),
-            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR,
         );
     }
 

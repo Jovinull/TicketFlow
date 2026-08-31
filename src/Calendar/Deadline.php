@@ -36,8 +36,7 @@ declare(strict_types=1);
 namespace GlpiPlugin\Ticketclock\Calendar;
 
 use GlpiPlugin\Ticketclock\Enum\DelayUnit;
-
-use function Safe\strtotime;
+use GlpiPlugin\Ticketclock\Support\Time;
 
 /**
  * The outcome of a deadline computation, including *how* it was computed.
@@ -60,12 +59,12 @@ final readonly class Deadline
 
     public function isExpiredAt(string $now): bool
     {
-        return strtotime($now) >= strtotime($this->deadline_date);
+        return Time::stamp($now) >= Time::stamp($this->deadline_date);
     }
 
     /** Seconds past the deadline; negative when still inside the window. */
     public function overdueSeconds(string $now): int
     {
-        return strtotime($now) - strtotime($this->deadline_date);
+        return Time::stamp($now) - Time::stamp($this->deadline_date);
     }
 }

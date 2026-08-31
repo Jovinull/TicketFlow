@@ -35,7 +35,7 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Ticketclock\Calendar;
 
-use function Safe\strtotime;
+use GlpiPlugin\Ticketclock\Support\Time;
 
 /**
  * A calendar described the way GLPI stores it: weekday segments plus holidays.
@@ -105,16 +105,16 @@ final class CalendarDefinition
 
     public function isHoliday(string $date): bool
     {
-        $ymd = date('Y-m-d', strtotime($date));
+        $ymd = date('Y-m-d', Time::stamp($date));
         foreach ($this->holidays as $holiday) {
             if ($holiday['perpetual']) {
-                $needle = date('m-d', strtotime($ymd));
-                $begin  = date('m-d', strtotime($holiday['begin']));
-                $end    = date('m-d', strtotime($holiday['end']));
+                $needle = date('m-d', Time::stamp($ymd));
+                $begin  = date('m-d', Time::stamp($holiday['begin']));
+                $end    = date('m-d', Time::stamp($holiday['end']));
             } else {
                 $needle = $ymd;
-                $begin  = date('Y-m-d', strtotime($holiday['begin']));
-                $end    = date('Y-m-d', strtotime($holiday['end']));
+                $begin  = date('Y-m-d', Time::stamp($holiday['begin']));
+                $end    = date('Y-m-d', Time::stamp($holiday['end']));
             }
 
             if ($begin <= $needle && $needle <= $end) {

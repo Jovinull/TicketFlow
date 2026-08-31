@@ -15,3 +15,38 @@ parameters:
         - ../../stubs/glpi_constants.php
         - ../../vendor/autoload.php
     treatPhpDocTypesAsCertain: false
+    ignoreErrors:
+        # `thecodingmachine/safe` is deliberately not a dependency of this plugin. It was
+        # declared dev-only while fourteen runtime files imported from it, and the code only
+        # ran because GLPI core happens to require the same package -- so the release archive
+        # shipped without it and executed against the host application's copy. GLPI's
+        # pre-publication security review flagged the misdeclaration; the dependency is gone
+        # rather than re-declared.
+        #
+        # The rule itself stays switched on, so any *new* native call still has to be argued
+        # for. Every exception below is listed by hand because that call checks its own result.
+        -
+            # The single place the plugin calls strtotime(). It throws on false, which is the
+            # guarantee Safe was there to provide, with a message naming the unreadable date.
+            message: '#Function strtotime is unsafe to use#'
+            path: src/Support/Time.php
+        -
+            # define() answers false only when the constant already exists, which means
+            # setup.php was included twice. Throwing there would break Setup > Plugins for the
+            # whole instance during plugin discovery -- strictly worse than the warning PHP
+            # already emits. This is one of the places where the unwrapped function is safer.
+            message: '#Function define is unsafe to use#'
+            path: setup.php
+        -
+            # Decoding a stored column. Every result is guarded by is_array(), so a corrupted
+            # row degrades to "no actions recorded" instead of taking down the log screen.
+            message: '#Function json_decode is unsafe to use#'
+            paths:
+                - src/Execution.php
+                - src/Engine/ActionDefinition.php
+        -
+            # Both results are checked: null from preg_replace_callback() raises rather than
+            # posting an empty followup, false from preg_match_all() returns no placeholders
+            # rather than reading an unset $matches.
+            message: '#Function preg_(replace_callback|match_all) is unsafe to use#'
+            path: src/Engine/MessageRenderer.php

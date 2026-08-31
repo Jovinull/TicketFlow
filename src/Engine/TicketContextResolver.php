@@ -50,8 +50,7 @@ use Ticket_User;
 use TicketValidation;
 use GlpiPlugin\Ticketclock\Engine\Action\AddFollowupAction;
 use GlpiPlugin\Ticketclock\Enum\ResetEvent;
-
-use function Safe\strtotime;
+use GlpiPlugin\Ticketclock\Support\Time;
 
 /**
  * Turns ticket ids into {@see TicketContext} objects.
@@ -601,7 +600,7 @@ final class TicketContextResolver
     private function keepLatest(array &$events, ResetEvent $event, string $date): void
     {
         $current = $events[$event->value] ?? null;
-        if ($current === null || strtotime($date) > strtotime($current)) {
+        if ($current === null || Time::stamp($date) > Time::stamp($current)) {
             $events[$event->value] = $date;
         }
     }

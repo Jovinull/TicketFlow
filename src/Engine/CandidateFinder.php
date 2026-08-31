@@ -43,8 +43,7 @@ use GlpiPlugin\Ticketclock\Enum\StartEvent;
 use ITILFollowup;
 use Ticket;
 use TicketValidation;
-
-use function Safe\strtotime;
+use GlpiPlugin\Ticketclock\Support\Time;
 
 /**
  * Narrows "every ticket in the database" down to the handful a rule could possibly act on.
@@ -280,6 +279,6 @@ final class CandidateFinder
     {
         $seconds = $rule->delayInSeconds();
 
-        return date('Y-m-d H:i:s', strtotime($now) - $seconds);
+        return date('Y-m-d H:i:s', Time::stamp($now) - $seconds);
     }
 }

@@ -39,8 +39,6 @@ use CommonDBChild;
 use GlpiPlugin\Ticketclock\Engine\ActionDefinition;
 use GlpiPlugin\Ticketclock\Enum\ActionType;
 
-use function Safe\json_encode;
-
 /**
  * One action of a rule, stored generically (`action_type` + JSON `params`).
  *
@@ -218,7 +216,7 @@ class RuleAction extends CommonDBChild
             'plugin_ticketclock_rules_id' => $rules_id,
             'action_type'                => $type->value,
             'ranking'                    => $ranking,
-            'params'                     => json_encode($params, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'params'                     => json_encode($params, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
         ]);
     }
 }

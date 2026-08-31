@@ -41,8 +41,7 @@ use GlpiPlugin\Ticketclock\Engine\RuleDefinition;
 use GlpiPlugin\Ticketclock\Engine\TicketContext;
 use GlpiPlugin\Ticketclock\Enum\RuleType;
 use GlpiPlugin\Ticketclock\Enum\StartEvent;
-
-use function Safe\strtotime;
+use GlpiPlugin\Ticketclock\Support\Time;
 
 /**
  * "The ticket has been sitting in a state without the answer we are waiting for."
@@ -104,7 +103,7 @@ final class PendingInactivityMatcher extends AbstractMatcher
 
         $reference = $started_at;
         $reset     = $context->latestResetDate($rule->reset_events);
-        if ($reset !== null && strtotime($reset) > strtotime($reference)) {
+        if ($reset !== null && Time::stamp($reset) > Time::stamp($reference)) {
             $reference = $reset;
         }
 
@@ -129,7 +128,7 @@ final class PendingInactivityMatcher extends AbstractMatcher
         $reference = $message->date;
         if (
             $context->status_changed_at !== null
-            && strtotime($context->status_changed_at) > strtotime($reference)
+            && Time::stamp($context->status_changed_at) > Time::stamp($reference)
         ) {
             $reference = $context->status_changed_at;
         }

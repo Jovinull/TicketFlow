@@ -36,8 +36,7 @@ declare(strict_types=1);
 namespace GlpiPlugin\Ticketclock\Engine;
 
 use GlpiPlugin\Ticketclock\Enum\ResetEvent;
-
-use function Safe\strtotime;
+use GlpiPlugin\Ticketclock\Support\Time;
 
 /**
  * The state of one ticket, as far as the rule engine is concerned.
@@ -97,7 +96,7 @@ final readonly class TicketContext
             if ($date === null) {
                 continue;
             }
-            if ($latest === null || strtotime($date) > strtotime($latest)) {
+            if ($latest === null || Time::stamp($date) > Time::stamp($latest)) {
                 $latest = $date;
             }
         }

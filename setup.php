@@ -38,8 +38,6 @@ use GlpiPlugin\Ticketclock\Profile;
 use GlpiPlugin\Ticketclock\Rule;
 use GlpiPlugin\Ticketclock\Version;
 
-use function Safe\define;
-
 // This file is included *before* the plugin's PSR-4 autoloader exists. GLPI's
 // Plugin::load() calls loadPluginSetupFile() first and registerPluginAutoloader() only
 // afterwards, and plugin discovery (Plugin::getInformationsFromDirectory()) includes this

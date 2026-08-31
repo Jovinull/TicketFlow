@@ -42,8 +42,7 @@ use GlpiPlugin\Ticketclock\Engine\RuleDefinition;
 use GlpiPlugin\Ticketclock\Engine\TicketContext;
 use GlpiPlugin\Ticketclock\Enum\RuleType;
 use GlpiPlugin\Ticketclock\Enum\StartEvent;
-
-use function Safe\strtotime;
+use GlpiPlugin\Ticketclock\Support\Time;
 
 /**
  * "An approval request has been waiting for a decision."
@@ -106,7 +105,7 @@ final class PendingApprovalMatcher extends AbstractMatcher
                 return MatchResult::noMatch('last_message_not_from_target_group');
             }
 
-            if (strtotime($message->date) > strtotime($reference)) {
+            if (Time::stamp($message->date) > Time::stamp($reference)) {
                 $reference = $message->date;
             }
         }
@@ -114,7 +113,7 @@ final class PendingApprovalMatcher extends AbstractMatcher
         // A status change restarts the countdown in both modes.
         if (
             $context->status_changed_at !== null
-            && strtotime($context->status_changed_at) > strtotime($reference)
+            && Time::stamp($context->status_changed_at) > Time::stamp($reference)
         ) {
             $reference = $context->status_changed_at;
         }
