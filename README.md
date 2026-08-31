@@ -213,8 +213,10 @@ goes quiet for good: the ticket is never chased, never solved, and nothing is wr
 anywhere.
 
 *Setup > TicketFlow > Configuration > Ignore messages containing* holds one substring per
-line, matched case-insensitively against the followup body. Anything carrying one of them is
-neither treated as an answer nor allowed to restart the clock. The shipped list covers the
+line, matched literally against the followup body. `%` and `_` have no special meaning here;
+a mark of `100%` looks for those four characters. Matching ignores case, which comes from the
+collation GLPI gives the column rather than from anything this plugin enforces. Anything
+carrying one of the marks is neither treated as an answer nor allowed to restart the clock. The shipped list covers the
 usual wording in English, French, Portuguese, German and Spanish; local mail gateways word
 these differently, so it is meant to be edited. Leaving it empty counts every message, which
 is the old behaviour.

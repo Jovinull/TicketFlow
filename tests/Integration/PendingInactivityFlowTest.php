@@ -67,6 +67,7 @@ final class PendingInactivityFlowTest extends TestCase
     private int $calendars_id = 0;
     private int $rules_id = 0;
     private int $requester_id = 0;
+    private string $marks_before = '';
 
     protected function setUp(): void
     {
@@ -125,16 +126,29 @@ final class PendingInactivityFlowTest extends TestCase
             'final'        => ['type' => ActionType::AddSolution->value, 'content' => 'Automatically solved by TicketFlow.'],
         ]);
 
+        $this->marks_before = Config::get('ignored_message_marks');
+
         Config::set([
             'execution_enabled' => 1,
             'dry_run_global'    => 0,
             'system_users_id'   => $this->requester_id,
+            // Stated rather than inherited. Two of these tests turn on which followups count
+            // as somebody answering, and an instance where an administrator edited the marks
+            // is a normal instance -- a test that reddens there says nothing useful.
+            'ignored_message_marks' => Config::DEFAULT_IGNORED_MARKS,
         ]);
+        Config::reload();
     }
 
     protected function tearDown(): void
     {
-        Config::set(['execution_enabled' => 0, 'dry_run_global' => 1, 'system_users_id' => 0]);
+        Config::set([
+            'execution_enabled'     => 0,
+            'dry_run_global'        => 1,
+            'system_users_id'       => 0,
+            'ignored_message_marks' => $this->marks_before,
+        ]);
+        Config::reload();
         parent::tearDown();
     }
 

@@ -48,7 +48,6 @@ use Search;
 use Ticket;
 use Ticket_User;
 use TicketValidation;
-use GlpiPlugin\Ticketclock\Config;
 use GlpiPlugin\Ticketclock\Engine\Action\AddFollowupAction;
 use GlpiPlugin\Ticketclock\Enum\ResetEvent;
 use GlpiPlugin\Ticketclock\Support\Time;
@@ -278,7 +277,7 @@ final class TicketContextResolver
             'items_id' => $ids,
             ['NOT' => ['content' => ['LIKE', '%' . AddFollowupAction::MARKER . '%']]],
         ];
-        $this->excludeAutomaticReplies($where);
+        AutomaticReplyFilter::apply($where);
 
         $out = [];
         $iterator = $DB->request([
@@ -371,7 +370,7 @@ final class TicketContextResolver
             ['NOT' => ['content' => ['LIKE', '%' . AddFollowupAction::MARKER . '%']]],
         ];
 
-        $this->excludeAutomaticReplies($where);
+        AutomaticReplyFilter::apply($where);
 
         $out = [];
         $iterator = $DB->request([
@@ -389,28 +388,6 @@ final class TicketContextResolver
         return $out;
     }
 
-    /**
-     * Drops the configured automatic-reply marks from a followup query.
-     *
-     * Applied to both followup queries, and that is the point. One decides who sent the last
-     * message; the other feeds the reset events, so an out of office reply would restart the
-     * clock even where it did not win the "last message" comparison. Filtering only one of
-     * them fixes half the bug and leaves the half that is harder to notice.
-     *
-     * Done in SQL rather than afterwards in PHP because both queries pick or order rows: a
-     * row removed after the fact has already influenced the answer.
-     *
-     * @param array<int|string, mixed> $where modified in place
-     */
-    private function excludeAutomaticReplies(array &$where): void
-    {
-        /** @var \DBmysql $DB */
-        global $DB;
-
-        foreach (Config::ignoredMessageMarks() as $mark) {
-            $where[] = ['NOT' => ['content' => ['LIKE', '%' . $DB->escape($mark) . '%']]];
-        }
-    }
 
     /**
      * When each ticket last changed status.

@@ -83,12 +83,17 @@ final class Config
      * the latest message is picked, which is the only place the exclusion can work; a regex
      * would have to be applied in PHP afterwards, by which point the wrong row has already
      * won. They also cannot be made to backtrack, and an administrator editing this field
-     * cannot break the engine with a bad pattern.
+     * cannot break the engine with a bad pattern. `AutomaticReplyFilter` escapes LIKE's own
+     * wildcards so a mark means the characters it contains and nothing else.
+     *
+     * Matching ignores case because that is what GLPI's collation on the followup content
+     * gives, not because this code enforces it. A test asserts it so the promise stays true.
      *
      * The default covers what the common mail systems put in an automatic reply, in the
-     * languages this plugin ships. It is a starting point and is meant to be edited: local
-     * gateways word these differently, and the Diagnostics screen shows how many recent
-     * followups each mark catches so the list can be tuned against real traffic.
+     * languages this plugin ships plus German and Spanish. It is a starting point and is
+     * meant to be edited: local gateways word these differently. There is no tooling yet for
+     * checking a mark against real traffic before saving it, which is the obvious next step
+     * and is tracked separately.
      */
     public const DEFAULT_IGNORED_MARKS = "Out of Office\n"
         . "Out of the Office\n"
