@@ -330,4 +330,65 @@ final class UnreadableRuleTest extends TestCase
         self::assertStringContainsString('not running', $html, 'the form said nothing about the refusal');
         self::assertStringContainsString('unreadable', $html, 'the form did not say what was wrong');
     }
+    /**
+     * A preview must change nothing, and "nothing" has to include the rule's own bookkeeping.
+     *
+     * The simulation screen is reached with READ on the rule. If a dry run recorded the
+     * refusal, a read-only operator could stamp an error onto a rule they may only look at,
+     * including one inherited from a parent entity they do not administer.
+     */
+    public function testADryRunDoesNotRecordTheRefusal(): void
+    {
+        $this->corruptTheActionOf($this->rules_id);
+
+        $report = (new RuleEngine())->runRule($this->rule($this->rules_id), force_dry_run: true);
+
+        self::assertSame(1, $report->refused, 'the simulation must still say the rule is unusable');
+        self::assertNotSame([], $report->errors, 'and still say why');
+
+        $rule = new Rule();
+        self::assertTrue($rule->getFromDB($this->rules_id));
+        self::assertEmpty($rule->fields['last_error'], 'a preview wrote to the rule');
+    }
+
+    /**
+     * The worse direction of the same mistake. Clearing is destructive: a preview that wiped
+     * the record would erase the evidence of why a rule stopped, and could be triggered by
+     * somebody with nothing but READ.
+     */
+    public function testADryRunDoesNotClearAnExistingRefusal(): void
+    {
+        $this->corruptTheActionOf($this->rules_id);
+        (new RuleEngine())->runRule($this->rule($this->rules_id));
+
+        // Repaired, so a real run would legitimately clear the record.
+        RuleAction::setActionsForRule($this->rules_id, [
+            'add_followup' => ['enabled' => 1, 'content' => 'Please answer.'],
+        ]);
+
+        (new RuleEngine())->runRule($this->rule($this->rules_id), force_dry_run: true);
+
+        $rule = new Rule();
+        self::assertTrue($rule->getFromDB($this->rules_id));
+        self::assertNotEmpty($rule->fields['last_error'], 'a preview erased a recorded refusal');
+    }
+
+    /**
+     * The same restraint applies without anybody at a screen: a rule left in simulation, or
+     * an instance still under the global dry run, has asked for a run that changes nothing.
+     */
+    public function testARuleInSimulationNeverWritesItsOwnError(): void
+    {
+        $this->corruptTheActionOf($this->rules_id);
+
+        $rule = new Rule();
+        self::assertTrue($rule->getFromDB($this->rules_id));
+        $rule->update(['id' => $this->rules_id, 'is_dry_run' => 1]);
+
+        (new RuleEngine())->runRule($this->rule($this->rules_id));
+
+        $reloaded = new Rule();
+        self::assertTrue($reloaded->getFromDB($this->rules_id));
+        self::assertEmpty($reloaded->fields['last_error'], 'a rule in simulation wrote to itself');
+    }
 }

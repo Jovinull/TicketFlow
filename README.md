@@ -296,7 +296,9 @@ the rule rather than running the actions that survived, because a rule configure
 followup, then close" quietly becoming "add a followup" is a wrong outcome on every ticket it
 touches, and one nobody would notice.
 
-The reason is kept on the rule, not only in the log. Opening the rule shows it at the top of
+The reason is kept on the rule, not only in the log, and only a real run writes it: a
+simulation reports the refusal on screen and counts it, but changes nothing, including the
+rule's own bookkeeping. Opening the rule shows it at the top of
 the form, and *Administration > TicketFlow > Rules* can be searched and filtered on **Why it
 is not running**, so a whole instance can be checked at once. Saving the rule rewrites its
 actions from the form, which is the usual fix, and the message clears the next time the rule

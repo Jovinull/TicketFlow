@@ -56,6 +56,11 @@ $rule->check($rules_id, READ);
 $run_real = isset($_POST['run_real']);
 if ($run_real) {
     Session::checkRight(Rule::$rightname, UPDATE);
+    // On this rule, not merely somewhere: `check()` is the item-level test, so a rule the
+    // operator can only read -- an inherited one belonging to a parent entity, say -- is not
+    // one they may run for real. A real run also records why a rule was refused onto the
+    // rule row, and writing to a rule is not something a reader gets to do.
+    $rule->check($rules_id, UPDATE);
     // ... and the rights the run will actually exercise on tickets. See the method.
     Rule::checkOperatorMayActOnTickets();
 }

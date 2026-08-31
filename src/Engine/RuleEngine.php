@@ -182,6 +182,14 @@ final readonly class RuleEngine
         // would give a wrong outcome on every ticket it touches without saying so. One rule
         // stops until the row is fixed; the rest of the pass is unaffected, because runAll()
         // asks each rule separately and merges what comes back.
+        // Decided before anything is written, because two of the callers must not write at
+        // all. A preview is reached with READ on the rule, and a rule left in simulation or
+        // an instance still under the global dry run has asked for a run that changes
+        // nothing. "Nothing" has to include the rule's own bookkeeping, or the guarantee is
+        // not a guarantee: without this a read-only operator could stamp an error onto a
+        // rule, or wipe an existing one off a parent-entity rule they only inherit.
+        $dry_run = $force_dry_run || $this->isGloballyInert() || $rule->is_dry_run;
+
         if ($rule->unusable !== []) {
             $report->refused++;
 
@@ -200,22 +208,31 @@ final readonly class RuleEngine
             // its report, and the file log is not the plugin's audit trail: without this the
             // only way to learn why a rule went quiet is to know the log exists and go
             // looking. The rule's own screen is where somebody will look.
-            Rule::recordRefusal($rule->id, implode(' ', $rule->unusable));
+            //
+            // A dry run still reports and still counts; it just does not write. Whoever
+            // asked for the simulation sees the reason on screen, and the record appears the
+            // first time a real run reaches the rule.
+            if (!$dry_run) {
+                Rule::recordRefusal($rule->id, implode(' ', $rule->unusable));
+            }
 
             return $report;
         }
 
         // A rule that runs is a rule that is no longer broken. Cheap: the UPDATE is guarded
-        // on the column being set, so it matches nothing in the normal case.
-        Rule::clearRefusal($rule->id);
+        // on the column being set, so it matches nothing in the normal case. Skipped in a dry
+        // run for the same reason as above, and this direction is the worse one to get wrong:
+        // clearing is destructive, and a preview must not be able to erase the record of why
+        // a rule stopped.
+        if (!$dry_run) {
+            Rule::clearRefusal($rule->id);
+        }
 
         $matcher = $this->matcherFor($rule);
         if ($matcher === null) {
             $report->errors[] = sprintf(__('No matcher supports rule type "%s".', 'ticketclock'), $rule->type->value);
             return $report;
         }
-
-        $dry_run = $force_dry_run || $this->isGloballyInert() || $rule->is_dry_run;
 
         $batch_size = max(1, Config::getInt('batch_size', 200));
         $ceiling    = $max_candidates > 0 ? $max_candidates : Config::getInt('max_tickets_per_run', 1000);
