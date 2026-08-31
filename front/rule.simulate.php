@@ -56,6 +56,8 @@ $rule->check($rules_id, READ);
 $run_real = isset($_POST['run_real']);
 if ($run_real) {
     Session::checkRight(Rule::$rightname, UPDATE);
+    // ... and the rights the run will actually exercise on tickets. See the method.
+    Rule::checkOperatorMayActOnTickets();
 }
 
 // A manual run acts as the logged-in operator, not as the cron. That matters: core relaxes

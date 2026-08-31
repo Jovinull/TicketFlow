@@ -47,6 +47,7 @@ use GlpiPlugin\Ticketclock\Enum\RuleType;
 use GlpiPlugin\Ticketclock\Enum\StartEvent;
 use Session;
 use Ticket;
+use Glpi\Exception\Http\AccessDeniedHttpException;
 
 /**
  * A TicketFlow rule: conditions + clock + actions.
@@ -89,6 +90,39 @@ class Rule extends CommonDBTM
     public static function getIcon(): string
     {
         return 'ti ti-timeline-event-exclamation';
+    }
+
+    /**
+     * What an operator must hold before the manual "Run for real" button may touch a ticket.
+     *
+     * `CommonDBTM::add()` and `update()` authorize nothing -- in GLPI authorization lives in
+     * the controller, not the model. So holding this plugin's own UPDATE right was enough to
+     * reach code that adds followups, writes solutions and closes tickets, and
+     * `Profile::installRights()` hands that right to every profile that can configure GLPI.
+     * An operator with no ticket rights at all could act on tickets through this screen.
+     *
+     * Deliberately a right check rather than `Ticket::check()` or `ITILSolution::check()`.
+     * Those also apply the interface's status transition matrix, and
+     * `Ticket::isAllowedStatus(WAITING, SOLVED)` is false: GLPI's UI does not offer a solve
+     * button on a pending ticket. Since a pending ticket is the only kind this plugin ever
+     * acts on, routing the engine through those checks would authorize nothing extra and
+     * would stop the plugin from doing the one thing it exists to do.
+     *
+     * The cron path is untouched on purpose. It has no session to check, runs as the
+     * configured acting user, and is reached only by an administrator who enabled the
+     * automatic action.
+     */
+    public static function checkOperatorMayActOnTickets(): void
+    {
+        // haveRight() plus an explicit throw rather than Session::checkRight(), which also
+        // runs checkValidSessionId(). The caller has already validated the session one line
+        // earlier, and re-validating it here would make the guard untestable outside a real
+        // HTTP session for no gain.
+        if (!Session::haveRight(Ticket::$rightname, UPDATE)) {
+            throw new AccessDeniedHttpException(
+                'A real run writes to tickets, and this profile is missing the UPDATE right on them.',
+            );
+        }
     }
 
     public static function getMenuName()

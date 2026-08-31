@@ -46,6 +46,7 @@ use PHPUnit\Framework\TestCase;
 use Session;
 use Ticket;
 use Throwable;
+use Glpi\Exception\Http\AccessDeniedHttpException;
 
 /**
  * The rule form has to actually render.
@@ -304,5 +305,72 @@ final class RuleFormTest extends TestCase
 
         self::assertNotSame('', trim($html));
         self::assertStringNotContainsString('Fatal error', $html);
+    }
+    /**
+     * The manual "Run for real" button acts under the operator's own session, and GLPI's
+     * model layer authorizes nothing: `CommonDBTM::add()` and `update()` never call `can()`.
+     * The screen used to gate on this plugin's own right alone, and
+     * `Profile::installRights()` grants that right to every profile holding `config` -- so a
+     * configuration administrator with no helpdesk access could add followups, write
+     * solutions and close tickets from here.
+     */
+    public function testTheManualRunNeedsTicketRightsAndNotJustTheRuleRight(): void
+    {
+        $before = $_SESSION['glpiactiveprofile'];
+        $cron   = $_SESSION['glpicronuserrunning'] ?? null;
+
+        // A manual run is not a cron run, and the difference is the whole point:
+        // Session::isCron() makes haveRight() answer yes to everything, so the guard can
+        // only be exercised outside it. The suite sets that marker globally, hence this.
+        unset($_SESSION['glpicronuserrunning']);
+
+        $_SESSION['glpiactiveprofile'] = ['id' => 0, 'name' => 'config-only', 'interface' => 'central']
+            + [Rule::$rightname => ALLSTANDARDRIGHT, 'config' => ALLSTANDARDRIGHT, 'ticket' => 0];
+
+        try {
+            self::assertTrue(
+                (bool) Session::haveRight(Rule::$rightname, UPDATE),
+                'the operator must still hold the plugin right, or this test proves nothing',
+            );
+
+            $refused = false;
+            try {
+                Rule::checkOperatorMayActOnTickets();
+            } catch (AccessDeniedHttpException) {
+                $refused = true;
+            }
+
+            self::assertTrue($refused, 'the plugin right on its own let an operator act on tickets');
+        } finally {
+            $_SESSION['glpiactiveprofile'] = $before;
+            if ($cron !== null) {
+                $_SESSION['glpicronuserrunning'] = $cron;
+            }
+        }
+    }
+
+    /**
+     * The other direction. The guard is a right check and not `Ticket::check()` precisely so
+     * that it stays out of the interface's status transition rules: `canSolve()` is false for
+     * a ticket in WAITING, and a pending ticket is the only kind this plugin ever acts on.
+     */
+    public function testAnOperatorWhoMayEditTicketsIsNotBlocked(): void
+    {
+        $before = $_SESSION['glpiactiveprofile'];
+        $cron   = $_SESSION['glpicronuserrunning'] ?? null;
+        unset($_SESSION['glpicronuserrunning']);
+
+        $_SESSION['glpiactiveprofile'] = ['id' => 0, 'name' => 'helpdesk', 'interface' => 'central']
+            + [Rule::$rightname => ALLSTANDARDRIGHT, 'ticket' => ALLSTANDARDRIGHT];
+
+        try {
+            Rule::checkOperatorMayActOnTickets();
+            self::addToAssertionCount(1);
+        } finally {
+            $_SESSION['glpiactiveprofile'] = $before;
+            if ($cron !== null) {
+                $_SESSION['glpicronuserrunning'] = $cron;
+            }
+        }
     }
 }
