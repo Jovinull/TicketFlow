@@ -297,8 +297,9 @@ followup, then close" quietly becoming "add a followup" is a wrong outcome on ev
 touches, and one nobody would notice.
 
 The reason is kept on the rule, not only in the log, and only a real run writes it: a
-simulation reports the refusal on screen and counts it, but changes nothing, including the
-rule's own bookkeeping. Opening the rule shows it at the top of
+simulation reports the refusal on screen and counts it, but changes no plugin data, the
+rule's own bookkeeping included. Reading a corrupt rule still writes a line to the server
+error log, which is diagnostics about the broken row rather than a record of the run. Opening the rule shows it at the top of
 the form, and *Administration > TicketFlow > Rules* can be searched and filtered on **Why it
 is not running**, so a whole instance can be checked at once. Saving the rule rewrites its
 actions from the form, which is the usual fix, and the message clears the next time the rule

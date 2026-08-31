@@ -212,6 +212,11 @@ final readonly class RuleEngine
             // A dry run still reports and still counts; it just does not write. Whoever
             // asked for the simulation sees the reason on screen, and the record appears the
             // first time a real run reaches the rule.
+            //
+            // "Writes nothing" means the plugin's data and its audit trail. Reading a corrupt
+            // rule still puts a line in the server error log, because that happens where the
+            // row is parsed and before anybody knows what kind of run this is. That is
+            // diagnostics about a broken row, not a record of the run.
             if (!$dry_run) {
                 Rule::recordRefusal($rule->id, implode(' ', $rule->unusable));
             }

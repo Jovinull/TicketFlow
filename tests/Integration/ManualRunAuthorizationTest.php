@@ -38,6 +38,7 @@ namespace GlpiPlugin\Ticketclock\Tests\Integration;
 use Calendar;
 use CalendarSegment;
 use CommonITILActor;
+use Entity;
 use Group;
 use Group_Ticket;
 use GlpiPlugin\Ticketclock\Config;
@@ -295,5 +296,87 @@ final class ManualRunAuthorizationTest extends TestCase
         self::assertTrue($ticket->getFromDB($this->tickets_id));
         self::assertSame(Ticket::CLOSED, (int) $ticket->fields['status']);
         self::assertSame(1, $report->executed);
+    }
+    /**
+     * A rule inherited from a parent entity may be read, but not run for real.
+     *
+     * This one is pinned rather than argued, because the argument is easy to get backwards.
+     * GLPI 11 splits the two: `canViewItem()` calls `checkEntity(true)`, which accepts an
+     * ancestor of the session's entities, so a recursive rule stored on the parent is visible
+     * from every child. `canUpdateItem()` calls `checkEntity()` without recursion, so it is
+     * not editable from there. `check($id, UPDATE)` therefore refuses it, and a real run --
+     * which writes the refusal record onto the rule row -- is refused with it.
+     *
+     * If a future GLPI aligns the two, this test goes red instead of the plugin quietly
+     * widening who may act on somebody else's rule.
+     */
+    public function testAnInheritedRuleIsReadableButNotRunnableForReal(): void
+    {
+        $suffix = uniqid();
+        $before = [$_SESSION['glpiactiveentities'], $_SESSION['glpiactive_entity']];
+        $show   = $_SESSION['glpishowallentities'] ?? null;
+
+        $_SESSION['glpishowallentities'] = 1;
+        Session::changeActiveEntities(0, true);
+
+        $parent = (int) (new Entity())->add(['name' => 'TicketFlow parent ' . $suffix, 'entities_id' => 0]);
+        $child  = (int) (new Entity())->add(['name' => 'TicketFlow child ' . $suffix, 'entities_id' => $parent]);
+
+        $inherited = $this->ruleIn($parent, recursive: true);
+        $own       = $this->ruleIn($child, recursive: false);
+
+        try {
+            unset($_SESSION['glpishowallentities']);
+            $_SESSION['glpiactiveentities']        = [$child];
+            $_SESSION['glpiactive_entity']         = $child;
+            $_SESSION['glpiactiveentities_string'] = "'" . $child . "'";
+
+            $rule = new Rule();
+            self::assertTrue($rule->getFromDB($inherited));
+            self::assertTrue($rule->can($inherited, READ), 'an inherited rule must stay visible');
+            self::assertFalse(
+                $rule->can($inherited, UPDATE),
+                'a child entity could run and stamp metadata onto a rule it only inherits',
+            );
+
+            $mine = new Rule();
+            self::assertTrue($mine->getFromDB($own));
+            self::assertTrue(
+                $mine->can($own, UPDATE),
+                'the check must not also block a rule the operator actually owns',
+            );
+        } finally {
+            $_SESSION['glpishowallentities'] = 1;
+            Session::changeActiveEntities(0, true);
+
+            foreach ([$inherited, $own] as $id) {
+                (new Rule())->delete(['id' => $id], true);
+            }
+            foreach ([$child, $parent] as $id) {
+                (new Entity())->delete(['id' => $id], true);
+            }
+
+            [$_SESSION['glpiactiveentities'], $_SESSION['glpiactive_entity']] = $before;
+            if ($show !== null) {
+                $_SESSION['glpishowallentities'] = $show;
+            } else {
+                unset($_SESSION['glpishowallentities']);
+            }
+        }
+    }
+
+    private function ruleIn(int $entities_id, bool $recursive): int
+    {
+        $rule = new Rule();
+
+        return (int) $rule->add([
+            'name'         => 'TicketFlow entity rule ' . uniqid(),
+            'entities_id'  => $entities_id,
+            'is_recursive' => $recursive ? 1 : 0,
+            'rule_type'    => 'pending_inactivity',
+            'target_status' => Ticket::WAITING,
+            'delay_value'  => 1,
+            'delay_unit'   => 'business_days',
+        ]);
     }
 }

@@ -56,10 +56,15 @@ $rule->check($rules_id, READ);
 $run_real = isset($_POST['run_real']);
 if ($run_real) {
     Session::checkRight(Rule::$rightname, UPDATE);
-    // On this rule, not merely somewhere: `check()` is the item-level test, so a rule the
-    // operator can only read -- an inherited one belonging to a parent entity, say -- is not
-    // one they may run for real. A real run also records why a rule was refused onto the
-    // rule row, and writing to a rule is not something a reader gets to do.
+    // On this rule, not merely somewhere. `check()` is the item-level test, and GLPI 11
+    // splits the two directions: `canViewItem()` uses `checkEntity(true)`, which accepts an
+    // ancestor of the session's entities, so a recursive rule stored on a parent entity is
+    // visible from every child; `canUpdateItem()` uses `checkEntity()` without recursion, so
+    // it is not editable from there. A real run writes the refusal record onto the rule row,
+    // and writing to a rule is not something a reader gets to do.
+    //
+    // Easy to get backwards, so ManualRunAuthorizationTest pins it rather than leaving the
+    // guarantee resting on this comment.
     $rule->check($rules_id, UPDATE);
     // ... and the rights the run will actually exercise on tickets. See the method.
     Rule::checkOperatorMayActOnTickets();
