@@ -177,11 +177,14 @@ final class InspectorScopeTest extends TestCase
         $this->seeEverything();
         $report = Inspector::report();
 
-        $names = array_column($report['entities'], 'name');
-        self::assertTrue($this->containing($names, 'tenant mine ' . $this->suffix));
-        self::assertTrue(
-            $this->containing($names, 'tenant theirs ' . $this->suffix),
-            'the restriction must not hide data from a reader who genuinely has the whole tree',
+        // Asserted on the count rather than on the listed rows: the table stops at
+        // Inspector::ENTITY_LIMIT, so on a large instance a specific entity may legitimately
+        // not appear. `entities_total` is the number the restriction actually allowed, which
+        // is what "sees everything" means here.
+        self::assertGreaterThanOrEqual(
+            $this->countAllEntities(),
+            $report['entities_total'],
+            'the restriction must not hide entities from a reader who holds the whole tree',
         );
 
         self::assertGreaterThanOrEqual(3, $report['pending']['waiting_tickets']);
@@ -199,6 +202,11 @@ final class InspectorScopeTest extends TestCase
         }
 
         return 0;
+    }
+
+    private function countAllEntities(): int
+    {
+        return countElementsInTable(Entity::getTable());
     }
 
     /**

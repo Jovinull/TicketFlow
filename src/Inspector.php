@@ -73,6 +73,7 @@ final class Inspector
             'warnings'     => Config::getHealthWarnings(),
             'calendars'    => self::calendars(),
             'entities'     => self::entities(),
+            'entities_total' => self::countEntities(),
             'groups'       => self::assignableGroups(),
             'pending'      => self::pending(),
             'approvals'    => self::approvals(),
@@ -137,7 +138,11 @@ final class Inspector
         /** @var \DBmysql $DB */
         global $DB;
 
-        $criteria = ['FROM' => Entity::getTable(), 'ORDER' => 'completename', 'LIMIT' => 200];
+        $criteria = [
+            'FROM'  => Entity::getTable(),
+            'ORDER' => 'completename',
+            'LIMIT' => self::ENTITY_LIMIT,
+        ];
         self::restrict($criteria, Entity::getTable(), 'id');
 
         $out = [];
@@ -312,6 +317,24 @@ final class Inspector
         ksort($per_ticket);
 
         return $per_ticket;
+    }
+
+    /**
+     * How many entities the table lists at most.
+     *
+     * The row cost is real: each one resolves its calendar through the tree and counts its
+     * tickets. But a page whose whole job is to state facts must not quietly show the first
+     * two hundred and let the reader believe that is all of them, so `countEntities()`
+     * reports the true total alongside and the template says when it stopped short.
+     */
+    private const ENTITY_LIMIT = 200;
+
+    private static function countEntities(): int
+    {
+        $criteria = ['FROM' => Entity::getTable()];
+        self::restrict($criteria, Entity::getTable(), 'id');
+
+        return self::count($criteria);
     }
 
     /**

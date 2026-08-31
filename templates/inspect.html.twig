@@ -115,6 +115,11 @@
             {% endfor %}
             </tbody>
         </table>
+        {% if report.entities_total > report.entities|length %}
+            <p class="text-warning small mb-0">
+                {{ __('Showing %1$d of %2$d entities you can see. The rest are not listed here.', 'ticketclock')|format(report.entities|length, report.entities_total) }}
+            </p>
+        {% endif %}
     </div>
 </div>
 
