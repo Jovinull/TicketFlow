@@ -139,12 +139,28 @@ final class Config
             if (array_key_exists($name, self::MINIMUMS)) {
                 $clean[$name] = (string) max((int) $clean[$name], self::MINIMUMS[$name]);
             }
+
+            // The acting user ends up as the author of followups and solutions on real
+            // tickets, so it is the one setting where a typo is written into somebody's
+            // ticket history and stays there. An id nobody can resolve is refused rather
+            // than stored: the engine would otherwise attribute its work to a user that
+            // does not exist, and the audit trail would name nobody.
+            if ($name === 'system_users_id' && (int) $clean[$name] > 0 && !self::userExists((int) $clean[$name])) {
+                unset($clean[$name]);
+            }
         }
 
         if ($clean !== []) {
             CoreConfig::setConfigurationValues(self::CONTEXT, $clean);
             self::$cache = null;
         }
+    }
+
+    private static function userExists(int $users_id): bool
+    {
+        $user = new User();
+
+        return $user->getFromDB($users_id) && (int) $user->fields['is_deleted'] === 0;
     }
 
     /** Write any missing default. Called on install and on every init (cheap, cached). */

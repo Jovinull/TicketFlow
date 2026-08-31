@@ -24,7 +24,9 @@ parameters:
         # rather than re-declared.
         #
         # The rule itself stays switched on, so any *new* native call still has to be argued
-        # for. Every exception below is listed by hand because that call checks its own result.
+        # for. Every exception below is listed by hand, with why its failure is acceptable.
+        # Two of them (define, error_log) do not check their return at all: for those the
+        # argument is that the failure is not actionable, not that it is handled.
         -
             # The single place the plugin calls strtotime(). It throws on false, which is the
             # guarantee Safe was there to provide, with a message naming the unreadable date.
