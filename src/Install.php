@@ -96,7 +96,7 @@ final class Install
 
         foreach (self::tables() as $table) {
             if ($DB->tableExists($table)) {
-                $DB->doQuery('DROP TABLE `' . $table . '`');
+                $DB->doQuery('DROP TABLE ' . $DB->quoteName($table));
             }
         }
 
@@ -158,6 +158,12 @@ final class Install
         /** @var \DBmysql $DB */
         global $DB;
 
+        // Raw CREATE TABLE, deliberately: GLPI's Migration API offers addField(), dropTable()
+        // and renameTable() but no table builder, so every plugin writes the statement out.
+        // What the query builder would buy is escaping, and there is nothing here to escape:
+        // the names come from getTable() on the plugin's own classes, and quoteName() makes
+        // that structural rather than incidental. Recorded by GLPI's security review as a
+        // checklist note, with no injection path identified.
         $charset   = 'utf8mb4';
         $collation = 'utf8mb4_unicode_ci';
         $suffix    = "ENGINE=InnoDB DEFAULT CHARSET={$charset} COLLATE={$collation} ROW_FORMAT=DYNAMIC";
@@ -165,7 +171,7 @@ final class Install
         $rules = Rule::getTable();
         if (!$DB->tableExists($rules)) {
             $DB->doQuery("
-                CREATE TABLE `{$rules}` (
+                CREATE TABLE {$DB->quoteName($rules)} (
                     `id`                  INT UNSIGNED NOT NULL AUTO_INCREMENT,
                     `entities_id`         INT UNSIGNED NOT NULL DEFAULT 0,
                     `is_recursive`        TINYINT NOT NULL DEFAULT 0,
@@ -203,7 +209,7 @@ final class Install
         $rulegroups = RuleGroup::getTable();
         if (!$DB->tableExists($rulegroups)) {
             $DB->doQuery("
-                CREATE TABLE `{$rulegroups}` (
+                CREATE TABLE {$DB->quoteName($rulegroups)} (
                     `id`                         INT UNSIGNED NOT NULL AUTO_INCREMENT,
                     `plugin_ticketclock_rules_id` INT UNSIGNED NOT NULL DEFAULT 0,
                     `groups_id`                  INT UNSIGNED NOT NULL DEFAULT 0,
@@ -217,7 +223,7 @@ final class Install
         $ruleactions = RuleAction::getTable();
         if (!$DB->tableExists($ruleactions)) {
             $DB->doQuery("
-                CREATE TABLE `{$ruleactions}` (
+                CREATE TABLE {$DB->quoteName($ruleactions)} (
                     `id`                         INT UNSIGNED NOT NULL AUTO_INCREMENT,
                     `plugin_ticketclock_rules_id` INT UNSIGNED NOT NULL DEFAULT 0,
                     `action_type`                VARCHAR(50) NOT NULL DEFAULT '',
@@ -235,7 +241,7 @@ final class Install
             // this behaves as a partial unique index — blocking rows (processing, executed,
             // failed) reserve the occurrence, while dry runs and skipped rows do not.
             $DB->doQuery("
-                CREATE TABLE `{$executions}` (
+                CREATE TABLE {$DB->quoteName($executions)} (
                     `id`                         INT UNSIGNED NOT NULL AUTO_INCREMENT,
                     `plugin_ticketclock_rules_id` INT UNSIGNED NOT NULL DEFAULT 0,
                     `tickets_id`                 INT UNSIGNED NOT NULL DEFAULT 0,
