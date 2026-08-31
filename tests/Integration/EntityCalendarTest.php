@@ -72,6 +72,7 @@ final class EntityCalendarTest extends TestCase
     private int $child_entity = 0;
     private int $calendars_id = 0;
     private int $root_calendar_before = 0;
+    private int $sibling_entity = 0;
 
     protected function setUp(): void
     {
@@ -160,6 +161,30 @@ final class EntityCalendarTest extends TestCase
             'calendars_id'       => $this->root_calendar_before,
             'calendars_strategy' => 0,
         ]);
+
+        // These used to be left behind. Every run added a few entities, and once the
+        // instance passed the two hundred the diagnostics table lists, a *different* test
+        // started failing on the entity it had just created -- on one PHP version only,
+        // because that job happened to run second. Tests that leak state do not fail
+        // themselves; they fail whatever runs next.
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        foreach ([$this->sibling_entity, $this->child_entity, $this->parent_entity] as $id) {
+            if ($id > 0) {
+                $DB->delete(Ticket::getTable(), ['entities_id' => $id]);
+                (new Entity())->delete(['id' => $id], true);
+            }
+        }
+        if ($this->groups_id > 0) {
+            (new Group())->delete(['id' => $this->groups_id], true);
+        }
+        if ($this->calendars_id > 0) {
+            (new Calendar())->delete(['id' => $this->calendars_id], true);
+        }
+        if ($this->rules_id > 0) {
+            (new Rule())->delete(['id' => $this->rules_id], true);
+        }
 
         parent::tearDown();
     }
@@ -270,7 +295,7 @@ final class EntityCalendarTest extends TestCase
      */
     public function testARuleConfinedToOneEntityIgnoresItsSiblings(): void
     {
-        $sibling = (int) (new Entity())->add([
+        $sibling = $this->sibling_entity = (int) (new Entity())->add([
             'name'        => 'TicketFlow sibling ' . uniqid(),
             'entities_id' => 0,
         ]);
