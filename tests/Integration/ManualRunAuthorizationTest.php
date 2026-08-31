@@ -258,4 +258,42 @@ final class ManualRunAuthorizationTest extends TestCase
         self::assertSame(Ticket::CLOSED, (int) $ticket->fields['status']);
         self::assertSame(1, $report->executed);
     }
+    /**
+     * `close_ticket` shares the transition check with `change_status` but reaches it by a
+     * different route: its target is not configurable, it is always CLOSED. Covering only
+     * the configurable one would leave the hard close resting on an untested assumption.
+     */
+    public function testTheHardCloseIsRefusedWhenTheProfileDeniesClosing(): void
+    {
+        RuleAction::setActionsForRule($this->rules_id, [
+            'final' => ['type' => ActionType::CloseTicket->value],
+        ]);
+
+        $this->becomeOperator(followup_rights: ITILFollowup::ADDALLITEM, status_matrix: [
+            Ticket::WAITING => [Ticket::CLOSED => 0],
+        ]);
+
+        $report = RuleEngine::forOperator()->runRule($this->rule());
+
+        $ticket = new Ticket();
+        self::assertTrue($ticket->getFromDB($this->tickets_id));
+        self::assertSame(Ticket::WAITING, (int) $ticket->fields['status'], 'the hard close ignored the profile\'s status matrix');
+        self::assertSame(1, $report->failed);
+    }
+
+    public function testTheHardCloseRunsWhenTheProfileAllowsIt(): void
+    {
+        RuleAction::setActionsForRule($this->rules_id, [
+            'final' => ['type' => ActionType::CloseTicket->value],
+        ]);
+
+        $this->becomeOperator(followup_rights: ITILFollowup::ADDALLITEM);
+
+        $report = RuleEngine::forOperator()->runRule($this->rule());
+
+        $ticket = new Ticket();
+        self::assertTrue($ticket->getFromDB($this->tickets_id));
+        self::assertSame(Ticket::CLOSED, (int) $ticket->fields['status']);
+        self::assertSame(1, $report->executed);
+    }
 }
