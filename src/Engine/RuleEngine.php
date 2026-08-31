@@ -85,7 +85,10 @@ final readonly class RuleEngine
     public static function forOperator(): self
     {
         // array_values because getActiveEntities() is keyed, and the finder wants a list.
-        return new self(new CandidateFinder(array_values(array_map(intval(...), Session::getActiveEntities()))));
+        return new self(
+            new CandidateFinder(array_values(array_map(intval(...), Session::getActiveEntities()))),
+            authorization: new OperatorAuthorization(),
+        );
     }
 
     private ActionExecutor $executor;
@@ -95,6 +98,7 @@ final readonly class RuleEngine
         private TicketContextResolver $resolver = new TicketContextResolver(),
         ?BusinessTimeCalculator $calculator = null,
         ?ActionExecutor $executor = null,
+        ?OperatorAuthorization $authorization = null,
     ) {
         $calculator ??= new BusinessTimeCalculator(new GlpiCalendarEngine());
         $fallback = Config::getInt('fallback_calendars_id');
@@ -117,7 +121,7 @@ final readonly class RuleEngine
             new ChangeStatusAction(),
             new CloseTicketAction(),
             new SendNotificationAction(),
-        ]);
+        ], $authorization);
     }
 
     public function getActionExecutor(): ActionExecutor

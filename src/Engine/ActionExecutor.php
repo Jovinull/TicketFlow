@@ -55,9 +55,12 @@ final readonly class ActionExecutor
     private array $actions;
 
     /**
-     * @param list<ActionInterface> $actions
+     * @param list<ActionInterface>      $actions
+     * @param OperatorAuthorization|null $authorization what the logged-in operator may do to
+     *                                                 a ticket, or null for the scheduled
+     *                                                 run, which has no session to ask about
      */
-    public function __construct(array $actions)
+    public function __construct(array $actions, private ?OperatorAuthorization $authorization = null)
     {
         $this->actions = array_values($actions);
     }
@@ -93,7 +96,14 @@ final readonly class ActionExecutor
             }
 
             try {
+                // Asked before the action runs, not inside it: the scheduled run must not
+                // hit this at all. See OperatorAuthorization for why the two callers cannot
+                // share one check.
+                $this->authorization?->authorize($definition->type, $context->ticket->tickets_id);
+
                 $result = $handler->execute($definition, $context);
+            } catch (OperatorNotAllowed $e) {
+                $result = ActionResult::failure($definition->type, $e->getMessage());
             } catch (Throwable $e) {
                 // An action must never take the whole cron down.
                 $result = ActionResult::failure($definition->type, $e->getMessage());

@@ -1,0 +1,15 @@
+# Kept out of the archives GitHub generates from a tag, so a source download matches what
+# the release actually ships. The official release workflow builds its own archive and is
+# unaffected either way; this is about the "Download ZIP" copy somebody might drop straight
+# into glpi/plugins/. Development tooling has no business running from there.
+.github/**          export-ignore
+tools/**            export-ignore
+.gitattributes      export-ignore
+.php-cs-fixer.php   export-ignore
+.twig_cs.dist.php   export-ignore
+phpstan.neon        export-ignore
+psalm.xml           export-ignore
+rector.php          export-ignore
+phpunit.xml         export-ignore
+phpunit-unit.xml    export-ignore
+.glpi-coverage.json export-ignore
