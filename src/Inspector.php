@@ -104,8 +104,11 @@ final class Inspector
         /** @var \DBmysql $DB */
         global $DB;
 
+        $criteria = ['FROM' => Calendar::getTable(), 'ORDER' => 'id'];
+        self::restrict($criteria, Calendar::getTable(), '', true);
+
         $out = [];
-        foreach ($DB->request(['FROM' => Calendar::getTable(), 'ORDER' => 'id']) as $row) {
+        foreach ($DB->request($criteria) as $row) {
             $calendar = new Calendar();
             $calendar->getFromDB($row['id']);
 
@@ -134,8 +137,11 @@ final class Inspector
         /** @var \DBmysql $DB */
         global $DB;
 
+        $criteria = ['FROM' => Entity::getTable(), 'ORDER' => 'completename', 'LIMIT' => 200];
+        self::restrict($criteria, Entity::getTable(), 'id');
+
         $out = [];
-        foreach ($DB->request(['FROM' => Entity::getTable(), 'ORDER' => 'completename', 'LIMIT' => 200]) as $row) {
+        foreach ($DB->request($criteria) as $row) {
             // Asked for by its *strategy* field, which is what GLPI 11 expects. Passing
             // 'calendars_id' as the reference still works -- core rewrites it -- but it
             // trigger_error()s a deprecation on every single call, and this one runs once per
@@ -166,18 +172,22 @@ final class Inspector
         global $DB;
 
         $counts = [];
-        $iterator = $DB->request([
-            'SELECT' => ['groups_id', 'COUNT DISTINCT' => 'tickets_id AS nb'],
-            'FROM'   => Group_Ticket::getTable(),
-            'WHERE'  => ['type' => CommonITILActor::ASSIGN],
-            'GROUPBY' => 'groups_id',
-        ]);
-        foreach ($iterator as $row) {
+        $criteria = self::assignedGroupTickets();
+        $criteria['SELECT']  = [
+            Group_Ticket::getTable() . '.groups_id',
+            'COUNT DISTINCT' => Group_Ticket::getTable() . '.tickets_id AS nb',
+        ];
+        $criteria['GROUPBY'] = Group_Ticket::getTable() . '.groups_id';
+
+        foreach ($DB->request($criteria) as $row) {
             $counts[(int) $row['groups_id']] = (int) $row['nb'];
         }
 
+        $groups = ['FROM' => Group::getTable(), 'WHERE' => ['is_assign' => 1], 'ORDER' => 'completename'];
+        self::restrict($groups, Group::getTable(), '', true);
+
         $out = [];
-        foreach ($DB->request(['FROM' => Group::getTable(), 'WHERE' => ['is_assign' => 1], 'ORDER' => 'completename']) as $row) {
+        foreach ($DB->request($groups) as $row) {
             $out[] = [
                 'id'          => (int) $row['id'],
                 'name'        => (string) ($row['completename'] ?: $row['name']),
@@ -199,33 +209,30 @@ final class Inspector
         /** @var \DBmysql $DB */
         global $DB;
 
-        $waiting = countElementsInTable(Ticket::getTable(), [
+        $waiting = self::countTickets([
             'status'     => Ticket::WAITING,
             'is_deleted' => 0,
         ]);
 
-        $waiting_without_reference = countElementsInTable(Ticket::getTable(), [
+        $waiting_without_reference = self::countTickets([
             'status'             => Ticket::WAITING,
             'is_deleted'         => 0,
             'begin_waiting_date' => null,
         ]);
 
+        $reason_criteria = ['FROM' => PendingReason::getTable(), 'ORDER' => 'name'];
+        self::restrict($reason_criteria, PendingReason::getTable(), '', true);
+
         $reasons = [];
-        foreach ($DB->request(['FROM' => PendingReason::getTable(), 'ORDER' => 'name']) as $row) {
+        foreach ($DB->request($reason_criteria) as $row) {
             $reasons[] = [
-                'id'   => (int) $row['id'],
-                'name' => (string) $row['name'],
-                'in_use' => countElementsInTable(PendingReason_Item::getTable(), [
-                    'pendingreasons_id' => $row['id'],
-                    'itemtype'          => Ticket::class,
-                ]),
+                'id'     => (int) $row['id'],
+                'name'   => (string) $row['name'],
+                'in_use' => self::countPendingItems(['pendingreasons_id' => $row['id']]),
             ];
         }
 
-        $items_without_reason = countElementsInTable(PendingReason_Item::getTable(), [
-            'itemtype'          => Ticket::class,
-            'pendingreasons_id' => 0,
-        ]);
+        $items_without_reason = self::countPendingItems(['pendingreasons_id' => 0]);
 
         return [
             'waiting_tickets'           => $waiting,
@@ -243,10 +250,12 @@ final class Inspector
         /** @var \DBmysql $DB */
         global $DB;
 
+        $validations = ['FROM' => TicketValidation::getTable()];
+        self::restrict($validations, TicketValidation::getTable());
+
         $by_status = [];
-        $iterator = $DB->request([
+        $iterator = $DB->request($validations + [
             'SELECT'  => ['status', 'COUNT' => 'id AS nb'],
-            'FROM'    => TicketValidation::getTable(),
             'GROUPBY' => 'status',
         ]);
         foreach ($iterator as $row) {
@@ -267,8 +276,8 @@ final class Inspector
         return [
             'by_status'      => $rows,
             'waiting'        => $by_status[CommonITILValidation::WAITING] ?? 0,
-            'group_targets'  => countElementsInTable(TicketValidation::getTable(), ['itemtype_target' => Group::class]),
-            'user_targets'   => countElementsInTable(TicketValidation::getTable(), ['itemtype_target' => 'User']),
+            'group_targets'  => self::countValidations(['itemtype_target' => Group::class]),
+            'user_targets'   => self::countValidations(['itemtype_target' => 'User']),
         ];
     }
 
@@ -285,13 +294,15 @@ final class Inspector
         /** @var \DBmysql $DB */
         global $DB;
 
+        $criteria = self::assignedGroupTickets();
+        $criteria['SELECT']  = [
+            Group_Ticket::getTable() . '.tickets_id',
+            'COUNT' => Group_Ticket::getTable() . '.id AS nb',
+        ];
+        $criteria['GROUPBY'] = Group_Ticket::getTable() . '.tickets_id';
+
         $per_ticket = [];
-        $iterator = $DB->request([
-            'SELECT'  => ['tickets_id', 'COUNT' => 'id AS nb'],
-            'FROM'    => Group_Ticket::getTable(),
-            'WHERE'   => ['type' => CommonITILActor::ASSIGN],
-            'GROUPBY' => 'tickets_id',
-        ]);
+        $iterator = $DB->request($criteria);
 
         foreach ($iterator as $row) {
             $nb = (int) $row['nb'];
@@ -301,6 +312,128 @@ final class Inspector
         ksort($per_ticket);
 
         return $per_ticket;
+    }
+
+    /**
+     * Narrows a query to the entities the reader is actually allowed to see.
+     *
+     * The diagnostics page is gated on this plugin's own UPDATE right, and `installRights()`
+     * hands that right to every profile that can configure GLPI -- which includes the
+     * entity-scoped administrator of a single subsidiary. Without this, such an operator
+     * would read entity names, ticket volumes, group workloads and approval counts for the
+     * whole instance, which is precisely what core keeps entity-scoped everywhere else.
+     * Reported by GLPI's pre-publication security review.
+     *
+     * Core returns no criteria at all when the reader can genuinely see everything, so an
+     * empty result is "no restriction needed", not a failure.
+     *
+     * @param array<string, mixed> $criteria query being built; modified in place
+     */
+    private static function restrict(array &$criteria, string $table, string $field = '', bool $recursive = false): void
+    {
+        $restriction = getEntitiesRestrictCriteria($table, $field, '', $recursive);
+        if ($restriction === []) {
+            return;
+        }
+
+        $criteria['WHERE'] ??= [];
+        $criteria['WHERE'][] = $restriction;
+    }
+
+    /**
+     * Assigned-group rows joined to their ticket, so the entity restriction has something to
+     * apply to: `glpi_groups_tickets` carries no `entities_id` of its own.
+     *
+     * @return array<string, mixed>
+     */
+    private static function assignedGroupTickets(): array
+    {
+        $criteria = [
+            'FROM'       => Group_Ticket::getTable(),
+            'INNER JOIN' => [
+                Ticket::getTable() => [
+                    'ON' => [
+                        Group_Ticket::getTable() => 'tickets_id',
+                        Ticket::getTable()       => 'id',
+                    ],
+                ],
+            ],
+            'WHERE'      => [
+                Group_Ticket::getTable() . '.type' => CommonITILActor::ASSIGN,
+                Ticket::getTable() . '.is_deleted' => 0,
+            ],
+        ];
+        self::restrict($criteria, Ticket::getTable());
+
+        return $criteria;
+    }
+
+    /**
+     * @param array<string, mixed> $where
+     */
+    private static function countTickets(array $where): int
+    {
+        $criteria = ['FROM' => Ticket::getTable(), 'WHERE' => $where];
+        self::restrict($criteria, Ticket::getTable());
+
+        return self::count($criteria);
+    }
+
+    /**
+     * Pending-reason rows attached to tickets. Same join reason as assignedGroupTickets():
+     * the link table has no entity of its own, the ticket it points at does.
+     *
+     * @param array<string, mixed> $where columns of the link table, unqualified
+     */
+    private static function countPendingItems(array $where): int
+    {
+        $link = PendingReason_Item::getTable();
+
+        $qualified = [$link . '.itemtype' => Ticket::class];
+        foreach ($where as $field => $value) {
+            $qualified[$link . '.' . $field] = $value;
+        }
+
+        $criteria = [
+            'FROM'       => $link,
+            'INNER JOIN' => [
+                Ticket::getTable() => [
+                    'ON' => [
+                        $link              => 'items_id',
+                        Ticket::getTable() => 'id',
+                    ],
+                ],
+            ],
+            'WHERE'      => $qualified,
+        ];
+        self::restrict($criteria, Ticket::getTable());
+
+        return self::count($criteria);
+    }
+
+    /**
+     * @param array<string, mixed> $where
+     */
+    private static function countValidations(array $where): int
+    {
+        $criteria = ['FROM' => TicketValidation::getTable(), 'WHERE' => $where];
+        self::restrict($criteria, TicketValidation::getTable());
+
+        return self::count($criteria);
+    }
+
+    /**
+     * @param array<string, mixed> $criteria
+     */
+    private static function count(array $criteria): int
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $criteria['COUNT'] = 'nb';
+        $row = $DB->request($criteria)->current();
+
+        return is_array($row) ? (int) $row['nb'] : 0;
     }
 
     /**
