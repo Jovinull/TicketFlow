@@ -42,6 +42,7 @@ use CommonITILActor;
 use CommonITILValidation;
 use CronTask;
 use Entity;
+use Glpi\DBAL\QueryExpression;
 use Group;
 use Group_Ticket;
 use PendingReason;
@@ -354,12 +355,29 @@ final class Inspector
      */
     private static function restrict(array &$criteria, string $table, string $field = '', bool $recursive = false): void
     {
-        $restriction = getEntitiesRestrictCriteria($table, $field, '', $recursive);
-        if ($restriction === []) {
+        $criteria['WHERE'] ??= [];
+
+        // No session means no reader, and a report with nobody to read it shows nothing.
+        //
+        // Not defensiveness for its own sake. `getEntitiesRestrictCriteria()` changed inside
+        // the range this plugin supports: GLPI 11.0.8 added an explicit "no active session
+        // and no privileged context, deny everything" branch that 11.0.0 does not have. This
+        // page is only reachable through `front/inspect.php`, which needs a session, so the
+        // difference cannot bite today -- but the whole page exists to disclose aggregates,
+        // and its scoping should not depend on which patch of the host answered.
+        if (($_SESSION['glpiactiveentities'] ?? []) === []) {
+            $criteria['WHERE'][] = new QueryExpression('0');
+
             return;
         }
 
-        $criteria['WHERE'] ??= [];
+        $restriction = getEntitiesRestrictCriteria($table, $field, '', $recursive);
+        if ($restriction === []) {
+            // Core's way of saying "this reader may see everything", which it answers for a
+            // genuine global administrator.
+            return;
+        }
+
         $criteria['WHERE'][] = $restriction;
     }
 
