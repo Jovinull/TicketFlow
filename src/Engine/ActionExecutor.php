@@ -77,12 +77,13 @@ final readonly class ActionExecutor
     }
 
     /**
-     * @return array{results: list<ActionResult>, success: bool}
+     * @return array{results: list<ActionResult>, success: bool, refused: bool}
      */
     public function run(ActionContext $context): array
     {
         $results = [];
         $success = true;
+        $refused = false;
 
         foreach ($context->rule->orderedActions() as $definition) {
             $handler = $this->handlerFor($definition->type);
@@ -103,7 +104,13 @@ final readonly class ActionExecutor
 
                 $result = $handler->execute($definition, $context);
             } catch (OperatorNotAllowed $e) {
-                $result = ActionResult::failure($definition->type, $e->getMessage());
+                // Do not flatten this into an ordinary failure. The engine can release an
+                // untouched occurrence for cron, while retaining a claim if an earlier
+                // action in this same batch already ran.
+                $results[] = ActionResult::refused($e->type, $e->getMessage());
+                $success = false;
+                $refused = true;
+                break;
             } catch (Throwable $e) {
                 // An action must never take the whole cron down.
                 $result = ActionResult::failure($definition->type, $e->getMessage());
@@ -117,7 +124,7 @@ final readonly class ActionExecutor
             }
         }
 
-        return ['results' => $results, 'success' => $success];
+        return ['results' => $results, 'success' => $success, 'refused' => $refused];
     }
 
     /**

@@ -286,4 +286,39 @@ final class InspectorScopeTest extends TestCase
         ]);
         $ticket->update(['id' => $tickets_id, 'status' => Ticket::WAITING]);
     }
+    /**
+     * With no session there is no reader, and a report about entities shows none of them.
+     *
+     * `getEntitiesRestrictCriteria()` is not the same function across the range this plugin
+     * supports: GLPI 11.0.8 added an explicit "no active session and no privileged context,
+     * deny everything" branch that 11.0.0 does not have. This page is only reachable through
+     * `front/inspect.php`, which requires a session, so the difference cannot bite today --
+     * but the page exists to disclose aggregates, and its scoping should not depend on which
+     * patch of the host answered the question.
+     */
+    public function testWithNoSessionEntitiesTheReportShowsNothing(): void
+    {
+        $before = $_SESSION['glpiactiveentities'] ?? null;
+        $show   = $_SESSION['glpishowallentities'] ?? null;
+
+        try {
+            unset($_SESSION['glpishowallentities']);
+            $_SESSION['glpiactiveentities'] = [];
+
+            $report = Inspector::report();
+
+            self::assertSame([], $report['entities'], 'a report with no reader listed entities');
+            self::assertSame([], $report['groups']);
+            self::assertSame([], $report['calendars']);
+            self::assertSame(0, $report['pending']['waiting_tickets']);
+            self::assertSame(0, $report['entities_total']);
+        } finally {
+            if ($before !== null) {
+                $_SESSION['glpiactiveentities'] = $before;
+            }
+            if ($show !== null) {
+                $_SESSION['glpishowallentities'] = $show;
+            }
+        }
+    }
 }

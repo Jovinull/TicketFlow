@@ -38,6 +38,8 @@ namespace GlpiPlugin\Ticketclock\Tests\Integration;
 use Calendar;
 use CalendarSegment;
 use CommonITILActor;
+use Entity;
+use Glpi\Exception\Http\AccessDeniedHttpException;
 use Group;
 use Group_Ticket;
 use GlpiPlugin\Ticketclock\Config;
@@ -161,7 +163,15 @@ final class ManualRunAuthorizationTest extends TestCase
 
         self::assertSame(0, $this->followupsOnTicket(), 'the manual run wrote a followup the operator could not write by hand');
         self::assertSame(0, $report->executed);
-        self::assertSame(1, $report->failed, 'the refusal must be recorded, not silently skipped');
+        self::assertSame(0, $report->failed, 'a refusal is not an action failure');
+        self::assertSame(1, $report->skipped, 'the refusal must be visible, not silent');
+
+        // The denied manual attempt took a claim briefly, but it must release it before
+        // returning. Otherwise one under-privileged click disables the scheduled rule for
+        // this ticket permanently.
+        $scheduled = (new RuleEngine())->runRule($this->rule());
+        self::assertSame(1, $this->followupsOnTicket(), 'the denied manual run reserved the occurrence against cron');
+        self::assertSame(1, $scheduled->executed);
     }
 
     public function testAnOperatorWithFollowupRightsCanWriteOne(): void
@@ -172,6 +182,24 @@ final class ManualRunAuthorizationTest extends TestCase
 
         self::assertSame(1, $this->followupsOnTicket(), 'an operator who may add followups was blocked');
         self::assertSame(1, $report->executed);
+    }
+
+    public function testAManualFollowupIsAttributedToTheOperatorNotTheSystemUser(): void
+    {
+        $this->becomeOperator(followup_rights: ITILFollowup::ADDALLITEM);
+        $operator_users_id = (int) Session::getLoginUserID();
+
+        RuleEngine::forOperator()->runRule($this->rule());
+
+        /** @var \DBmysql $DB */
+        global $DB;
+        $row = $DB->request([
+            'FROM'  => ITILFollowup::getTable(),
+            'WHERE' => ['itemtype' => Ticket::class, 'items_id' => $this->tickets_id],
+        ])->current();
+
+        self::assertNotFalse($row, 'the operator run did not create its followup');
+        self::assertSame($operator_users_id, (int) $row['users_id']);
     }
 
     /**
@@ -240,7 +268,8 @@ final class ManualRunAuthorizationTest extends TestCase
         $ticket = new Ticket();
         self::assertTrue($ticket->getFromDB($this->tickets_id));
         self::assertSame(Ticket::WAITING, (int) $ticket->fields['status'], 'the ticket was moved to a status the profile denies');
-        self::assertSame(1, $report->failed);
+        self::assertSame(0, $report->failed);
+        self::assertSame(1, $report->skipped, 'a refused transition must release its occurrence for cron');
     }
 
     public function testTheSameTransitionIsAllowedWhenTheProfilePermitsIt(): void
@@ -278,7 +307,8 @@ final class ManualRunAuthorizationTest extends TestCase
         $ticket = new Ticket();
         self::assertTrue($ticket->getFromDB($this->tickets_id));
         self::assertSame(Ticket::WAITING, (int) $ticket->fields['status'], 'the hard close ignored the profile\'s status matrix');
-        self::assertSame(1, $report->failed);
+        self::assertSame(0, $report->failed);
+        self::assertSame(1, $report->skipped, 'a refused hard close must release its occurrence for cron');
     }
 
     public function testTheHardCloseRunsWhenTheProfileAllowsIt(): void
@@ -295,5 +325,137 @@ final class ManualRunAuthorizationTest extends TestCase
         self::assertTrue($ticket->getFromDB($this->tickets_id));
         self::assertSame(Ticket::CLOSED, (int) $ticket->fields['status']);
         self::assertSame(1, $report->executed);
+    }
+    /**
+     * A rule inherited from a parent entity may be read, but not run for real.
+     *
+     * Asserted against the plugin's own guard, not against whichever core method it happens
+     * to sit next to. `CommonDBTM::canUpdateItem()` answered this differently inside the
+     * range the plugin supports -- `checkEntity(true)` up to GLPI 11.0.4, `checkEntity()`
+     * from 11.0.5 -- so an earlier version of this test passed on the CI's GLPI while the
+     * behaviour it claimed to protect was absent on 11.0.0 through 11.0.4. Testing the
+     * policy instead of the mechanism is what makes the result mean something on all of them.
+     *
+     * Why the policy: a real run writes to the rule row. Being able to see a rule is not the
+     * same as administering it, and a recursive rule is visible from every child by design.
+     */
+    public function testAnInheritedRuleIsReadableButNotRunnableForReal(): void
+    {
+        $suffix = uniqid();
+        $before = [$_SESSION['glpiactiveentities'], $_SESSION['glpiactive_entity']];
+        $show   = $_SESSION['glpishowallentities'] ?? null;
+
+        $_SESSION['glpishowallentities'] = 1;
+        Session::changeActiveEntities(0, true);
+
+        $parent = (int) (new Entity())->add(['name' => 'TicketFlow parent ' . $suffix, 'entities_id' => 0]);
+        $child  = (int) (new Entity())->add(['name' => 'TicketFlow child ' . $suffix, 'entities_id' => $parent]);
+
+        $inherited = $this->ruleIn($parent, recursive: true);
+        $own       = $this->ruleIn($child, recursive: false);
+
+        try {
+            unset($_SESSION['glpishowallentities']);
+            $_SESSION['glpiactiveentities']        = [$child];
+            $_SESSION['glpiactive_entity']         = $child;
+            $_SESSION['glpiactiveentities_string'] = "'" . $child . "'";
+
+            $rule = new Rule();
+            self::assertTrue($rule->getFromDB($inherited));
+            self::assertTrue($rule->can($inherited, READ), 'an inherited rule must stay visible');
+
+            $refused = false;
+            try {
+                Rule::checkOperatorAdministersRule($rule);
+            } catch (AccessDeniedHttpException) {
+                $refused = true;
+            }
+            self::assertTrue(
+                $refused,
+                'a child entity could run and stamp metadata onto a rule it only inherits',
+            );
+
+            // The other direction matters as much: a guard that also blocked the operator's
+            // own rule would be a regression wearing a fix's clothes.
+            $mine = new Rule();
+            self::assertTrue($mine->getFromDB($own));
+            Rule::checkOperatorAdministersRule($mine);
+            self::addToAssertionCount(1);
+        } finally {
+            $_SESSION['glpishowallentities'] = 1;
+            Session::changeActiveEntities(0, true);
+
+            foreach ([$inherited, $own] as $id) {
+                (new Rule())->delete(['id' => $id], true);
+            }
+            foreach ([$child, $parent] as $id) {
+                (new Entity())->delete(['id' => $id], true);
+            }
+
+            [$_SESSION['glpiactiveentities'], $_SESSION['glpiactive_entity']] = $before;
+            if ($show !== null) {
+                $_SESSION['glpishowallentities'] = $show;
+            } else {
+                unset($_SESSION['glpishowallentities']);
+            }
+        }
+    }
+
+    private function ruleIn(int $entities_id, bool $recursive): int
+    {
+        $rule = new Rule();
+
+        return (int) $rule->add([
+            'name'         => 'TicketFlow entity rule ' . uniqid(),
+            'entities_id'  => $entities_id,
+            'is_recursive' => $recursive ? 1 : 0,
+            'rule_type'    => 'pending_inactivity',
+            'target_status' => Ticket::WAITING,
+            'delay_value'  => 1,
+            'delay_unit'   => 'business_days',
+        ]);
+    }
+    /**
+     * A refusal that arrives after an action already ran keeps the occurrence.
+     *
+     * Releasing it is right when nothing happened: the operator was told no, the ticket is
+     * untouched, and the scheduled run should still get its turn. It is wrong the moment an
+     * earlier action succeeded. The followup is already on the ticket, and handing the
+     * occurrence back would have cron write it a second time -- turning a permissions refusal
+     * into duplicated content on somebody's ticket.
+     *
+     * So a partial run stays `failed`, which retains the claim. The cost is that the
+     * occurrence needs a human to look at it; the alternative costs correctness.
+     */
+    public function testARefusalAfterAnActionKeepsTheOccurrenceSoCronCannotRepeatIt(): void
+    {
+        // Allowed first, denied second: the followup lands, the close does not.
+        RuleAction::setActionsForRule($this->rules_id, [
+            'add_followup' => ['enabled' => 1, 'content' => 'Please answer.'],
+            'final'        => ['type' => ActionType::CloseTicket->value],
+        ]);
+
+        $this->becomeOperator(followup_rights: ITILFollowup::ADDALLITEM, status_matrix: [
+            Ticket::WAITING => [Ticket::CLOSED => 0],
+        ]);
+
+        $report = RuleEngine::forOperator()->runRule($this->rule());
+
+        self::assertSame(1, $this->followupsOnTicket(), 'the first action should have run');
+        self::assertSame(1, $report->failed, 'a partial run is a failure, not a clean refusal');
+        self::assertSame(0, $report->skipped, 'releasing here would let the followup be written twice');
+
+        $ticket = new Ticket();
+        self::assertTrue($ticket->getFromDB($this->tickets_id));
+        self::assertSame(Ticket::WAITING, (int) $ticket->fields['status'], 'the denied close happened anyway');
+
+        // The scheduled run is not subject to the operator policy, so if the occurrence had
+        // been handed back it would run the whole rule again: a second followup, and the
+        // close the operator was refused.
+        $scheduled = (new RuleEngine())->runRule($this->rule());
+
+        self::assertSame(1, $this->followupsOnTicket(), 'cron repeated an action that had already run');
+        self::assertSame(0, $scheduled->executed);
+        self::assertSame(1, $scheduled->already_processed, 'the occurrence was not retained');
     }
 }

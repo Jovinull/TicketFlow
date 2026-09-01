@@ -88,6 +88,7 @@ final readonly class RuleEngine
         return new self(
             new CandidateFinder(array_values(array_map(intval(...), Session::getActiveEntities()))),
             authorization: new OperatorAuthorization(),
+            actor_users_id: (int) Session::getLoginUserID(),
         );
     }
 
@@ -99,6 +100,8 @@ final readonly class RuleEngine
         ?BusinessTimeCalculator $calculator = null,
         ?ActionExecutor $executor = null,
         ?OperatorAuthorization $authorization = null,
+        /** Null for cron; the manual path attributes generated content to its operator. */
+        private ?int $actor_users_id = null,
     ) {
         $calculator ??= new BusinessTimeCalculator(new GlpiCalendarEngine());
         $fallback = Config::getInt('fallback_calendars_id');
@@ -176,13 +179,68 @@ final readonly class RuleEngine
 
         $report = new RunReport();
         $report->preview_limit = max($preview_limit, 0);
+
+        // Refused before anything is read, let alone written. A rule whose stored actions
+        // cannot all be read is not the rule somebody configured, and running the survivors
+        // would give a wrong outcome on every ticket it touches without saying so. One rule
+        // stops until the row is fixed; the rest of the pass is unaffected, because runAll()
+        // asks each rule separately and merges what comes back.
+        // Decided before anything is written, because two of the callers must not write at
+        // all. A preview is reached with READ on the rule, and a rule left in simulation or
+        // an instance still under the global dry run has asked for a run that changes
+        // nothing. "Nothing" has to include the rule's own bookkeeping, or the guarantee is
+        // not a guarantee: without this a read-only operator could stamp an error onto a
+        // rule, or wipe an existing one off a parent-entity rule they only inherit.
+        $dry_run = $force_dry_run || $this->isGloballyInert() || $rule->is_dry_run;
+
+        if ($rule->unusable !== []) {
+            $report->refused++;
+
+            $messages = [];
+            foreach ($rule->unusable as $problem) {
+                $messages[] = sprintf(
+                    __('Rule "%1$s" was not run: %2$s', 'ticketclock'),
+                    $rule->name,
+                    $problem,
+                );
+            }
+
+            $report->errors = array_merge($report->errors, $messages);
+
+            // Kept on the rule, not only in this report. A scheduled run has nobody reading
+            // its report, and the file log is not the plugin's audit trail: without this the
+            // only way to learn why a rule went quiet is to know the log exists and go
+            // looking. The rule's own screen is where somebody will look.
+            //
+            // A dry run still reports and still counts; it just does not write. Whoever
+            // asked for the simulation sees the reason on screen, and the record appears the
+            // first time a real run reaches the rule.
+            //
+            // "Writes nothing" means the plugin's data and its audit trail. Reading a corrupt
+            // rule still puts a line in the server error log, because that happens where the
+            // row is parsed and before anybody knows what kind of run this is. That is
+            // diagnostics about a broken row, not a record of the run.
+            if (!$dry_run) {
+                Rule::recordRefusal($rule->id, implode(' ', $rule->unusable));
+            }
+
+            return $report;
+        }
+
+        // A rule that runs is a rule that is no longer broken. Cheap: the UPDATE is guarded
+        // on the column being set, so it matches nothing in the normal case. Skipped in a dry
+        // run for the same reason as above, and this direction is the worse one to get wrong:
+        // clearing is destructive, and a preview must not be able to erase the record of why
+        // a rule stopped.
+        if (!$dry_run) {
+            Rule::clearRefusal($rule->id);
+        }
+
         $matcher = $this->matcherFor($rule);
         if ($matcher === null) {
             $report->errors[] = sprintf(__('No matcher supports rule type "%s".', 'ticketclock'), $rule->type->value);
             return $report;
         }
-
-        $dry_run = $force_dry_run || $this->isGloballyInert() || $rule->is_dry_run;
 
         $batch_size = max(1, Config::getInt('batch_size', 200));
         $ceiling    = $max_candidates > 0 ? $max_candidates : Config::getInt('max_tickets_per_run', 1000);
@@ -295,11 +353,41 @@ final readonly class RuleEngine
             $fresh,
             $recheck->deadline ?? $deadline,
             $this->buildRenderer($rule, $fresh, $recheck->deadline ?? $deadline),
-            Config::getActingUserId(),
+            $this->actingUserId(),
             false,
         );
 
         $outcome = $this->executor->run($action_context);
+
+        if ($outcome['refused']) {
+            $message = $this->firstError($outcome['results']);
+            // A refused first action has made no ticket change, so releasing the occurrence
+            // lets cron process it under the automation policy. If an earlier action already
+            // ran, retaining a failed claim is safer: re-running the batch could duplicate
+            // that side effect.
+            $partial = count($outcome['results']) > 1;
+            Execution::complete(
+                $executions_id,
+                $partial ? ExecutionState::Failed : ExecutionState::Skipped,
+                $outcome['results'],
+                $message,
+            );
+            $report->errors[] = sprintf('#%d: %s', $fresh->tickets_id, $message);
+            if ($partial) {
+                $report->failed++;
+            } else {
+                $report->skipped++;
+            }
+            $report->notePreview(fn(): PreviewRow => $this->buildPreviewRow(
+                $fresh,
+                $recheck->deadline ?? $deadline,
+                $now,
+                false,
+                $partial ? 'failed' : 'refused',
+                $rule,
+            ));
+            return;
+        }
 
         Execution::complete(
             $executions_id,
@@ -337,7 +425,7 @@ final readonly class RuleEngine
             $context,
             $deadline,
             $this->buildRenderer($rule, $context, $deadline),
-            Config::getActingUserId(),
+            $this->actingUserId(),
             true,
         );
 
@@ -418,6 +506,11 @@ final readonly class RuleEngine
     private function isGloballyInert(): bool
     {
         return !Config::getBool('execution_enabled') || Config::getBool('dry_run_global');
+    }
+
+    private function actingUserId(): int
+    {
+        return $this->actor_users_id ?? Config::getActingUserId();
     }
 
     private function matcherFor(RuleDefinition $rule): ?MatcherInterface

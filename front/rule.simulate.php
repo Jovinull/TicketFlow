@@ -54,8 +54,17 @@ $rule->check($rules_id, READ);
 // Running a rule for real is a POST; GLPI's CheckCsrfListener has already validated and
 // consumed the token by the time this file runs, so only the right is checked here.
 $run_real = isset($_POST['run_real']);
+$simulate = isset($_POST['simulate']);
+$ran      = $run_real || $simulate;
 if ($run_real) {
     Session::checkRight(Rule::$rightname, UPDATE);
+    // On this rule, not merely somewhere: the item-level test, which also applies whatever
+    // entity rules core applies to editing anything.
+    $rule->check($rules_id, UPDATE);
+    // And the plugin's own policy on top, because the line above does not answer the same
+    // question on every supported GLPI: `canUpdateItem()` accepted an ancestor entity up to
+    // 11.0.4 and stopped at 11.0.5. See the method.
+    Rule::checkOperatorAdministersRule($rule);
     // ... and the rights the run will actually exercise on tickets. See the method.
     Rule::checkOperatorMayActOnTickets();
 }
@@ -75,26 +84,28 @@ Html::header(
     'rule',
 );
 
-$engine     = RuleEngine::forOperator();
 $definition = $rule->toDefinition();
 
-// A manual run still honours the safety switches, the idempotency claim and the
-// re-validation step; the only thing the button changes is that it does not force dry run.
-// The screen is the only reader of the preview, so it is the only place that asks for it.
-// The ceiling matches what a run can examine anyway, so nothing that used to be listed
-// stops being listed.
-$report = $engine->runRule(
-    $definition,
-    force_dry_run: !$run_real,
-    preview_limit: Config::getInt('max_tickets_per_run', 1000),
-);
+$report = null;
+if ($ran) {
+    $engine = RuleEngine::forOperator();
+
+    // Both evaluation modes are POST-only. A preview can create non-blocking audit rows when
+    // dry-run logging is enabled, and a bare GET must never scan the instance or write them.
+    $report = $engine->runRule(
+        $definition,
+        force_dry_run: !$run_real,
+        preview_limit: Config::getInt('max_tickets_per_run', 1000),
+    );
+}
 
 TemplateRenderer::getInstance()->display('@ticketclock/simulation.html.twig', [
     'rule'        => $rule,
     'definition'  => $definition,
     'report'      => $report,
-    'counters'    => $report->counters(),
+    'counters'    => $report?->counters() ?? [],
     'was_real'    => $run_real,
+    'ran'         => $ran,
     'description' => $rule->getHumanDescription(),
     'warnings'    => Config::getHealthWarnings(),
     'can_run'     => Session::haveRight(Rule::$rightname, UPDATE),

@@ -5,6 +5,44 @@ All notable changes to TicketFlow are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] — 2026-09-01
+
+Minor release: it contains the security hardening completed after 1.0.1, plus operational
+features for safely diagnosing and preventing silent automation failures.
+
+### Added
+
+- Configurable automatic-reply marks. Followups matching a configured literal marker are
+  ignored when determining whether a requester replied, so out-of-office mail no longer
+  silently restarts or suppresses a rule.
+- A persistent, searchable reason on a rule whose stored actions cannot be read. Operators can
+  see and repair a refused rule without discovering it only in a server log.
+- A schema contract that compares clean installation with upgrades from each historical
+  schema, on both MariaDB and MySQL.
+- A complete PHP/database CI matrix, including MySQL 8.0 and 9.7.
+- Engineering playbook, review/release checklist and ADR-010 for the manual execution model.
+
+### Fixed
+
+- A manual authorization refusal no longer reserves an occurrence against cron when no action
+  ran. Conversely, a refusal after a prior action keeps the claim, preventing cron from
+  duplicating the earlier side effect.
+- Simulation is POST-only and no longer scans candidates or writes plugin state on a bare GET.
+- Manual followups and solutions are attributed to the logged-in operator, while cron keeps
+  using the configured automation user.
+- Global TicketFlow configuration now requires GLPI's global `config` UPDATE right.
+- Rule execution and the diagnostics page fail closed when there is no session context from
+  which to derive an entity scope.
+- Schema migrations apply their DDL before recording the new schema version, so an interrupted
+  upgrade cannot claim a step that never reached the database.
+
+### Changed
+
+- Manual execution has an explicit operator policy per action and per ticket; cron remains a
+  separate, administrator-configured automation context.
+- Automatic-reply marks are matched as literals, including `%`, `_`, quotes and backslashes,
+  rather than as SQL `LIKE` wildcards.
+
 ## [1.0.1] — 2026-08-31
 
 Security release. Everything here came out of GLPI's pre-publication security review and two
@@ -351,7 +389,9 @@ First release. Targets GLPI 11.0.
   administrator deletes it — deliberately, since the alternative risks repeating a
   destructive action.
 
-[Unreleased]: https://github.com/Jovinull/ticketclock/compare/1.0.0...HEAD
+[Unreleased]: https://github.com/Jovinull/ticketclock/compare/1.1.0...HEAD
+[1.1.0]: https://github.com/Jovinull/ticketclock/compare/1.0.1...1.1.0
+[1.0.1]: https://github.com/Jovinull/ticketclock/releases/tag/1.0.1
 [1.0.0]: https://github.com/Jovinull/ticketclock/releases/tag/1.0.0
 [0.2.0]: https://github.com/Jovinull/ticketclock/releases/tag/0.2.0
 [0.1.0]: https://github.com/Jovinull/ticketclock/releases/tag/0.1.0

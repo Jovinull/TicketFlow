@@ -46,7 +46,7 @@ namespace GlpiPlugin\Ticketclock;
 final class Version
 {
     /** Plugin version, as published in the catalog manifest. */
-    public const VERSION = '1.0.1';
+    public const VERSION = '1.1.0';
 
     /** Minimal GLPI version, inclusive. */
     public const MIN_GLPI = '11.0.0';
@@ -61,7 +61,7 @@ final class Version
      * schema, and {@see Install} compares this against what the database reports to decide
      * which migrations are missing.
      */
-    public const SCHEMA = '1.1.0';
+    public const SCHEMA = '1.2.0';
 
     private function __construct() {}
 }

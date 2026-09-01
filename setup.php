@@ -55,10 +55,10 @@ require_once __DIR__ . '/src/Version.php';
 //
 // GlpiPlugin\Ticketclock\Version stays the source of truth for code -- the unit suite uses
 // it without loading this file at all -- and a test asserts the two never drift apart.
-define('PLUGIN_TICKETCLOCK_VERSION', '1.0.1');
+define('PLUGIN_TICKETCLOCK_VERSION', '1.1.0');
 define('PLUGIN_TICKETCLOCK_MIN_GLPI', '11.0.0');
 define('PLUGIN_TICKETCLOCK_MAX_GLPI', '11.0.99');
-define('PLUGIN_TICKETCLOCK_SCHEMA_VERSION', '1.1.0');
+define('PLUGIN_TICKETCLOCK_SCHEMA_VERSION', '1.2.0');
 
 /**
  * Init hooks of the plugin.

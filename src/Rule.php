@@ -93,6 +93,88 @@ class Rule extends CommonDBTM
     }
 
     /**
+     * Records why the engine would not run this rule, where somebody will find it.
+     *
+     * A refusal happens before any ticket is chosen, so there is no execution to attach the
+     * reason to, and inventing one would put a row carrying no ticket into a log that is
+     * otherwise strictly one row per ticket. The problem belongs to the rule: it is the rule
+     * that is unusable, on every ticket, until somebody edits it. So it is kept on the rule
+     * and shown on the rule's own screen and in its list.
+     *
+     * Written straight to the table rather than through update(): this runs from cron, where
+     * a history entry and a notification for every pass would be noise, and the value is
+     * bookkeeping about the rule rather than a change somebody made to it.
+     */
+    public static function recordRefusal(int $rules_id, string $reason): void
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        if ($rules_id <= 0) {
+            return;
+        }
+
+        $DB->update(self::getTable(), [
+            'last_error'      => $reason,
+            'last_error_date' => $_SESSION['glpi_currenttime'] ?? date('Y-m-d H:i:s'),
+        ], ['id' => $rules_id]);
+    }
+
+    /**
+     * Clears a recorded refusal once the rule runs again.
+     *
+     * Guarded on the column already being set, so the normal case is an UPDATE matching no
+     * rows rather than a write per rule per pass. A stale error is worse than none: it sends
+     * somebody looking for a problem that was fixed.
+     */
+    public static function clearRefusal(int $rules_id): void
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        if ($rules_id <= 0) {
+            return;
+        }
+
+        $DB->update(self::getTable(), [
+            'last_error'      => null,
+            'last_error_date' => null,
+        ], ['id' => $rules_id, ['NOT' => ['last_error' => null]]]);
+    }
+
+    /**
+     * Whether the operator administers this rule, rather than merely inheriting it.
+     *
+     * A real run writes to the rule row -- it records why the rule was refused, or clears an
+     * earlier record -- so it needs more than being able to see the rule. A recursive rule
+     * stored on a parent entity is visible from every child by design; that is what
+     * `is_recursive` is for. It is not a rule those children own.
+     *
+     * Stated here rather than left to `CommonDBTM::check($id, UPDATE)`, and that is the whole
+     * reason this method exists. Core changed the answer inside the range this plugin
+     * supports:
+     *
+     *     GLPI 11.0.0 - 11.0.4   canUpdateItem() -> checkEntity(true)   ancestor accepted
+     *     GLPI 11.0.5 and later  canUpdateItem() -> checkEntity()       ancestor refused
+     *
+     * So through 11.0.4 the item check alone lets a child-entity operator run and stamp
+     * metadata onto a parent's rule, and from 11.0.5 it does not. A guarantee that flips with
+     * the host's patch level is not a guarantee. The plugin states its own policy, and the
+     * test asserts that policy rather than which core method happens to be called.
+     *
+     * `haveAccessToEntity()` without the recursive flag is the direct-access test: the rule's
+     * entity has to be one of the session's own, not an ancestor of one.
+     */
+    public static function checkOperatorAdministersRule(self $rule): void
+    {
+        if (!Session::haveAccessToEntity((int) ($rule->fields['entities_id'] ?? -1))) {
+            throw new AccessDeniedHttpException(
+                'A real run writes to the rule, and this rule belongs to an entity outside your own.',
+            );
+        }
+    }
+
+    /**
      * What an operator must hold before the manual "Run for real" button may touch a ticket.
      *
      * `CommonDBTM::add()` and `update()` authorize nothing -- in GLPI authorization lives in
@@ -101,16 +183,17 @@ class Rule extends CommonDBTM
      * `Profile::installRights()` hands that right to every profile that can configure GLPI.
      * An operator with no ticket rights at all could act on tickets through this screen.
      *
-     * Deliberately a right check rather than `Ticket::check()` or `ITILSolution::check()`.
-     * Those also apply the interface's status transition matrix, and
-     * `Ticket::isAllowedStatus(WAITING, SOLVED)` is false: GLPI's UI does not offer a solve
-     * button on a pending ticket. Since a pending ticket is the only kind this plugin ever
-     * acts on, routing the engine through those checks would authorize nothing extra and
-     * would stop the plugin from doing the one thing it exists to do.
-     *
-     * The cron path is untouched on purpose. It has no session to check, runs as the
-     * configured acting user, and is reached only by an administrator who enabled the
-     * automatic action.
+     * This is the coarse gate: the right to touch tickets at all. What each action needs
+     * beyond it is asked per action and per ticket by `Engine\OperatorAuthorization`, which
+     * is handed only to the manual caller. The split is not tidiness. Those per-action checks
+     * go through the ticket's own capability methods, and `Ticket::isAllowedStatus()` answers
+     * from the session profile's `ticket_status` matrix, and the matrix stores only the
+     * transitions a profile is *denied*. A standard central profile therefore decodes to an
+     * empty matrix and every transition is allowed; it answers false only for a
+     * helpdesk-interface profile or an explicit denial. A cron run is the case that matters
+     * here: it carries no profile at all, the key is absent, and the method returns false for
+     * everything. Sharing one check between the two callers would stop the scheduled
+     * run solving anything, on every installation.
      */
     public static function checkOperatorMayActOnTickets(): void
     {
@@ -145,6 +228,8 @@ class Rule extends CommonDBTM
             $fields = array_replace($fields, $overrides);
         }
 
+        $problems = [];
+
         return new RuleDefinition(
             (int) ($fields['id'] ?? 0),
             (string) ($fields['name'] ?? ''),
@@ -161,9 +246,10 @@ class Rule extends CommonDBTM
             CalendarMode::tryFromString((string) ($fields['calendar_mode'] ?? '')) ?? CalendarMode::Entity,
             (int) ($fields['calendars_id'] ?? 0),
             ResetEvent::decodeList(isset($fields['reset_events']) ? (string) $fields['reset_events'] : null),
-            RuleAction::getDefinitionsForRule((int) ($fields['id'] ?? 0)),
+            RuleAction::getDefinitionsForRule((int) ($fields['id'] ?? 0), $problems),
             (bool) ($fields['is_dry_run'] ?? false),
             StartEvent::tryFromString((string) ($fields['start_event'] ?? '')) ?? StartEvent::PendingStart,
+            $problems ?? [],
         );
     }
 
@@ -480,6 +566,8 @@ class Rule extends CommonDBTM
             'target_statuses'  => [0 => __('Not applicable', 'ticketclock')] + Ticket::getAllStatusArray(),
             'description'     => $ID > 0 ? $this->getHumanDescription() : '',
             'is_destructive'  => $ID > 0 && $this->toDefinition()->isDestructive(),
+            'last_error'      => (string) ($this->fields['last_error'] ?? ''),
+            'last_error_date' => (string) ($this->fields['last_error_date'] ?? ''),
         ]);
 
         return true;
@@ -573,6 +661,27 @@ class Rule extends CommonDBTM
             'field'    => 'comment',
             'name'     => __('Comments'),
             'datatype' => 'text',
+        ];
+
+        // Searchable so an administrator can list every rule the engine is refusing, rather
+        // than opening them one by one. `id` 17 and 18 continue the plugin's own block; 80 is
+        // core's conventional slot for the entity and stays last.
+        $tab[] = [
+            'id'            => '17',
+            'table'         => self::getTable(),
+            'field'         => 'last_error',
+            'name'          => __('Why it is not running', 'ticketclock'),
+            'datatype'      => 'text',
+            'massiveaction' => false,
+        ];
+
+        $tab[] = [
+            'id'            => '18',
+            'table'         => self::getTable(),
+            'field'         => 'last_error_date',
+            'name'          => __('Refused at', 'ticketclock'),
+            'datatype'      => 'datetime',
+            'massiveaction' => false,
         ];
 
         $tab[] = [

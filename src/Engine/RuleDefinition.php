@@ -73,6 +73,18 @@ final readonly class RuleDefinition
         public array $actions,
         public bool $is_dry_run,
         public StartEvent $start_event = StartEvent::PendingStart,
+        /**
+         * Why this rule cannot be run, if it cannot.
+         *
+         * A rule whose stored actions cannot all be read is not the rule the administrator
+         * configured. Running the ones that survive would produce a wrong outcome on every
+         * ticket it touches, quietly, until somebody audits by hand -- a rule reading "add a
+         * followup, then close" silently becoming "add a followup". The engine refuses the
+         * whole rule instead and says why, which costs one rule until the row is fixed.
+         *
+         * @var list<string>
+         */
+        public array $unusable = [],
     ) {}
 
     public function targetsGroup(int $groups_id): bool

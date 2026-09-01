@@ -272,15 +272,18 @@ final class TicketContextResolver
         /** @var \DBmysql $DB */
         global $DB;
 
+        $where = [
+            'itemtype' => Ticket::class,
+            'items_id' => $ids,
+            ['NOT' => ['content' => ['LIKE', '%' . AddFollowupAction::MARKER . '%']]],
+        ];
+        AutomaticReplyFilter::apply($where);
+
         $out = [];
         $iterator = $DB->request([
             'SELECT' => ['items_id', 'users_id', 'date'],
             'FROM'   => ITILFollowup::getTable(),
-            'WHERE'  => [
-                'itemtype' => Ticket::class,
-                'items_id' => $ids,
-                ['NOT' => ['content' => ['LIKE', '%' . AddFollowupAction::MARKER . '%']]],
-            ],
+            'WHERE'  => $where,
             'ORDER'  => 'date ASC',
         ]);
 
@@ -349,7 +352,8 @@ final class TicketContextResolver
      *
      * Public only: a private note is invisible to the requester, so it cannot be the
      * message that put the ball in their court. TicketFlow's own generated followups are
-     * excluded here too, exactly as in loadFollowups().
+     * excluded here too, exactly as in loadFollowups(), and so is anything carrying one of
+     * the configured automatic-reply marks.
      *
      * @param list<int> $ids
      * @return array<int, array<string, mixed>>
@@ -359,16 +363,20 @@ final class TicketContextResolver
         /** @var \DBmysql $DB */
         global $DB;
 
+        $where = [
+            'itemtype'   => Ticket::class,
+            'items_id'   => $ids,
+            'is_private' => 0,
+            ['NOT' => ['content' => ['LIKE', '%' . AddFollowupAction::MARKER . '%']]],
+        ];
+
+        AutomaticReplyFilter::apply($where);
+
         $out = [];
         $iterator = $DB->request([
             'SELECT' => ['id', 'items_id', 'users_id', 'date'],
             'FROM'   => ITILFollowup::getTable(),
-            'WHERE'  => [
-                'itemtype'   => Ticket::class,
-                'items_id'   => $ids,
-                'is_private' => 0,
-                ['NOT' => ['content' => ['LIKE', '%' . AddFollowupAction::MARKER . '%']]],
-            ],
+            'WHERE'  => $where,
             'ORDER'  => ['items_id ASC', 'date ASC', 'id ASC'],
         ]);
 
@@ -379,6 +387,7 @@ final class TicketContextResolver
 
         return $out;
     }
+
 
     /**
      * When each ticket last changed status.

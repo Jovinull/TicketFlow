@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "main"
+      - "develop"
     tags:
       - "*"
   pull_request:
@@ -21,6 +22,10 @@ jobs:
     uses: "glpi-project/plugin-ci-workflows/.github/workflows/generate-ci-matrix.yml@v1"
     with:
       glpi-version: "11.0.x"
+      # The plugin supports both MariaDB and MySQL 8. The reduced upstream matrix only
+      # exercises MariaDB, so use the official complete matrix to keep database-specific
+      # metadata and SQL paths covered as well.
+      complete-matrix: true
   ci:
     name: "GLPI ${{ matrix.glpi-version }} - php:${{ matrix.php-version }} - ${{ matrix.db-image }}"
     needs: "generate-ci-matrix"

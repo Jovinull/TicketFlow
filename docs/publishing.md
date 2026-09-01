@@ -28,7 +28,7 @@ They are separate, and the second depends on the first.
 
 | Requirement | Source | Status |
 |---|---|---|
-| Publicly accessible git repository | tutorial · *Publishing your plugin* | ⚠️ **you must create it** — nothing else blocks |
+| Publicly accessible git repository | tutorial · *Publishing your plugin* | ✅ `github.com/Jovinull/ticketclock` |
 | Open source licence | same | ✅ MIT, `LICENSE` at the root |
 | Directory name alphanumeric only, never changes | guidelines · *Directories structure* | ✅ `ticketclock` |
 | `setup.php` and `hook.php` at the root | requirements | ✅ |
@@ -87,14 +87,14 @@ uses.
 |---|---|---|---|
 | PHP Parallel Lint | always runs | — | ✅ 81 files, no syntax error |
 | PHP CodeSniffer | `.phpcs.xml` | ❌ | skipped — superseded by PHP-CS-Fixer, as in the official skeleton |
-| PHP-CS-Fixer | `.php-cs-fixer.php` | ✅ | ✅ clean |
+| PHP-CS-Fixer | `.php-cs-fixer.php` | ✅ | ✅ clean in local validation and official CI |
 | PHPStan | `phpstan.neon` | ✅ | ✅ **no errors at level 8**, with the official `phpstan-glpi` extension, deprecation rules and the Safe rule |
 | Psalm | `psalm.xml` | ✅ | ✅ **no errors**, taint analysis on |
 | Rector | `rector.php` | ✅ | ✅ **clean**. The skeleton's config delegates to GLPI's `PluginsRector.php`, which 11.0.4 does not ship, so this one stands alone: PHP 8.2 plus the dead-code, code-quality and type-declaration sets |
 | ESLint / Stylelint | `eslint.config.*` / `.stylelintrc.js` | ❌ | not applicable — no JavaScript, no CSS |
 | Licence header check | `tools/HEADER` | ✅ | ✅ all 84 PHP and Twig files carry the header |
 | Install + activate plugin | always runs | — | ✅ verified repeatedly against GLPI 11.0.4 |
-| PHPUnit | `phpunit.xml` | ✅ | ✅ **146 tests, 512 assertions** (95 unit + 51 integration), green on **both** matrix halves and on 8.3 |
+| PHPUnit | `phpunit.xml` | ✅ | ✅ green in the complete MariaDB/MySQL matrix; see the current Actions run for the exact count |
 | Jest / Vitest | `jest.config.js` / `vitest.config.*` | ❌ | not applicable |
 | TwigCS | `.twig_cs.dist.php` | ✅ | ✅ no violation |
 | **Uninstall cleanliness** | always runs | — | ✅ no leftover table, config row, cron task, profile right or display preference |
@@ -102,8 +102,9 @@ uses.
 | Manifest URL validity | manifest touched in a PR | ✅ | ⚠️ passes once the repository is public |
 | Common dependencies with core | `composer.json` | ✅ | ✅ **zero production dependencies**; the two dev ones (`phpunit`, `thecodingmachine/safe`) are exempt from that check, which only compares production requirements |
 
-The CI matrix for GLPI 11.0.x is **PHP 8.2 / MariaDB 10.6** and **PHP 8.5 / MariaDB 12.3**.
-Our declared floor is PHP 8.2, and the code uses no syntax newer than that.
+The complete CI matrix for GLPI 11.0.x covers **PHP 8.2 / MariaDB 10.6**, **PHP 8.3 /
+MariaDB 12.3**, **PHP 8.4 / MySQL 8.0** and **PHP 8.5 / MySQL 9.7**. Our declared floor
+is PHP 8.2, and the code uses no syntax newer than that.
 
 Both halves were run locally rather than assumed, on their own containers: **PHP 8.2.33 /
 MariaDB 10.6.28** and **PHP 8.5.9 / MariaDB 12.3.3**, plus 8.3 in between. Each got a fresh
@@ -134,11 +135,12 @@ a one-line change once CI has run green at least once.
 
 ## 4. What is left, and it is not code
 
-1. **Create the public repository** at `github.com/Jovinull/ticketclock` and push. Every URL
-   in the manifest, the headers and the docs already points there.
-2. **Cut the `1.0.0` tag.** `.github/workflows/release.yml` calls the official release
+1. **Merge the reviewed release PR to `main`.** The release tag must point at the same commit
+   that the review and CI approved.
+2. **Cut the next version tag.** `.github/workflows/release.yml` calls the official release
    workflow, which builds and attaches the archive.
-3. **Check the `<download_url>`** resolves to that archive.
+3. **Check the `<download_url>`** resolves to that archive before making it the current
+   manifest version.
 4. **Submit the raw manifest URL** at plugins.glpi-project.org/#/submit and wait for
    Teclib'.
 5. **Then, and only then**, email `glpi@teclib.com` for the Marketplace.
@@ -201,10 +203,9 @@ actually download rather than against the source tree.
   general point stands: rendering assertions prove a field is on the page, not that the page
   does the right thing when you use it — and a test suite only covers the paths somebody
   thought to walk down.
-* **The manifest URLs are unverifiable until the repository is public** — the CI step that
-  checks them will be the first real test.
-* **The CI has never run.** Everything above was reproduced locally with the same tools and
-  the same GLPI version, but GitHub Actions itself has not executed once.
+* **A release URL is valid only after its tag workflow has attached the archive.** Keep the
+  manifest's version and `download_url` aligned with that tag, and verify the published
+  artifact rather than assuming the source tree describes it.
 
 ---
 

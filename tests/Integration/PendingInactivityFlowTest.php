@@ -67,6 +67,7 @@ final class PendingInactivityFlowTest extends TestCase
     private int $calendars_id = 0;
     private int $rules_id = 0;
     private int $requester_id = 0;
+    private string $marks_before = '';
 
     protected function setUp(): void
     {
@@ -125,16 +126,29 @@ final class PendingInactivityFlowTest extends TestCase
             'final'        => ['type' => ActionType::AddSolution->value, 'content' => 'Automatically solved by TicketFlow.'],
         ]);
 
+        $this->marks_before = Config::get('ignored_message_marks');
+
         Config::set([
             'execution_enabled' => 1,
             'dry_run_global'    => 0,
             'system_users_id'   => $this->requester_id,
+            // Stated rather than inherited. Two of these tests turn on which followups count
+            // as somebody answering, and an instance where an administrator edited the marks
+            // is a normal instance -- a test that reddens there says nothing useful.
+            'ignored_message_marks' => Config::DEFAULT_IGNORED_MARKS,
         ]);
+        Config::reload();
     }
 
     protected function tearDown(): void
     {
-        Config::set(['execution_enabled' => 0, 'dry_run_global' => 1, 'system_users_id' => 0]);
+        Config::set([
+            'execution_enabled'     => 0,
+            'dry_run_global'        => 1,
+            'system_users_id'       => 0,
+            'ignored_message_marks' => $this->marks_before,
+        ]);
+        Config::reload();
         parent::tearDown();
     }
 
@@ -353,5 +367,56 @@ final class PendingInactivityFlowTest extends TestCase
 
         self::assertSame(0, $report->executed);
         self::assertSame(0, $this->countTicketFlowFollowups($tickets_id));
+    }
+    /**
+     * An out of office reply must not count as the requester answering.
+     *
+     * It reaches GLPI through the mail collector as an ordinary public followup signed by
+     * the requester, which is exactly what the engine looks for when it decides who holds
+     * the ticket. Before this was filtered, such a reply silenced the rule for good: the
+     * clock stopped, the ticket was never chased and never solved, and nothing was written
+     * anywhere, so the only way to notice was to audit old tickets by hand.
+     */
+    public function testAnAutomaticReplyDoesNotStopTheClock(): void
+    {
+        $tickets_id = $this->createPendingTicket(date('Y-m-d H:i:s', strtotime('-30 days')));
+
+        // Signed by the requester, public, arriving after the ticket went pending.
+        (new ITILFollowup())->add([
+            'itemtype' => Ticket::class,
+            'items_id' => $tickets_id,
+            'content'  => 'Automatic reply: I am out of the office until Monday.',
+            'users_id' => $this->requester_id,
+            'is_private' => 0,
+        ]);
+
+        $rule = new Rule();
+        self::assertTrue($rule->getFromDB($this->rules_id));
+        $report = (new RuleEngine())->runRule($rule->toDefinition());
+
+        self::assertSame(1, $report->executed, implode(' | ', $report->errors));
+    }
+
+    /**
+     * The other direction, which is what stops the filter from being a blunt instrument:
+     * a real answer from the requester still stops the clock.
+     */
+    public function testAGenuineAnswerStillStopsTheClock(): void
+    {
+        $tickets_id = $this->createPendingTicket(date('Y-m-d H:i:s', strtotime('-30 days')));
+
+        (new ITILFollowup())->add([
+            'itemtype' => Ticket::class,
+            'items_id' => $tickets_id,
+            'content'  => 'Here is the information you asked for.',
+            'users_id' => $this->requester_id,
+            'is_private' => 0,
+        ]);
+
+        $rule = new Rule();
+        self::assertTrue($rule->getFromDB($this->rules_id));
+        $report = (new RuleEngine())->runRule($rule->toDefinition());
+
+        self::assertSame(0, $report->executed, 'a real answer must still stop the clock');
     }
 }

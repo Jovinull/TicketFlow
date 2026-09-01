@@ -68,7 +68,7 @@ final readonly class OperatorAuthorization
     {
         $ticket = new Ticket();
         if (!$ticket->getFromDB($tickets_id)) {
-            throw new OperatorNotAllowed(__('The ticket no longer exists.', 'ticketclock'));
+            throw new OperatorNotAllowed(__('The ticket no longer exists.', 'ticketclock'), $definition->type);
         }
 
         $type = $definition->type;
@@ -91,11 +91,14 @@ final readonly class OperatorAuthorization
         };
 
         if (!$allowed) {
-            throw new OperatorNotAllowed(sprintf(
-                __('Your profile may not run "%s" on ticket %d.', 'ticketclock'),
-                $type->value,
-                $tickets_id,
-            ));
+            throw new OperatorNotAllowed(
+                sprintf(
+                    __('Your profile may not run "%s" on ticket %d.', 'ticketclock'),
+                    $type->value,
+                    $tickets_id,
+                ),
+                $type,
+            );
         }
     }
 

@@ -204,6 +204,23 @@ a fixed whitelist of names, each escaped before it reaches the timeline.
 An unknown placeholder is **left visible** rather than blanked, so a typo shows up in the
 dry run instead of producing a hole in a customer-facing message.
 
+### Automatic replies
+
+An out-of-office reply reaches GLPI through the mail collector as an ordinary public followup
+signed by the requester, which is exactly what the engine looks for when it decides who is
+holding the ticket. Left alone it reads as an answer, and a rule waiting on the requester
+goes quiet for good: the ticket is never chased, never solved, and nothing is written
+anywhere.
+
+*Setup > TicketFlow > Configuration > Ignore messages containing* holds one substring per
+line, matched literally against the followup body. `%` and `_` have no special meaning here;
+a mark of `100%` looks for those four characters. Matching ignores case, which comes from the
+collation GLPI gives the column rather than from anything this plugin enforces. Anything
+carrying one of the marks is neither treated as an answer nor allowed to restart the clock. The shipped list covers the
+usual wording in English, French, Portuguese, German and Spanish; local mail gateways word
+these differently, so it is meant to be edited. Leaving it empty counts every message, which
+is the old behaviour.
+
 ## Idempotency
 
 Each match belongs to an **occurrence**, identified by the cycle it belongs to:
@@ -244,12 +261,14 @@ One right, `plugin_ticketclock_rule`, in the standard profile matrix
 | Bit | Grants |
 |---|---|
 | `READ` | see rules, logs and simulations |
-| `UPDATE` | edit rules, change the configuration, run a rule manually |
+| `UPDATE` | edit rules and run a rule manually, subject to the operator's own ticket/action rights |
 | `CREATE` | create and duplicate rules |
 | `PURGE` | delete rules |
 
 On install, every profile that can already configure GLPI receives the full right.
-Rules are entity-scoped and honour the reader's active entity.
+Rules are entity-scoped and honour the reader's active entity. The instance-wide TicketFlow
+configuration additionally requires GLPI's own global `config` UPDATE right; changing it
+selects the automation identity and affects every entity.
 
 ## Observability
 
@@ -272,6 +291,23 @@ written against its own hook. Core search and export cover the usual questions w
 either of them.
 
 ## Troubleshooting
+
+**A rule reports "was not run".** Its stored actions could not all be read: a row with
+unreadable JSON parameters, or an action type this version does not know. The engine refuses
+the rule rather than running the actions that survived, because a rule configured as "add a
+followup, then close" quietly becoming "add a followup" is a wrong outcome on every ticket it
+touches, and one nobody would notice.
+
+The reason is kept on the rule, not only in the log, and only a real run writes it: a
+simulation reports the refusal on screen and counts it, but changes no plugin data, the
+rule's own bookkeeping included. Reading a corrupt rule still writes a line to the server
+error log, which is diagnostics about the broken row rather than a record of the run. Opening the rule shows it at the top of
+the form, and *Administration > TicketFlow > Rules* can be searched and filtered on **Why it
+is not running**, so a whole instance can be checked at once. Saving the rule rewrites its
+actions from the form, which is the usual fix, and the message clears the next time the rule
+runs. Only that rule stops; the rest of the run is unaffected, and the run summary counts it
+under `refused`.
+
 
 **Nothing happens.** Check *Diagnostics*. In order: is execution enabled, is global dry run
 off, is the rule active, is the rule in simulation-only mode, is the `ProcessRules` task
@@ -334,7 +370,9 @@ See [docs/development.md](docs/development.md).
 | [docs/architecture.md](docs/architecture.md) | components, cron flow, data model, concurrency |
 | [docs/rules.md](docs/rules.md) | the exact semantics of every rule field |
 | [docs/development.md](docs/development.md) | setup, tests, conventions |
-| [docs/adr/](docs/adr/) | why the load-bearing decisions were made (nine of them) |
+| [docs/engineering-playbook.md](docs/engineering-playbook.md) | architecture boundaries, security invariants, SOLID/pragmatic design rules, quality gates |
+| [docs/review-checklist.md](docs/review-checklist.md) | pull-request and release evidence checklist |
+| [docs/adr/](docs/adr/) | why the load-bearing decisions were made (ten of them) |
 | [docs/publishing.md](docs/publishing.md) | what GLPI requires to publish a plugin, and where this one stands against it |
 | [docs/i18n.md](docs/i18n.md) | how translations work, and how to add a language |
 | [CHANGELOG.md](CHANGELOG.md) | releases |

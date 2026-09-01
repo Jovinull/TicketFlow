@@ -44,7 +44,7 @@
             <div>{{ description }}</div>
         </div>
 
-        {% if not was_real %}
+        {% if ran and not was_real %}
             <div class="alert alert-secondary d-flex align-items-start">
                 <i class="ti ti-eye me-2 mt-1"></i>
                 <div>{{ __('Nothing was modified: no followup, no solution, no status change and no operational notification was produced.', 'ticketclock') }}</div>
@@ -66,6 +66,7 @@
             </div>
         {% endif %}
 
+        {% if ran %}
         <div class="row row-cards mb-3">
             {% set tiles = {
                 (__('Tickets analysed', 'ticketclock')): counters.analyzed,
@@ -155,6 +156,8 @@
                                     <span class="badge bg-success">{{ __('Executed', 'ticketclock') }}</span>
                                 {% elseif row.reason == 'failed' %}
                                     <span class="badge bg-danger">{{ __('Failed', 'ticketclock') }}</span>
+                                {% elseif row.reason == 'refused' %}
+                                    <span class="badge bg-secondary">{{ __('Not allowed', 'ticketclock') }}</span>
                                 {% else %}
                                     <span class="badge bg-secondary">{{ __('Still within the deadline', 'ticketclock') }}</span>
                                 {% endif %}
@@ -172,6 +175,7 @@
                 </p>
             {% endif %}
         {% endif %}
+        {% endif %}
     </div>
 
     <div class="card-footer d-flex flex-row-reverse">
@@ -181,7 +185,16 @@
             <span>{{ __('Back to the rule', 'ticketclock') }}</span>
         </a>
 
-        {% if can_run and not was_real %}
+        {% if not ran %}
+            <form method="post" action="{{ config('root_doc') }}/plugins/ticketclock/front/rule.simulate.php">
+                <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token() }}" />
+                <input type="hidden" name="id" value="{{ rule.fields['id'] }}" />
+                <button class="btn btn-primary" type="submit" name="simulate" value="1">
+                    <i class="ti ti-eye"></i>
+                    <span>{{ __('Simulate', 'ticketclock') }}</span>
+                </button>
+            </form>
+        {% elseif can_run and not was_real %}
             <form method="post" action="{{ config('root_doc') }}/plugins/ticketclock/front/rule.simulate.php"
                   onsubmit="return confirm('{{ __('This will really execute the rule on the tickets listed above. Continue?', 'ticketclock')|e('js') }}');">
                 <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token() }}" />

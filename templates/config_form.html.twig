@@ -101,6 +101,11 @@
                         'min': 0,
                         'helper': __('Executions older than this are deleted by the purge automatic action. 0 disables the purge.', 'ticketclock')
                     }) }}
+
+                    {{ fields.textareaField('ignored_message_marks', config.ignored_message_marks, __('Ignore messages containing', 'ticketclock'), {
+                        'rows': 6,
+                        'helper': __('One per line, case-insensitive. A followup containing any of these is not treated as somebody answering, so an out-of-office reply cannot stop a rule from running. Leave empty to count every message.', 'ticketclock')
+                    }) }}
                 </div>
 
             </div>

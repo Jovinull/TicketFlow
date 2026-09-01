@@ -50,6 +50,15 @@ final class RunReport
     public int $simulated = 0;
 
     /**
+     * Rules the engine would not run at all.
+     *
+     * Its own counter rather than folded into `failed`, which counts tickets whose actions
+     * were attempted and did not work. A refused rule attempted nothing and analyzed nothing;
+     * adding it to `failed` would describe a run that never happened.
+     */
+    public int $refused = 0;
+
+    /**
      * Rows for the simulation screen.
      *
      * Empty unless somebody asked for them. A cron pass never reads this, and building a
@@ -100,6 +109,7 @@ final class RunReport
         $this->skipped           += $other->skipped;
         $this->already_processed += $other->already_processed;
         $this->simulated         += $other->simulated;
+        $this->refused           += $other->refused;
 
         $this->preview_omitted += $other->preview_omitted;
 
