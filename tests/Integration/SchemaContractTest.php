@@ -195,19 +195,36 @@ final class SchemaContractTest extends TestCase
     }
 
     /**
-     * MySQL 8 no longer reports integer display widths, while MariaDB still does.
+     * Two engines describe the same column differently. This is about the description.
      *
-     * `INT(11)` and `INT` are the same storage type here: the former width never restricted
-     * the range and is deprecated in MySQL. Keeping it in this contract would make a correct
-     * schema fail solely because the database engine serialises identical metadata differently.
+     * The contract is written in MariaDB's spelling because that is what the plugin is
+     * developed against. Both sides of the comparison come through here, so it could equally
+     * have been written in MySQL's; what matters is that neither engine's habits can make a
+     * correct schema look wrong.
+     *
+     * Integer display widths: MariaDB reports `int(10) unsigned`, MySQL 8 reports
+     * `int unsigned`. The width never restricted the range and MySQL removed it from its
+     * metadata. Only integers are touched, so `varchar(100)` keeps the length that does mean
+     * something.
+     *
+     * Quoting of defaults: MariaDB reports `'processing'` and `''`, MySQL reports
+     * `processing` and an empty string. Both measured, not assumed.
+     *
+     * One difference needs no handling, and it is worth saying why so nobody deletes the
+     * `?? 'NULL'` upstream thinking it redundant: for a column declared `DEFAULT NULL`,
+     * MariaDB reports the four-character string `NULL` while MySQL reports a real SQL NULL.
+     * The coalesce turns MySQL's into the same four characters, so the two already agree by
+     * the time they reach this method.
      */
     private function normaliseSignature(string $signature): string
     {
-        return preg_replace(
-            '/\\b(tinyint|smallint|mediumint|int|bigint)\\(\\d+\\)(?=(?: unsigned)?(?: NULL| NOT NULL))/',
+        $signature = preg_replace(
+            '/\b(tinyint|smallint|mediumint|int|bigint)\(\d+\)(?=(?: unsigned)?(?: NULL| NOT NULL))/',
             '$1',
             $signature,
         ) ?? $signature;
+
+        return preg_replace('/ default \'(.*)\'$/', ' default $1', $signature) ?? $signature;
     }
 
     /**
