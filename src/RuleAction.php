@@ -111,7 +111,7 @@ class RuleAction extends CommonDBChild
      *
      * @return array{
      *     add_followup: array{enabled: bool, content: string, is_private: bool},
-     *     final: array{type: string, content: string, solutiontypes_id: int, status: int},
+     *     final: array{type: string, content: string, solutiontypes_id: int, status: int, pendingreasons_id: int},
      *     send_notification: array{enabled: bool, event: string}
      * }
      */
@@ -119,7 +119,7 @@ class RuleAction extends CommonDBChild
     {
         $values = [
             'add_followup'      => ['enabled' => false, 'content' => '', 'is_private' => false],
-            'final'             => ['type' => 'none', 'content' => '', 'solutiontypes_id' => 0, 'status' => 0],
+            'final'             => ['type' => 'none', 'content' => '', 'solutiontypes_id' => 0, 'status' => 0, 'pendingreasons_id' => 0],
             'send_notification' => ['enabled' => false, 'event' => 'update'],
         ];
 
@@ -139,15 +139,17 @@ class RuleAction extends CommonDBChild
                         'content'          => $definition->stringParam('content'),
                         'solutiontypes_id' => $definition->intParam('solutiontypes_id'),
                         'status'           => 0,
+                        'pendingreasons_id' => 0,
                     ];
                     break;
 
                 case ActionType::ChangeStatus:
                     $values['final'] = [
-                        'type'             => ActionType::ChangeStatus->value,
-                        'content'          => '',
-                        'solutiontypes_id' => 0,
-                        'status'           => $definition->intParam('status'),
+                        'type'              => ActionType::ChangeStatus->value,
+                        'content'           => '',
+                        'solutiontypes_id'  => 0,
+                        'status'            => $definition->intParam('status'),
+                        'pendingreasons_id' => $definition->intParam('pendingreasons_id'),
                     ];
                     break;
 
@@ -157,6 +159,7 @@ class RuleAction extends CommonDBChild
                         'content'          => '',
                         'solutiontypes_id' => 0,
                         'status'           => 0,
+                        'pendingreasons_id' => 0,
                     ];
                     break;
 
@@ -204,7 +207,12 @@ class RuleAction extends CommonDBChild
                     'content'          => (string) ($final['content'] ?? ''),
                     'solutiontypes_id' => (int) ($final['solutiontypes_id'] ?? 0),
                 ],
-                ActionType::ChangeStatus => ['status' => (int) ($final['status'] ?? 0)],
+                ActionType::ChangeStatus => [
+                    'status' => (int) ($final['status'] ?? 0),
+                    // Only meaningful when the target is "pending", and stored regardless so
+                    // switching the target status back and forth does not lose the choice.
+                    'pendingreasons_id' => (int) ($final['pendingreasons_id'] ?? 0),
+                ],
                 default                  => [],
             };
             self::insert($rules_id, $final_type, self::RANK_FINAL, $params);

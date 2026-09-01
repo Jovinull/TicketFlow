@@ -148,6 +148,29 @@ ticket.
 The message is a template — the text above is a suggestion, not a hard-coded string. See
 [Message placeholders](#message-placeholders).
 
+### Worked example: put a ticket back on the requester once the team has answered
+
+The clock does not only run against your team. Point it the other way and the same machinery
+does the thing GLPI has no answer for: a ticket a technician has replied to sits in the queue
+looking like work until somebody notices the ball is in the requester's court.
+
+| Field | Value |
+|---|---|
+| Rule type | Pending without an answer |
+| Start the clock | From the last message belonging to the assigned group |
+| Target status | *Processing (assigned)* — the status the ticket is in while it is still yours |
+| Delay | 4 business hours, say |
+| Final action | Change the status to *Pending* |
+| Pending reason | whichever one your instance uses for "waiting on the requester" |
+
+The delay is what keeps it sane: a technician who replies and keeps working is not interrupted,
+and only a reply nobody followed up on moves the ticket.
+
+**Set the pending reason.** A ticket parked in pending with no reason is parked and forgotten:
+GLPI's own bump followups and its auto-solve both read the pending reason, so without one
+nothing chases the ticket and nothing ever closes it. With one, TicketFlow hands the ticket to
+core's own pending machinery and steps out of the way.
+
 ### Worked example: approval unanswered for two business days
 
 | Field | Value |

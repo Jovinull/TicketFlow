@@ -287,6 +287,14 @@ final class SchemaContractTest extends TestCase
         $DB->clearSchemaCache();
 
         try {
+            // Collapse InnoDB's instant-column history first. Each add/drop cycle leaves the
+            // old column versions in the row, and after a few runs the rebuild a DROP needs
+            // exceeds the 8126-byte row limit -- the table fails to alter and the suite leaves
+            // a half-migrated instance behind. FORCE rewrites the table so the next cycle
+            // starts from a clean row, which makes these tests repeatable rather than
+            // working until they suddenly do not.
+            $DB->doQuery('ALTER TABLE ' . $DB->quoteName($table) . ' FORCE');
+
             foreach ($columns_to_drop as $column) {
                 self::assertTrue(
                     $DB->fieldExists($table, $column),
@@ -369,6 +377,7 @@ final class SchemaContractTest extends TestCase
         $DB->clearSchemaCache();
 
         try {
+            $DB->doQuery('ALTER TABLE ' . $DB->quoteName($table) . ' FORCE');
             foreach (['last_error', 'last_error_date'] as $column) {
                 $DB->doQuery('ALTER TABLE ' . $DB->quoteName($table) . ' DROP COLUMN ' . $DB->quoteName($column));
             }

@@ -192,6 +192,10 @@
 
                 {{ fields.dropdownArrayField('_actions[final][status]', actions.final.status, target_statuses, __('Target status', 'ticketclock')) }}
 
+                {{ fields.dropdownField('PendingReason', '_actions[final][pendingreasons_id]', actions.final.pendingreasons_id, __('Pending reason', 'ticketclock'), {
+                    'helper': __('Only used when the target status is "Pending". A ticket parked in pending with no reason is parked and forgotten: GLPI\'s own bump and auto-solve read the pending reason, so without one nothing chases the ticket and nothing closes it.', 'ticketclock')
+                }) }}
+
                 {{ fields.dropdownYesNo('_actions[send_notification][enabled]', actions.send_notification.enabled, __('Raise a notification', 'ticketclock')) }}
 
                 {{ fields.textField('_actions[send_notification][event]', actions.send_notification.event, __('Notification event', 'ticketclock'), {

@@ -35,6 +35,8 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Ticketclock\Engine\Action;
 
+use PendingReason;
+use PendingReason_Item;
 use Ticket;
 use GlpiPlugin\Ticketclock\Engine\ActionContext;
 use GlpiPlugin\Ticketclock\Engine\ActionDefinition;
@@ -67,6 +69,54 @@ final class ChangeStatusAction implements ActionInterface
         );
     }
 
+    /**
+     * Registers the pending reason that goes with a move into "pending".
+     *
+     * A ticket parked in `WAITING` with no pending reason is parked and forgotten: core's own
+     * automation -- the bump followups and the auto-solve in `PendingReasonCron` -- keys off
+     * `PendingReason_Item`, so without a reason attached nothing ever chases it and nothing
+     * ever closes it. The rule moved the ticket out of somebody's queue and gave nothing the
+     * job of moving it on.
+     *
+     * Registered against the ticket directly rather than by writing a followup that carries
+     * `pending`, which is how the interface does it. The interface has a person typing a
+     * message; a rule does not, and a followup with no content exists only to carry a flag.
+     * If the operator wants the requester to see something, the rule's followup action is
+     * there for that and says what they chose to say.
+     *
+     * `previous_status` is what core restores when the ticket leaves pending, so it has to be
+     * the status the ticket actually had, captured before the update above.
+     */
+    private function registerPendingReason(ActionDefinition $definition, ActionContext $context, int $status): void
+    {
+        $pendingreasons_id = $definition->intParam('pendingreasons_id');
+        if ($status !== Ticket::WAITING || $pendingreasons_id <= 0) {
+            return;
+        }
+
+        $reason = new PendingReason();
+        if (!$reason->getFromDB($pendingreasons_id)) {
+            // Configured once, deleted later. Not worth failing the action the rule already
+            // performed; the ticket is pending, it just has nobody chasing it.
+            return;
+        }
+
+        $ticket = new Ticket();
+        if (!$ticket->getFromDB($context->ticket->tickets_id)) {
+            return;
+        }
+
+        PendingReason_Item::createForItem($ticket, [
+            'pendingreasons_id'           => $pendingreasons_id,
+            // Taken from the reason itself: those two fields are what an administrator
+            // configured on it, and overriding them per rule would quietly diverge from what
+            // the reason says it does everywhere else.
+            'followup_frequency'          => (int) $reason->fields['followup_frequency'],
+            'followups_before_resolution' => (int) $reason->fields['followups_before_resolution'],
+            'previous_status'             => $context->ticket->status,
+        ]);
+    }
+
     public function execute(ActionDefinition $definition, ActionContext $context): ActionResult
     {
         $status = $definition->intParam('status');
@@ -96,6 +146,10 @@ final class ChangeStatusAction implements ActionInterface
                 'id'     => $context->ticket->tickets_id,
                 'status' => $status,
             ]);
+
+            if ($ok) {
+                $this->registerPendingReason($definition, $context, $status);
+            }
         } catch (Throwable $e) {
             return ActionResult::failure(ActionType::ChangeStatus, $e->getMessage());
         }
