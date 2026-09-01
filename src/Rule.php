@@ -93,26 +93,6 @@ class Rule extends CommonDBTM
     }
 
     /**
-     * What an operator must hold before the manual "Run for real" button may touch a ticket.
-     *
-     * `CommonDBTM::add()` and `update()` authorize nothing -- in GLPI authorization lives in
-     * the controller, not the model. So holding this plugin's own UPDATE right was enough to
-     * reach code that adds followups, writes solutions and closes tickets, and
-     * `Profile::installRights()` hands that right to every profile that can configure GLPI.
-     * An operator with no ticket rights at all could act on tickets through this screen.
-     *
-     * Deliberately a right check rather than `Ticket::check()` or `ITILSolution::check()`.
-     * Those also apply the interface's status transition matrix, and
-     * `Ticket::isAllowedStatus(WAITING, SOLVED)` is false: GLPI's UI does not offer a solve
-     * button on a pending ticket. Since a pending ticket is the only kind this plugin ever
-     * acts on, routing the engine through those checks would authorize nothing extra and
-     * would stop the plugin from doing the one thing it exists to do.
-     *
-     * The cron path is untouched on purpose. It has no session to check, runs as the
-     * configured acting user, and is reached only by an administrator who enabled the
-     * automatic action.
-     */
-    /**
      * Records why the engine would not run this rule, where somebody will find it.
      *
      * A refusal happens before any ticket is chosen, so there is no execution to attach the
@@ -194,6 +174,24 @@ class Rule extends CommonDBTM
         }
     }
 
+    /**
+     * What an operator must hold before the manual "Run for real" button may touch a ticket.
+     *
+     * `CommonDBTM::add()` and `update()` authorize nothing -- in GLPI authorization lives in
+     * the controller, not the model. So holding this plugin's own UPDATE right was enough to
+     * reach code that adds followups, writes solutions and closes tickets, and
+     * `Profile::installRights()` hands that right to every profile that can configure GLPI.
+     * An operator with no ticket rights at all could act on tickets through this screen.
+     *
+     * This is the coarse gate: the right to touch tickets at all. What each action needs
+     * beyond it is asked per action and per ticket by `Engine\OperatorAuthorization`, which
+     * is handed only to the manual caller. The split is not tidiness. Those per-action checks
+     * go through the ticket's own capability methods, and `Ticket::isAllowedStatus()` answers
+     * from the session profile's `ticket_status` matrix: a real web profile carries that key
+     * and answers sensibly, while a cron run carries no profile at all and gets `false` for
+     * every transition. Sharing one check between the two callers would stop the scheduled
+     * run solving anything, on every installation.
+     */
     public static function checkOperatorMayActOnTickets(): void
     {
         // haveRight() plus an explicit throw rather than Session::checkRight(), which also
