@@ -319,7 +319,14 @@ final class SchemaContractTest extends TestCase
             );
         } finally {
             // Whatever happened above, the instance the rest of the suite runs on has to be
-            // whole again.
+            // whole again. `Install::install()` records each version while it queues its DDL,
+            // before `executeMigration()` applies it. If applying that DDL was the operation
+            // that failed, the row can therefore already say 1.2.0 while the columns are still
+            // gone. Resetting the recorded starting point makes the cleanup replay the chain
+            // instead of trusting that optimistic marker and leaving the following tests on a
+            // half-migrated database.
+            CoreConfig::setConfigurationValues(Config::CONTEXT, [Install::SCHEMA_VERSION_KEY => '1.0.0']);
+            Config::reload();
             Install::install(new Migration(Version::VERSION));
             $DB->clearSchemaCache();
         }
