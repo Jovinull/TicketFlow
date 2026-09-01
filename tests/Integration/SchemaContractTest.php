@@ -46,6 +46,7 @@ use GlpiPlugin\Ticketclock\Version;
 use Migration;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 /**
  * The schema is the same whether it was installed or upgraded into.
@@ -343,5 +344,73 @@ final class SchemaContractTest extends TestCase
             '1.1.0, before the refusal columns' => ['1.1.0', ['last_error', 'last_error_date']],
             '1.0.0, before start_event as well' => ['1.0.0', ['last_error', 'last_error_date', 'start_event']],
         ];
+    }
+    /**
+     * A failed upgrade must not leave the instance claiming a version it did not reach, and
+     * must be recoverable by running the installer again.
+     *
+     * Worth being precise about what this protects, because the obvious reading is wrong.
+     * Every migration this plugin has applies its own DDL as it goes -- `migrateTo100` with a
+     * raw `CREATE TABLE`, the others by calling `migrationOneTable()` -- so today the columns
+     * land before the version is recorded either way. The trap is for the migration nobody
+     * has written yet: one that only queues through `addField()` and leaves the applying to
+     * the installer. With the version recorded first, such a step could fail while the row
+     * already claimed the new schema, and the next attempt would skip past it forever.
+     *
+     * So the installer applies each step before recording it, and this asserts the property
+     * that follows: after a failure the recorded version is one that genuinely completed, and
+     * running the installer again finishes the job. Re-running is safe because `addField()`
+     * checks for the column first, so a step that half happened simply completes.
+     */
+    public function testAFailedUpgradeStaysRecoverable(): void
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $table = Rule::getTable();
+        $DB->clearSchemaCache();
+
+        try {
+            foreach (['last_error', 'last_error_date'] as $column) {
+                $DB->doQuery('ALTER TABLE ' . $DB->quoteName($table) . ' DROP COLUMN ' . $DB->quoteName($column));
+            }
+            CoreConfig::setConfigurationValues(Config::CONTEXT, [Install::SCHEMA_VERSION_KEY => '1.1.0']);
+            Config::reload();
+
+            $failed = false;
+            try {
+                Install::install(new class (Version::VERSION) extends Migration {
+                    public function executeMigration(): never
+                    {
+                        throw new RuntimeException('the database went away mid-upgrade');
+                    }
+                });
+            } catch (RuntimeException) {
+                $failed = true;
+            }
+
+            self::assertTrue($failed, 'the failure was swallowed');
+            self::assertNotSame(
+                Version::SCHEMA,
+                Install::getInstalledSchemaVersion(),
+                'the instance claims the new schema after an upgrade that threw',
+            );
+
+            // The part a user cares about: try again and it finishes.
+            self::assertTrue(Install::install(new Migration(Version::VERSION)));
+            $DB->clearSchemaCache();
+
+            self::assertSame(Version::SCHEMA, Install::getInstalledSchemaVersion());
+            self::assertSame(
+                array_map($this->normaliseSignature(...), self::EXPECTED['rules']),
+                $this->signatureOf($table),
+                'retrying the upgrade did not produce the installed shape',
+            );
+        } finally {
+            CoreConfig::setConfigurationValues(Config::CONTEXT, [Install::SCHEMA_VERSION_KEY => '1.0.0']);
+            Config::reload();
+            Install::install(new Migration(Version::VERSION));
+            $DB->clearSchemaCache();
+        }
     }
 }

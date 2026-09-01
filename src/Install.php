@@ -80,11 +80,19 @@ final class Install
                 continue;
             }
 
+            // Applied, then recorded. The migration methods only queue their DDL; nothing
+            // reaches the database until executeMigration() runs. Recording the version first
+            // -- which is what this loop used to do, with a single execute after it -- meant
+            // that a failure while applying left the instance claiming a schema it did not
+            // have, and the next upgrade attempt would skip straight past the step that never
+            // happened. Now a failure stops at the last version that genuinely landed, and
+            // running the install again resumes from there.
+            //
+            // Executing per step is safe: executeMigration() empties its queues each time.
             self::$method($migration);
+            $migration->executeMigration();
             self::setInstalledSchemaVersion($version);
         }
-
-        $migration->executeMigration();
 
         Config::registerDefaults();
         Profile::installRights();
