@@ -42,6 +42,7 @@ use GlpiPlugin\Ticketclock\Engine\ActionContext;
 use GlpiPlugin\Ticketclock\Engine\ActionDefinition;
 use GlpiPlugin\Ticketclock\Engine\ActionResult;
 use GlpiPlugin\Ticketclock\Enum\ActionType;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -70,44 +71,52 @@ final class ChangeStatusAction implements ActionInterface
     }
 
     /**
-     * Registers the pending reason that goes with a move into "pending".
+     * The pending reason this action must attach, or null when it attaches none.
      *
-     * A ticket parked in `WAITING` with no pending reason is parked and forgotten: core's own
-     * automation -- the bump followups and the auto-solve in `PendingReasonCron` -- keys off
-     * `PendingReason_Item`, so without a reason attached nothing ever chases it and nothing
-     * ever closes it. The rule moved the ticket out of somebody's queue and gave nothing the
-     * job of moving it on.
+     * Looked up before the ticket is touched. A reason configured once and deleted since
+     * would otherwise leave the ticket in exactly the state this feature exists to prevent:
+     * pending, with nothing registered, so core's bump followups and its auto-solve never
+     * see it. Nobody would be told, because the status change itself succeeded.
      *
-     * Registered against the ticket directly rather than by writing a followup that carries
-     * `pending`, which is how the interface does it. The interface has a person typing a
-     * message; a rule does not, and a followup with no content exists only to carry a flag.
-     * If the operator wants the requester to see something, the rule's followup action is
-     * there for that and says what they chose to say.
-     *
-     * `previous_status` is what core restores when the ticket leaves pending, so it has to be
-     * the status the ticket actually had, captured before the update above.
+     * @throws RuntimeException when a reason is configured but no longer exists
      */
-    private function registerPendingReason(ActionDefinition $definition, ActionContext $context, int $status): void
+    private function pendingReasonToAttach(ActionDefinition $definition, int $status): ?PendingReason
     {
         $pendingreasons_id = $definition->intParam('pendingreasons_id');
         if ($status !== Ticket::WAITING || $pendingreasons_id <= 0) {
-            return;
+            return null;
         }
 
         $reason = new PendingReason();
         if (!$reason->getFromDB($pendingreasons_id)) {
-            // Configured once, deleted later. Not worth failing the action the rule already
-            // performed; the ticket is pending, it just has nobody chasing it.
-            return;
+            throw new RuntimeException(sprintf(
+                __('Pending reason %d no longer exists. The ticket was left as it was: moving it to pending without a reason would leave nothing to chase it.', 'ticketclock'),
+                $pendingreasons_id,
+            ));
         }
 
+        return $reason;
+    }
+
+    /**
+     * Registers the reason against the ticket, after the status change it belongs to.
+     *
+     * Registered directly rather than by writing a followup that carries `pending`, which is
+     * how the interface does it. The interface has a person typing a message; a rule does
+     * not, and a followup with no content exists only to carry a flag.
+     *
+     * `previous_status` is what core restores when the ticket leaves pending, so it has to be
+     * the status the ticket really had, captured before the update.
+     */
+    private function attachPendingReason(PendingReason $reason, ActionContext $context): bool
+    {
         $ticket = new Ticket();
         if (!$ticket->getFromDB($context->ticket->tickets_id)) {
-            return;
+            return false;
         }
 
-        PendingReason_Item::createForItem($ticket, [
-            'pendingreasons_id'           => $pendingreasons_id,
+        return PendingReason_Item::createForItem($ticket, [
+            'pendingreasons_id'           => (int) $reason->fields['id'],
             // Taken from the reason itself: those two fields are what an administrator
             // configured on it, and overriding them per rule would quietly diverge from what
             // the reason says it does everywhere else.
@@ -141,14 +150,25 @@ final class ChangeStatusAction implements ActionInterface
         }
 
         try {
+            // Resolved first: if the configured reason is gone, the ticket must not move at
+            // all. Moving it and reporting success would produce the one outcome this action
+            // is supposed to rule out.
+            $reason = $this->pendingReasonToAttach($definition, $status);
+
             $ticket = new Ticket();
             $ok = $ticket->update([
                 'id'     => $context->ticket->tickets_id,
                 'status' => $status,
             ]);
 
-            if ($ok) {
-                $this->registerPendingReason($definition, $context, $status);
+            if ($ok && $reason !== null && !$this->attachPendingReason($reason, $context)) {
+                // The ticket is pending and nothing is registered against it. The status
+                // change cannot be taken back from here, so the run says so instead of
+                // reporting a success that left the ticket unattended.
+                return ActionResult::failure(
+                    ActionType::ChangeStatus,
+                    __('The ticket is now pending, but its reason could not be registered, so nothing will chase it.', 'ticketclock'),
+                );
             }
         } catch (Throwable $e) {
             return ActionResult::failure(ActionType::ChangeStatus, $e->getMessage());

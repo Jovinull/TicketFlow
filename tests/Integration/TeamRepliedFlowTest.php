@@ -42,6 +42,7 @@ use Group;
 use Group_Ticket;
 use Group_User;
 use GlpiPlugin\Ticketclock\Config;
+use GlpiPlugin\Ticketclock\Execution;
 use GlpiPlugin\Ticketclock\Engine\RuleEngine;
 use GlpiPlugin\Ticketclock\Enum\ActionType;
 use GlpiPlugin\Ticketclock\Rule;
@@ -266,5 +267,134 @@ final class TeamRepliedFlowTest extends TestCase
         ], ['id' => $answer]);
 
         return $tickets_id;
+    }
+    /**
+     * A reason configured once and deleted since must stop the rule, not half-run it.
+     *
+     * Moving the ticket anyway produces exactly the state the pending reason exists to
+     * prevent -- pending, with nothing registered, so core never chases it and never closes
+     * it -- and reporting success means nobody finds out. The ticket stays where it was and
+     * the run says why.
+     */
+    public function testADeletedPendingReasonStopsTheRuleInsteadOfParkingTheTicket(): void
+    {
+        RuleAction::setActionsForRule($this->rules_id, [
+            'final' => [
+                'type'              => ActionType::ChangeStatus->value,
+                'status'            => Ticket::WAITING,
+                'pendingreasons_id' => $this->pendingreasons_id,
+            ],
+        ]);
+
+        (new PendingReason())->delete(['id' => $this->pendingreasons_id], true);
+        $deleted = $this->pendingreasons_id;
+        $this->pendingreasons_id = 0;
+
+        $report = (new RuleEngine())->runRule($this->rule());
+
+        $ticket = new Ticket();
+        self::assertTrue($ticket->getFromDB($this->tickets_id));
+        self::assertSame(
+            Ticket::ASSIGNED,
+            (int) $ticket->fields['status'],
+            'the ticket was parked in pending with a reason that no longer exists',
+        );
+        self::assertSame(0, $report->executed);
+        self::assertSame(1, $report->failed, 'the run reported nothing wrong');
+
+        // An action failure is recorded against the execution, not in the run's own error
+        // list, which carries the rule-level problems.
+        $execution = new Execution();
+        self::assertTrue($execution->getFromDBByCrit(['tickets_id' => $this->tickets_id]));
+        self::assertStringContainsString(
+            (string) $deleted,
+            (string) $execution->fields['error'],
+            'the log does not say which reason went missing',
+        );
+    }
+
+    /**
+     * The full cycle: core has to recognise the record as its own and undo it.
+     *
+     * Registering the reason ourselves rather than through a followup is only correct if core
+     * still treats it as a pending it owns. When an answer arrives through the interface, it
+     * has to take the ticket out of pending and drop the record -- otherwise the plugin has
+     * left a ticket that looks pending to GLPI forever.
+     *
+     * The `pending` key is what the interface posts on every followup, and it is what core
+     * keys the undo on: `PendingReason_Item::handlePendingReasonUpdateFromNewTimelineItem()`
+     * returns immediately without it.
+     */
+    public function testAnAnswerThroughTheInterfaceTakesTheTicketOutOfPendingAgain(): void
+    {
+        $this->armWithPendingReason();
+        (new RuleEngine())->runRule($this->rule());
+
+        $pending = new Ticket();
+        self::assertTrue($pending->getFromDB($this->tickets_id));
+        self::assertSame(Ticket::WAITING, (int) $pending->fields['status']);
+
+        (new ITILFollowup())->add([
+            'itemtype'   => Ticket::class,
+            'items_id'   => $this->tickets_id,
+            'content'    => 'The serial number is 12345.',
+            'users_id'   => $this->requester_id,
+            'is_private' => 0,
+            // What the timeline form posts on every followup.
+            'pending'    => 0,
+        ]);
+
+        $answered = new Ticket();
+        self::assertTrue($answered->getFromDB($this->tickets_id));
+        self::assertNotSame(
+            Ticket::WAITING,
+            (int) $answered->fields['status'],
+            'core did not recognise the pending this plugin registered, so the ticket is stuck',
+        );
+        self::assertFalse(
+            (new PendingReason_Item())->getFromDBByCrit(['itemtype' => Ticket::class, 'items_id' => $this->tickets_id]),
+            'core left its pending record behind',
+        );
+    }
+
+    /**
+     * And the case that is not ours to fix, pinned because it decides how the feature is used.
+     *
+     * A followup arriving without the `pending` key -- which is how GLPI's own mail collector
+     * builds one, `MailCollector.php` never setting it -- leaves the ticket pending. So a
+     * requester answering by email does not take the ticket back out on its own, in stock
+     * GLPI, with or without this plugin.
+     *
+     * That is why the pending reason is worth configuring rather than optional in practice:
+     * core's bump followups and its auto-solve become the only thing that moves the ticket on.
+     * If a future GLPI changes this, this test says so.
+     */
+    public function testAnAnswerWithoutThePendingKeyLeavesTheTicketPending(): void
+    {
+        $this->armWithPendingReason();
+        (new RuleEngine())->runRule($this->rule());
+
+        (new ITILFollowup())->add([
+            'itemtype'   => Ticket::class,
+            'items_id'   => $this->tickets_id,
+            'content'    => 'Answered by email.',
+            'users_id'   => $this->requester_id,
+            'is_private' => 0,
+        ]);
+
+        $still = new Ticket();
+        self::assertTrue($still->getFromDB($this->tickets_id));
+        self::assertSame(Ticket::WAITING, (int) $still->fields['status']);
+    }
+
+    private function armWithPendingReason(): void
+    {
+        RuleAction::setActionsForRule($this->rules_id, [
+            'final' => [
+                'type'              => ActionType::ChangeStatus->value,
+                'status'            => Ticket::WAITING,
+                'pendingreasons_id' => $this->pendingreasons_id,
+            ],
+        ]);
     }
 }

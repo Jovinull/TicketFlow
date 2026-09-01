@@ -169,7 +169,15 @@ and only a reply nobody followed up on moves the ticket.
 **Set the pending reason.** A ticket parked in pending with no reason is parked and forgotten:
 GLPI's own bump followups and its auto-solve both read the pending reason, so without one
 nothing chases the ticket and nothing ever closes it. With one, TicketFlow hands the ticket to
-core's own pending machinery and steps out of the way.
+core's own pending machinery and steps out of the way. If the reason is later deleted the rule
+refuses to run rather than parking tickets it cannot hand over.
+
+It matters more than it looks. An answer typed into the timeline takes the ticket back out of
+pending, because the form posts the flag core keys that on. An answer arriving through the mail
+collector does not: GLPI never sets that flag there, so a requester replying by email leaves
+the ticket pending. That is core's behaviour with or without this plugin, and it is why the
+pending reason is worth configuring — core's own bump and auto-solve become the only thing
+that moves the ticket on.
 
 ### Worked example: approval unanswered for two business days
 
