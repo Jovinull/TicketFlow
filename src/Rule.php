@@ -187,9 +187,12 @@ class Rule extends CommonDBTM
      * beyond it is asked per action and per ticket by `Engine\OperatorAuthorization`, which
      * is handed only to the manual caller. The split is not tidiness. Those per-action checks
      * go through the ticket's own capability methods, and `Ticket::isAllowedStatus()` answers
-     * from the session profile's `ticket_status` matrix: a real web profile carries that key
-     * and answers sensibly, while a cron run carries no profile at all and gets `false` for
-     * every transition. Sharing one check between the two callers would stop the scheduled
+     * from the session profile's `ticket_status` matrix, and the matrix stores only the
+     * transitions a profile is *denied*. A standard central profile therefore decodes to an
+     * empty matrix and every transition is allowed; it answers false only for a
+     * helpdesk-interface profile or an explicit denial. A cron run is the case that matters
+     * here: it carries no profile at all, the key is absent, and the method returns false for
+     * everything. Sharing one check between the two callers would stop the scheduled
      * run solving anything, on every installation.
      */
     public static function checkOperatorMayActOnTickets(): void

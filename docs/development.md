@@ -156,9 +156,13 @@ No schema change is needed: `rule_type` is a string column.
 1. Add a case to `Enum\ActionType`, with the right `isDestructive()`.
 2. Implement `Engine\Action\ActionInterface`. Honour `ActionContext::$dry_run` by returning
    `ActionResult::simulated()` and touching nothing.
-3. Register it in `Engine\RuleEngine`'s executor.
+3. Register it in `Engine\RuleEngine`'s executor and extend
+   `Engine\OperatorAuthorization` with the capability GLPI requires from a manual operator.
+   Cron must remain outside that web-session policy.
 4. Expose it in `templates/rule_form.html.twig` and map it in
    `RuleAction::setActionsForRule()` / `getFormValues()`.
+5. Cover dry run, manual authorization, cron behavior and a partial-action failure before
+   considering the action complete.
 
 No schema change: actions are stored as `action_type` + JSON `params`.
 
@@ -174,7 +178,9 @@ private const MIGRATIONS = [
 ```
 
 `Install::install()` reads the stored schema version and applies only what is missing, so
-the same entry point serves a fresh install and an upgrade.
+the same entry point serves a fresh install and an upgrade. Each migration must apply before
+its version is recorded. `SchemaContractTest` compares clean installation with upgrades from
+every supported historical schema.
 
 ## Quality
 
@@ -184,10 +190,23 @@ php -l <file>                       # syntax
 vendor/bin/phpunit --testsuite unit
 ```
 
-PHPStan, Psalm, PHP-CS-Fixer and Rector are the tools the official GLPI plugin skeleton
-uses; adding them is a natural next step, and their configuration should be copied from
-`pluginsGLPI/empty` for the target GLPI version rather than invented here. They are not
-vendored in 0.1 to keep the dependency surface at exactly one dev package (PHPUnit).
+The official GLPI plugin CI also runs PHPStan level 8, Psalm taint analysis, Rector,
+PHP-CS-Fixer, TwigCS and licence-header checks. Those tools deliberately come from the GLPI
+development checkout rather than the plugin release archive. From
+`<glpi>/plugins/ticketclock`, run:
+
+```bash
+../../vendor/bin/phpstan analyse -c phpstan.neon --memory-limit=1G
+../../vendor/bin/psalm --config=psalm.xml --no-cache
+../../vendor/bin/rector process --dry-run --no-progress-bar
+../../vendor/bin/php-cs-fixer check --config=.php-cs-fixer.php --diff --no-interaction
+../../vendor/bin/twigcs templates --config=.twig_cs.dist.php
+php tools/apply-headers.php --check
+```
+
+The remote PHP/database matrix remains the final compatibility gate. See
+[engineering-playbook.md](engineering-playbook.md) and
+[review-checklist.md](review-checklist.md) for the rules behind the commands.
 
 ## Debugging
 

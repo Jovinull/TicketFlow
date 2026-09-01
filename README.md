@@ -261,12 +261,14 @@ One right, `plugin_ticketclock_rule`, in the standard profile matrix
 | Bit | Grants |
 |---|---|
 | `READ` | see rules, logs and simulations |
-| `UPDATE` | edit rules, change the configuration, run a rule manually |
+| `UPDATE` | edit rules and run a rule manually, subject to the operator's own ticket/action rights |
 | `CREATE` | create and duplicate rules |
 | `PURGE` | delete rules |
 
 On install, every profile that can already configure GLPI receives the full right.
-Rules are entity-scoped and honour the reader's active entity.
+Rules are entity-scoped and honour the reader's active entity. The instance-wide TicketFlow
+configuration additionally requires GLPI's own global `config` UPDATE right; changing it
+selects the automation identity and affects every entity.
 
 ## Observability
 
@@ -368,7 +370,9 @@ See [docs/development.md](docs/development.md).
 | [docs/architecture.md](docs/architecture.md) | components, cron flow, data model, concurrency |
 | [docs/rules.md](docs/rules.md) | the exact semantics of every rule field |
 | [docs/development.md](docs/development.md) | setup, tests, conventions |
-| [docs/adr/](docs/adr/) | why the load-bearing decisions were made (nine of them) |
+| [docs/engineering-playbook.md](docs/engineering-playbook.md) | architecture boundaries, security invariants, SOLID/pragmatic design rules, quality gates |
+| [docs/review-checklist.md](docs/review-checklist.md) | pull-request and release evidence checklist |
+| [docs/adr/](docs/adr/) | why the load-bearing decisions were made (ten of them) |
 | [docs/publishing.md](docs/publishing.md) | what GLPI requires to publish a plugin, and where this one stands against it |
 | [docs/i18n.md](docs/i18n.md) | how translations work, and how to add a language |
 | [CHANGELOG.md](CHANGELOG.md) | releases |

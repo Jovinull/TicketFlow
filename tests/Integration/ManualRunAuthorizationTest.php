@@ -415,4 +415,47 @@ final class ManualRunAuthorizationTest extends TestCase
             'delay_unit'   => 'business_days',
         ]);
     }
+    /**
+     * A refusal that arrives after an action already ran keeps the occurrence.
+     *
+     * Releasing it is right when nothing happened: the operator was told no, the ticket is
+     * untouched, and the scheduled run should still get its turn. It is wrong the moment an
+     * earlier action succeeded. The followup is already on the ticket, and handing the
+     * occurrence back would have cron write it a second time -- turning a permissions refusal
+     * into duplicated content on somebody's ticket.
+     *
+     * So a partial run stays `failed`, which retains the claim. The cost is that the
+     * occurrence needs a human to look at it; the alternative costs correctness.
+     */
+    public function testARefusalAfterAnActionKeepsTheOccurrenceSoCronCannotRepeatIt(): void
+    {
+        // Allowed first, denied second: the followup lands, the close does not.
+        RuleAction::setActionsForRule($this->rules_id, [
+            'add_followup' => ['enabled' => 1, 'content' => 'Please answer.'],
+            'final'        => ['type' => ActionType::CloseTicket->value],
+        ]);
+
+        $this->becomeOperator(followup_rights: ITILFollowup::ADDALLITEM, status_matrix: [
+            Ticket::WAITING => [Ticket::CLOSED => 0],
+        ]);
+
+        $report = RuleEngine::forOperator()->runRule($this->rule());
+
+        self::assertSame(1, $this->followupsOnTicket(), 'the first action should have run');
+        self::assertSame(1, $report->failed, 'a partial run is a failure, not a clean refusal');
+        self::assertSame(0, $report->skipped, 'releasing here would let the followup be written twice');
+
+        $ticket = new Ticket();
+        self::assertTrue($ticket->getFromDB($this->tickets_id));
+        self::assertSame(Ticket::WAITING, (int) $ticket->fields['status'], 'the denied close happened anyway');
+
+        // The scheduled run is not subject to the operator policy, so if the occurrence had
+        // been handed back it would run the whole rule again: a second followup, and the
+        // close the operator was refused.
+        $scheduled = (new RuleEngine())->runRule($this->rule());
+
+        self::assertSame(1, $this->followupsOnTicket(), 'cron repeated an action that had already run');
+        self::assertSame(0, $scheduled->executed);
+        self::assertSame(1, $scheduled->already_processed, 'the occurrence was not retained');
+    }
 }
