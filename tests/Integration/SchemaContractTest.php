@@ -132,7 +132,7 @@ final class SchemaContractTest extends TestCase
     {
         foreach (self::EXPECTED as $suffix => $expected) {
             self::assertSame(
-                array_map(self::normaliseSignature(...), $expected),
+                array_map($this->normaliseSignature(...), $expected),
                 $this->signatureOf('glpi_plugin_ticketclock_' . $suffix),
                 sprintf(
                     'glpi_plugin_ticketclock_%s does not match the recorded schema. If a migration '
@@ -180,7 +180,7 @@ final class SchemaContractTest extends TestCase
         ]);
 
         foreach ($iterator as $row) {
-            $out[] = self::normaliseSignature(sprintf(
+            $out[] = $this->normaliseSignature(sprintf(
                 '%s %s %s default %s',
                 $row['COLUMN_NAME'],
                 $row['COLUMN_TYPE'],
@@ -201,7 +201,7 @@ final class SchemaContractTest extends TestCase
      * the range and is deprecated in MySQL. Keeping it in this contract would make a correct
      * schema fail solely because the database engine serialises identical metadata differently.
      */
-    private static function normaliseSignature(string $signature): string
+    private function normaliseSignature(string $signature): string
     {
         return preg_replace(
             '/\\b(tinyint|smallint|mediumint|int|bigint)\\(\\d+\\)(?=(?: unsigned)?(?: NULL| NOT NULL))/',
