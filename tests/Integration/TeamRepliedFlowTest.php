@@ -464,4 +464,78 @@ final class TeamRepliedFlowTest extends TestCase
             'the status core would restore was overwritten',
         );
     }
+    /**
+     * A pending record carrying no reason is not a ticket core is looking after.
+     *
+     * `createForItem()` writes what it is handed without checking, so these rows exist: the
+     * plugin's own diagnostics page counts them under "pending items with no reason". Reading
+     * the row's presence as "core has this" left the ticket pending with nothing bumping it
+     * and nothing solving it, and said the run succeeded.
+     */
+    public function testAPendingRecordWithNoReasonIsNotTreatedAsHandled(): void
+    {
+        $this->parkWithRecord(['pendingreasons_id' => 0]);
+
+        $report = (new RuleEngine())->runRule($this->rule());
+
+        self::assertSame(0, $report->executed);
+        self::assertSame(1, $report->failed, 'a ticket with no usable reason was reported as handled');
+    }
+
+    /**
+     * A record pointing at a reason that is gone.
+     *
+     * Not reachable by deleting the reason: GLPI cascades, and the record goes with it --
+     * measured, and it is why this test builds the orphan by removing the reason row directly
+     * rather than through the item API. The state still happens, by the means anything
+     * unreachable-through-the-UI happens: a restored backup, an import, somebody with database
+     * access. The check costs a lookup and this pins that it stays.
+     */
+    public function testAPendingRecordPointingAtAMissingReasonIsNotTreatedAsHandled(): void
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $orphan = (int) (new PendingReason())->add([
+            'name' => 'TicketFlow orphaned ' . uniqid(), 'entities_id' => 0, 'is_recursive' => 1,
+        ]);
+        $this->parkWithRecord(['pendingreasons_id' => $orphan]);
+
+        // Straight to the table: deleting through PendingReason would take the record with it
+        // and leave nothing to test.
+        $DB->delete(PendingReason::getTable(), ['id' => $orphan]);
+        self::assertTrue(
+            (new PendingReason_Item())->getFromDBByCrit(['itemtype' => Ticket::class, 'items_id' => $this->tickets_id]),
+            'the orphan record was not left behind, so this test proves nothing',
+        );
+
+        $report = (new RuleEngine())->runRule($this->rule());
+
+        self::assertSame(0, $report->executed);
+        self::assertSame(1, $report->failed, 'a reason that no longer exists was accepted as one');
+    }
+
+    /**
+     * Parks the ticket in pending with a record of the caller's choosing, and points the rule
+     * at pending so the action meets a ticket already in its target status.
+     *
+     * @param array<string, mixed> $record overrides for the PendingReason_Item row
+     */
+    private function parkWithRecord(array $record): void
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $DB->update(Ticket::getTable(), ['status' => Ticket::WAITING], ['id' => $this->tickets_id]);
+        (new Rule())->update(['id' => $this->rules_id, 'target_status' => Ticket::WAITING]);
+        $this->armWithPendingReason();
+
+        $ticket = new Ticket();
+        self::assertTrue($ticket->getFromDB($this->tickets_id));
+        PendingReason_Item::createForItem($ticket, $record + [
+            'followup_frequency'          => 86400,
+            'followups_before_resolution' => 3,
+            'previous_status'             => Ticket::ASSIGNED,
+        ]);
+    }
 }

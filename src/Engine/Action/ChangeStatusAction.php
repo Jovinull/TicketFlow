@@ -161,14 +161,36 @@ final class ChangeStatusAction implements ActionInterface
             return $unchanged;
         }
 
-        if (PendingReason_Item::getForItem($ticket) !== false) {
+        if ($this->coreAlreadyChasesThisTicket($ticket)) {
             return $unchanged;
         }
 
         return ActionResult::failure(
             ActionType::ChangeStatus,
-            __('The ticket is already pending with no reason recorded, and a reason cannot be attached now: there is no earlier status for GLPI to restore when it leaves pending. Point this rule at the status the ticket is in before it goes pending.', 'ticketclock'),
+            __('The ticket is already pending with no usable reason, and one cannot be attached now: there is no earlier status for GLPI to restore when it leaves pending. Point this rule at the status the ticket is in before it goes pending.', 'ticketclock'),
         );
+    }
+
+    /**
+     * Whether core's pending machinery is genuinely looking after this ticket.
+     *
+     * The presence of a `PendingReason_Item` row does not say so. `createForItem()` writes
+     * whatever it is handed without checking the reason, so a row can carry
+     * `pendingreasons_id = 0`, or point at a reason deleted since -- and this plugin already
+     * knew it: the diagnostics page counts those rows under "pending items with no reason".
+     * Either way nothing bumps the ticket and nothing solves it, which is the state this
+     * check exists to distinguish from a ticket core is handling.
+     */
+    private function coreAlreadyChasesThisTicket(Ticket $ticket): bool
+    {
+        $registered = PendingReason_Item::getForItem($ticket);
+        if ($registered === false) {
+            return false;
+        }
+
+        $pendingreasons_id = (int) ($registered->fields['pendingreasons_id'] ?? 0);
+
+        return $pendingreasons_id > 0 && (new PendingReason())->getFromDB($pendingreasons_id);
     }
 
     public function execute(ActionDefinition $definition, ActionContext $context): ActionResult
