@@ -173,6 +173,17 @@ strips every assigned technician from the ticket.
 Climbing a group hierarchy is deliberately not here. That is Escalade's feature and it is
 maintained by the GLPI team; point a rule at the group you want and let Escalade do the rest.
 
+Two limits worth knowing before you configure this:
+
+* **The group has to belong to the ticket's entity** — its own, or an ancestor's when the group
+  is recursive, which is the same set GLPI offers anywhere else. A rule pointing outside that is
+  refused when you save it, and refused again per ticket when it runs, so a rule stored before an
+  entity was reorganised cannot quietly hand tickets to a group that should not see them.
+* **Running a rule by hand needs the *assign* right on tickets**, not merely *update*. That is a
+  separate right in GLPI, and someone who cannot move a ticket between teams through the ticket
+  form cannot do it through "Run for real" either. The scheduled run is not affected: cron acts
+  under the automation policy, not under a profile.
+
 ### Worked example: put a ticket back on the requester once the team has answered
 
 The clock does not only run against your team. Point it the other way and the same machinery
@@ -368,6 +379,17 @@ under `refused`.
 **Nothing happens.** Check *Diagnostics*. In order: is execution enabled, is global dry run
 off, is the rule active, is the rule in simulation-only mode, is the `ProcessRules` task
 scheduled?
+
+**A group assignment fails with "does not belong to the ticket's entity".** The rule points at
+a group GLPI would not offer on those tickets. Usually the group moved entity, or lost its
+recursive flag, after the rule was written. Reopen the rule and pick the group again: the
+dropdown offers exactly the set that will be accepted.
+
+**A group assignment fails with "assigned to both".** The new group went on, and something
+refused to take an old one off — a business rule, or another plugin listening on
+`Group_Ticket`. The ticket is genuinely assigned to both, and the run says so instead of
+reporting a handover that did not happen. Remove the old group by hand, then look at what
+refused it, because the next run will hit the same thing.
 
 **Executions say `skipped: state_changed`.** The ticket changed between being selected and
 being acted on. That is the safety net doing its job.
