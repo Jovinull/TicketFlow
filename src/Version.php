@@ -46,7 +46,7 @@ namespace GlpiPlugin\Ticketclock;
 final class Version
 {
     /** Plugin version, as published in the catalog manifest. */
-    public const VERSION = '1.0.1';
+    public const VERSION = '1.1.0';
 
     /** Minimal GLPI version, inclusive. */
     public const MIN_GLPI = '11.0.0';
