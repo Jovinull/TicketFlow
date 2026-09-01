@@ -57,6 +57,9 @@ class RuleAction extends CommonDBChild
     public $dohistory = true;
 
     /** Ranks chosen so a message always lands before a terminal action. */
+    // Before the followup on purpose: the notification targets the ticket's assigned groups,
+    // so reassigning first is what makes the message reach the team that now owns it.
+    private const RANK_ASSIGN       = 5;
     private const RANK_FOLLOWUP     = 10;
     private const RANK_FINAL        = 20;
     private const RANK_NOTIFICATION = 30;
@@ -111,6 +114,7 @@ class RuleAction extends CommonDBChild
      *
      * @return array{
      *     add_followup: array{enabled: bool, content: string, is_private: bool},
+     *     assign_group: array{enabled: bool, groups_id: int, replace: bool},
      *     final: array{type: string, content: string, solutiontypes_id: int, status: int, pendingreasons_id: int},
      *     send_notification: array{enabled: bool, event: string}
      * }
@@ -118,6 +122,7 @@ class RuleAction extends CommonDBChild
     public static function getFormValues(int $rules_id): array
     {
         $values = [
+            'assign_group'      => ['enabled' => false, 'groups_id' => 0, 'replace' => false],
             'add_followup'      => ['enabled' => false, 'content' => '', 'is_private' => false],
             'final'             => ['type' => 'none', 'content' => '', 'solutiontypes_id' => 0, 'status' => 0, 'pendingreasons_id' => 0],
             'send_notification' => ['enabled' => false, 'event' => 'update'],
@@ -125,6 +130,14 @@ class RuleAction extends CommonDBChild
 
         foreach (self::getDefinitionsForRule($rules_id) as $definition) {
             switch ($definition->type) {
+                case ActionType::AssignGroup:
+                    $values['assign_group'] = [
+                        'enabled'   => true,
+                        'groups_id' => $definition->intParam('groups_id'),
+                        'replace'   => $definition->boolParam('replace'),
+                    ];
+                    break;
+
                 case ActionType::AddFollowup:
                     $values['add_followup'] = [
                         'enabled'    => true,
@@ -190,6 +203,14 @@ class RuleAction extends CommonDBChild
         }
 
         (new self())->deleteByCriteria(['plugin_ticketclock_rules_id' => $rules_id]);
+
+        $assign = (array) ($payload['assign_group'] ?? []);
+        if (!empty($assign['enabled']) && (int) ($assign['groups_id'] ?? 0) > 0) {
+            self::insert($rules_id, ActionType::AssignGroup, self::RANK_ASSIGN, [
+                'groups_id' => (int) $assign['groups_id'],
+                'replace'   => !empty($assign['replace']),
+            ]);
+        }
 
         $followup = (array) ($payload['add_followup'] ?? []);
         if (!empty($followup['enabled'])) {

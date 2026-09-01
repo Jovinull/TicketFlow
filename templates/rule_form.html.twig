@@ -164,6 +164,18 @@
             <div class="row flex-row">
                 {{ fields.largeTitle(__('Then', 'ticketclock'), 'ti ti-player-play') }}
 
+                {{ fields.dropdownYesNo('_actions[assign_group][enabled]', actions.assign_group.enabled, __('Hand the ticket to another group', 'ticketclock'), {
+                    'helper': __('Runs before the followup and the notification, so both reach the group that now owns the ticket.', 'ticketclock')
+                }) }}
+
+                {{ fields.dropdownField('Group', '_actions[assign_group][groups_id]', actions.assign_group.groups_id, __('Group', 'ticketclock'), {
+                    'condition': {'is_assign': 1}
+                }) }}
+
+                {{ fields.dropdownYesNo('_actions[assign_group][replace]', actions.assign_group.replace, __('Replace the current group', 'ticketclock'), {
+                    'helper': __('Yes removes the groups the ticket is assigned to now. No leaves them and adds this one alongside.', 'ticketclock')
+                }) }}
+
                 {{ fields.dropdownYesNo('_actions[add_followup][enabled]', actions.add_followup.enabled, __('Add a message to the timeline', 'ticketclock')) }}
 
                 {{ fields.textareaField('_actions[add_followup][content]', actions.add_followup.content, __('Message', 'ticketclock'), {

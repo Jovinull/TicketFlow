@@ -148,6 +148,31 @@ ticket.
 The message is a template — the text above is a suggestion, not a hard-coded string. See
 [Message placeholders](#message-placeholders).
 
+### Worked example: escalate to the next line after two business days
+
+| Field | Value |
+|---|---|
+| Rule type | Pending without an answer |
+| Assigned group | N1 |
+| Delay | 2 business days |
+| Actions | Hand the ticket to *N2*, replacing the current group; then a followup |
+
+The assignment runs before the followup and the notification, so both reach the group that now
+owns the ticket rather than the one that let it go stale. The new group is added before the old
+one is removed: a ticket briefly assigned to two groups is one two teams can see, while a ticket
+briefly assigned to none has fallen off every queue.
+
+**Alongside Escalade.** [Escalade](https://github.com/pluginsGLPI/escalade) is the plugin that
+owns escalation in GLPI, and the two coexist rather than compete: it knows how to escalate and
+not when, this knows when and now knows how. Verified with Escalade 2.10.7 on GLPI 11, both
+installed, a rule running from cron: the reassignment goes through, nothing errors, and the
+ticket's assigned technicians are left alone. That last part is not free — TicketFlow sets the
+opt-out Escalade documents for plugins that assign a group themselves, and without it Escalade
+strips every assigned technician from the ticket.
+
+Climbing a group hierarchy is deliberately not here. That is Escalade's feature and it is
+maintained by the GLPI team; point a rule at the group you want and let Escalade do the rest.
+
 ### Worked example: put a ticket back on the requester once the team has answered
 
 The clock does not only run against your team. Point it the other way and the same machinery

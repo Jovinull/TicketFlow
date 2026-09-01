@@ -42,6 +42,7 @@ use GlpiPlugin\Ticketclock\Calendar\Deadline;
 use GlpiPlugin\Ticketclock\Calendar\GlpiCalendarEngine;
 use GlpiPlugin\Ticketclock\Config;
 use GlpiPlugin\Ticketclock\Engine\Action\AddFollowupAction;
+use GlpiPlugin\Ticketclock\Engine\Action\AssignGroupAction;
 use GlpiPlugin\Ticketclock\Engine\Action\AddSolutionAction;
 use GlpiPlugin\Ticketclock\Engine\Action\ChangeStatusAction;
 use GlpiPlugin\Ticketclock\Engine\Action\CloseTicketAction;
@@ -119,6 +120,7 @@ final readonly class RuleEngine
         ];
 
         $this->executor = $executor ?? new ActionExecutor([
+            new AssignGroupAction(),
             new AddFollowupAction(),
             new AddSolutionAction(),
             new ChangeStatusAction(),

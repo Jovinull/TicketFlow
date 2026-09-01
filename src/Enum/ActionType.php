@@ -40,6 +40,7 @@ namespace GlpiPlugin\Ticketclock\Enum;
  */
 enum ActionType: string
 {
+    case AssignGroup = 'assign_group';
     case AddFollowup = 'add_followup';
     case AddSolution = 'add_solution';
     case ChangeStatus = 'change_status';
@@ -49,6 +50,7 @@ enum ActionType: string
     public function label(): string
     {
         return match ($this) {
+            self::AssignGroup      => __('Assign the ticket to a group', 'ticketclock'),
             self::AddFollowup      => __('Add a followup', 'ticketclock'),
             self::AddSolution      => __('Solve the ticket (add a solution)', 'ticketclock'),
             self::ChangeStatus     => __('Change the status', 'ticketclock'),
@@ -65,7 +67,10 @@ enum ActionType: string
     {
         return match ($this) {
             self::AddSolution, self::ChangeStatus, self::CloseTicket => true,
-            self::AddFollowup, self::SendNotification                => false,
+            // Reassigning is not destructive in the sense this flag means -- it does not
+            // solve, close or move a ticket out of anybody's sight -- but it does take the
+            // ticket away from the group that had it.
+            self::AddFollowup, self::SendNotification, self::AssignGroup => false,
         };
     }
 

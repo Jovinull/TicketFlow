@@ -87,6 +87,10 @@ final readonly class OperatorAuthorization
             // No transition of its own. UPDATE rather than READ on purpose: raising the
             // event sends the ticket's content out to whoever the notification targets, so
             // it is treated as acting on the ticket rather than merely looking at it.
+            // Reassigning is an edit of the ticket's actors, which is what UPDATE covers.
+            // Whether the operator may use that particular group is a separate question and
+            // the action answers it: GLPI has no per-group capability to ask here.
+            ActionType::AssignGroup,
             ActionType::SendNotification => $ticket->can($tickets_id, UPDATE),
         };
 
