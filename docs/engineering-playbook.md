@@ -203,6 +203,12 @@ A local green run is evidence; a green matrix is the merge gate.
 
 ## 9. Reference material
 
+- [Official empty plugin skeleton](https://github.com/pluginsGLPI/empty) — repository layout,
+  tooling and test conventions.
+- [Official example plugin](https://github.com/pluginsGLPI/example) — supported hooks and
+  integration examples; use it as an API reference, not as a reason to copy legacy patterns.
+- [Official plugin CI workflows](https://github.com/glpi-project/plugin-ci-workflows) — the
+  reusable pipeline and supported PHP/database matrix.
 - [GLPI plugin tutorial and Marketplace requirements](https://glpi-developer-documentation.readthedocs.io/en/master/plugins/tutorial.html)
 - [GLPI plugin guidelines](https://glpi-developer-documentation.readthedocs.io/en/master/plugins/guidelines.html)
 - [GLPI database updates](https://glpi-developer-documentation.readthedocs.io/en/master/devapi/database/dbupdate.html)
