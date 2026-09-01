@@ -51,7 +51,14 @@ use Migration;
  */
 final class Install
 {
-    private const SCHEMA_VERSION_KEY = 'schema_version';
+    /**
+     * Where the installed schema version is kept.
+     *
+     * Public because it is a stable identifier rather than behaviour, and the schema tests
+     * need to name it to build an older instance on purpose. The setter stays private: tests
+     * are allowed to say which version is recorded, not to bypass the migration chain.
+     */
+    public const SCHEMA_VERSION_KEY = 'schema_version';
 
     /**
      * Ordered list of migrations. Each key is the version it produces.

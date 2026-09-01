@@ -35,10 +35,16 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Ticketclock\Tests\Integration;
 
+use Config as CoreConfig;
+use GlpiPlugin\Ticketclock\Config;
 use GlpiPlugin\Ticketclock\Execution;
+use GlpiPlugin\Ticketclock\Install;
 use GlpiPlugin\Ticketclock\Rule;
 use GlpiPlugin\Ticketclock\RuleAction;
 use GlpiPlugin\Ticketclock\RuleGroup;
+use GlpiPlugin\Ticketclock\Version;
+use Migration;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -251,5 +257,84 @@ final class SchemaContractTest extends TestCase
         }
 
         return $out;
+    }
+    /**
+     * The upgrade path lands on the same schema as a clean install.
+     *
+     * The contract above checks whichever database the suite happens to run against, and on
+     * CI that database is always installed clean. So it proves the installer and says nothing
+     * about the migrations -- which is the half that actually drifts, because they are
+     * written months apart from the `CREATE TABLE` they have to agree with.
+     *
+     * This one builds the older schema on purpose and upgrades into the current one. The
+     * database is put back either way: a test that leaves a half-migrated instance behind
+     * would take every later test with it.
+     *
+     * @param list<string> $columns_to_drop
+     */
+    #[DataProvider('olderSchemas')]
+    public function testUpgradingFromAnOlderSchemaProducesTheInstalledShape(string $from, array $columns_to_drop): void
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $table = Rule::getTable();
+
+        // GLPI caches table metadata per request, and this test alters tables underneath it.
+        // Without clearing, the second data set asks about a column the cache last saw being
+        // dropped and gets an answer from before the migration put it back.
+        $DB->clearSchemaCache();
+
+        try {
+            foreach ($columns_to_drop as $column) {
+                self::assertTrue(
+                    $DB->fieldExists($table, $column),
+                    sprintf('%s is missing before the test starts; the database is not at the current schema', $column),
+                );
+                $DB->doQuery('ALTER TABLE ' . $DB->quoteName($table) . ' DROP COLUMN ' . $DB->quoteName($column));
+            }
+
+            // Recorded directly rather than through a test-only setter on Install: the test
+            // is entitled to say which version this instance claims to be, not to reach into
+            // the migration chain.
+            CoreConfig::setConfigurationValues(Config::CONTEXT, [Install::SCHEMA_VERSION_KEY => $from]);
+            Config::reload();
+
+            self::assertTrue(Install::install(new Migration(Version::VERSION)));
+
+            self::assertSame(
+                Version::SCHEMA,
+                Install::getInstalledSchemaVersion(),
+                'the upgrade did not record the version it migrated to',
+            );
+
+            self::assertSame(
+                array_map($this->normaliseSignature(...), self::EXPECTED['rules']),
+                $this->signatureOf($table),
+                sprintf(
+                    'upgrading from %s produced a different schema than a clean install. The migration '
+                    . 'and the CREATE TABLE have drifted apart, which is invisible until somebody upgrades.',
+                    $from,
+                ),
+            );
+        } finally {
+            // Whatever happened above, the instance the rest of the suite runs on has to be
+            // whole again.
+            Install::install(new Migration(Version::VERSION));
+            $DB->clearSchemaCache();
+        }
+    }
+
+    /**
+     * Each supported starting point, with the columns that version did not have yet.
+     *
+     * @return array<string, array{string, list<string>}>
+     */
+    public static function olderSchemas(): array
+    {
+        return [
+            '1.1.0, before the refusal columns' => ['1.1.0', ['last_error', 'last_error_date']],
+            '1.0.0, before start_event as well' => ['1.0.0', ['last_error', 'last_error_date', 'start_event']],
+        ];
     }
 }
