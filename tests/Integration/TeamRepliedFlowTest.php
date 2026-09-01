@@ -321,9 +321,10 @@ final class TeamRepliedFlowTest extends TestCase
      * has to take the ticket out of pending and drop the record -- otherwise the plugin has
      * left a ticket that looks pending to GLPI forever.
      *
-     * The `pending` key is what the interface posts on every followup, and it is what core
-     * keys the undo on: `PendingReason_Item::handlePendingReasonUpdateFromNewTimelineItem()`
-     * returns immediately without it.
+     * The `pending` key is what the interface posts on every followup, and core keys the undo
+     * on it. Measured rather than traced to a single method: with the key the ticket leaves
+     * pending and `CommonITILObject::prepareInputForUpdate()` drops the record, because the
+     * status moved away from WAITING. Without it, neither happens.
      */
     public function testAnAnswerThroughTheInterfaceTakesTheTicketOutOfPendingAgain(): void
     {
@@ -396,5 +397,71 @@ final class TeamRepliedFlowTest extends TestCase
                 'pendingreasons_id' => $this->pendingreasons_id,
             ],
         ]);
+    }
+    /**
+     * A rule pointed at tickets that are already pending cannot attach a reason to them.
+     *
+     * The form accepts it -- the status selector offers pending, and so does the action -- so
+     * it is a configuration somebody will build. It used to report success and register
+     * nothing, leaving the tickets in the exact state the reason exists to prevent.
+     */
+    public function testARuleAimedAtAlreadyPendingTicketsIsRefusedRatherThanSilent(): void
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $DB->update(Ticket::getTable(), ['status' => Ticket::WAITING], ['id' => $this->tickets_id]);
+        (new Rule())->update(['id' => $this->rules_id, 'target_status' => Ticket::WAITING]);
+        $this->armWithPendingReason();
+
+        $report = (new RuleEngine())->runRule($this->rule());
+
+        self::assertSame(0, $report->executed, 'the run reported success while registering nothing');
+        self::assertSame(1, $report->failed);
+
+        $execution = new Execution();
+        self::assertTrue($execution->getFromDBByCrit(['tickets_id' => $this->tickets_id]));
+        self::assertStringContainsString('already pending', (string) $execution->fields['error']);
+
+        self::assertFalse(
+            (new PendingReason_Item())->getFromDBByCrit(['itemtype' => Ticket::class, 'items_id' => $this->tickets_id]),
+            'a reason was attached with no earlier status to restore',
+        );
+    }
+
+    /**
+     * The same shape, but the ticket was already handed to core by somebody else. Nothing to
+     * do is not the same as something gone wrong.
+     */
+    public function testAnAlreadyPendingTicketThatCoreOwnsIsLeftAlone(): void
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $DB->update(Ticket::getTable(), ['status' => Ticket::WAITING], ['id' => $this->tickets_id]);
+        (new Rule())->update(['id' => $this->rules_id, 'target_status' => Ticket::WAITING]);
+        $this->armWithPendingReason();
+
+        $ticket = new Ticket();
+        self::assertTrue($ticket->getFromDB($this->tickets_id));
+        PendingReason_Item::createForItem($ticket, [
+            'pendingreasons_id'           => $this->pendingreasons_id,
+            'followup_frequency'          => 86400,
+            'followups_before_resolution' => 3,
+            'previous_status'             => Ticket::ASSIGNED,
+        ]);
+
+        $report = (new RuleEngine())->runRule($this->rule());
+
+        self::assertSame(1, $report->executed);
+        self::assertSame(0, $report->failed);
+
+        $registered = new PendingReason_Item();
+        self::assertTrue($registered->getFromDBByCrit(['itemtype' => Ticket::class, 'items_id' => $this->tickets_id]));
+        self::assertSame(
+            Ticket::ASSIGNED,
+            (int) $registered->fields['previous_status'],
+            'the status core would restore was overwritten',
+        );
     }
 }

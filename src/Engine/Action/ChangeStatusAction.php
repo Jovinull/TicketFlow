@@ -126,6 +126,51 @@ final class ChangeStatusAction implements ActionInterface
         ]);
     }
 
+    /**
+     * A ticket that is already where the action wants to put it.
+     *
+     * Nothing to change, and until now that meant nothing to say either -- which quietly lost
+     * the pending reason. A rule selecting tickets that are already pending, acting to make
+     * them pending, with a reason attached, reported success and registered nothing: the
+     * tickets stayed pending with no reason, which is the exact state the reason exists to
+     * prevent, arrived at by a configuration the form accepts.
+     *
+     * There is no safe way to attach one here. `previous_status` is what core restores when
+     * the ticket leaves pending, and the only status this ticket has is pending itself.
+     * Recording that would send the ticket back to pending on the way out of pending. Core
+     * never does it either: it writes `previous_status` only on the branch where the ticket
+     * was not pending yet.
+     *
+     * So: already handed to core, fine. Not handed over and unable to be, refused with the
+     * reason rather than a success nobody can act on.
+     */
+    private function alreadyInTargetStatus(ActionDefinition $definition, ActionContext $context, int $status): ActionResult
+    {
+        $unchanged = ActionResult::success(
+            ActionType::ChangeStatus,
+            __('The ticket already has the target status.', 'ticketclock'),
+            ['status' => $status, 'changed' => false],
+        );
+
+        if ($status !== Ticket::WAITING || $definition->intParam('pendingreasons_id') <= 0) {
+            return $unchanged;
+        }
+
+        $ticket = new Ticket();
+        if (!$ticket->getFromDB($context->ticket->tickets_id)) {
+            return $unchanged;
+        }
+
+        if (PendingReason_Item::getForItem($ticket) !== false) {
+            return $unchanged;
+        }
+
+        return ActionResult::failure(
+            ActionType::ChangeStatus,
+            __('The ticket is already pending with no reason recorded, and a reason cannot be attached now: there is no earlier status for GLPI to restore when it leaves pending. Point this rule at the status the ticket is in before it goes pending.', 'ticketclock'),
+        );
+    }
+
     public function execute(ActionDefinition $definition, ActionContext $context): ActionResult
     {
         $status = $definition->intParam('status');
@@ -134,11 +179,7 @@ final class ChangeStatusAction implements ActionInterface
         }
 
         if ($status === $context->ticket->status) {
-            return ActionResult::success(
-                ActionType::ChangeStatus,
-                __('The ticket already has the target status.', 'ticketclock'),
-                ['status' => $status, 'changed' => false],
-            );
+            return $this->alreadyInTargetStatus($definition, $context, $status);
         }
 
         if ($context->dry_run) {
