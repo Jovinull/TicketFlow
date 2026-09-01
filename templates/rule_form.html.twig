@@ -168,8 +168,12 @@
                     'helper': __('Runs before the followup and the notification, so both reach the group that now owns the ticket.', 'ticketclock')
                 }) }}
 
+                {# The rule's entity, not the session's: a rule saved at the root by someone
+                   viewing every entity must not be offered a group its own tickets could
+                   never see. Same set the save and the run accept. #}
                 {{ fields.dropdownField('Group', '_actions[assign_group][groups_id]', actions.assign_group.groups_id, __('Group', 'ticketclock'), {
-                    'condition': {'is_assign': 1}
+                    'condition': {'is_assign': 1},
+                    'entity': item.fields['entities_id']|default(-1)
                 }) }}
 
                 {{ fields.dropdownYesNo('_actions[assign_group][replace]', actions.assign_group.replace, __('Replace the current group', 'ticketclock'), {

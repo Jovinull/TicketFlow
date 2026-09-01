@@ -76,10 +76,14 @@ final class ManualRunAuthorizationTest extends TestCase
     /** @var array<string, mixed> */
     private array $profile_before = [];
 
+    /** @var list<int> */
+    private array $extra_groups = [];
+
     protected function setUp(): void
     {
         parent::setUp();
 
+        $this->extra_groups   = [];
         $this->cron_before    = $_SESSION['glpicronuserrunning'] ?? null;
         $this->profile_before = $_SESSION['glpiactiveprofile'];
         $_SESSION['glpi_currenttime'] = date('Y-m-d H:i:s');
@@ -145,8 +149,13 @@ final class ManualRunAuthorizationTest extends TestCase
             $_SESSION['glpicronuserrunning'] = $this->cron_before;
         }
 
-        foreach ([[Ticket::class, $this->tickets_id], [Rule::class, $this->rules_id],
-            [Group::class, $this->groups_id], [Calendar::class, $this->calendars_id]] as [$class, $id]) {
+        $cleanup = [[Ticket::class, $this->tickets_id], [Rule::class, $this->rules_id],
+            [Group::class, $this->groups_id], [Calendar::class, $this->calendars_id]];
+        foreach ($this->extra_groups as $extra) {
+            $cleanup[] = [Group::class, $extra];
+        }
+
+        foreach ($cleanup as [$class, $id]) {
             if ($id > 0) {
                 (new $class())->delete(['id' => $id], true);
             }
@@ -218,7 +227,7 @@ final class ManualRunAuthorizationTest extends TestCase
      * @param array<int, array<int, int>> $status_matrix core's own shape; empty means the
      *                                                   profile denies no transition
      */
-    private function becomeOperator(int $followup_rights, array $status_matrix = []): void
+    private function becomeOperator(int $followup_rights, array $status_matrix = [], ?int $ticket_rights = null): void
     {
         // A manual run is not a cron run; Session::isCron() would answer yes to every right.
         unset($_SESSION['glpicronuserrunning']);
@@ -227,9 +236,84 @@ final class ManualRunAuthorizationTest extends TestCase
         $_SESSION['glpiactiveprofile'] = [
             'id' => 4, 'name' => 'ticketclock-operator', 'interface' => 'central',
             'ticket_status' => $status_matrix,
-            'ticket'        => ALLSTANDARDRIGHT,
+            // ALLSTANDARDRIGHT does not include Ticket::ASSIGN: that is a separate bit, and a
+            // profile carrying every standard right still may not hand tickets to a team.
+            'ticket'        => $ticket_rights ?? ALLSTANDARDRIGHT,
             'followup'      => $followup_rights,
         ];
+    }
+
+    /**
+     * Assigning is its own right in GLPI. `Ticket::canAssign()` tests `Ticket::ASSIGN`, a bit
+     * apart from UPDATE, so a profile that may edit a ticket is not thereby allowed to move it
+     * between teams -- core's own actor form is hidden from those operators.
+     *
+     * Nothing downstream would object: `Group_Ticket::add()` and `delete()` authorize nothing
+     * on their own, which is the same gap the followup and status actions were fixed for. So
+     * the manual run would let an operator escalate tickets they could not escalate by hand.
+     */
+    public function testAnOperatorWithoutTheAssignRightCannotMoveTheTicketBetweenGroups(): void
+    {
+        $target = $this->assignTargetGroup();
+        $this->armAssignTo($target);
+        $this->becomeOperator(followup_rights: 0, ticket_rights: ALLSTANDARDRIGHT);
+
+        $report = RuleEngine::forOperator()->runRule($this->rule());
+
+        self::assertSame(0, $report->executed);
+        self::assertSame([$this->groups_id], $this->assignedGroups());
+    }
+
+    public function testTheSameOperatorMayMoveItOnceTheProfileGrantsAssignment(): void
+    {
+        $target = $this->assignTargetGroup();
+        $this->armAssignTo($target);
+        $this->becomeOperator(followup_rights: 0, ticket_rights: ALLSTANDARDRIGHT | Ticket::ASSIGN);
+
+        $report = RuleEngine::forOperator()->runRule($this->rule());
+
+        self::assertSame(1, $report->executed, implode(' | ', $report->errors));
+        self::assertSame([$target], $this->assignedGroups());
+    }
+
+    private function assignTargetGroup(): int
+    {
+        $groups_id = (int) (new Group())->add([
+            'name' => 'TicketFlow auth target ' . uniqid(),
+            'entities_id' => 0, 'is_recursive' => 1, 'is_assign' => 1,
+        ]);
+        $this->extra_groups[] = $groups_id;
+
+        return $groups_id;
+    }
+
+    private function armAssignTo(int $groups_id): void
+    {
+        RuleAction::setActionsForRule($this->rules_id, [
+            'assign_group' => ['enabled' => 1, 'groups_id' => $groups_id, 'replace' => true],
+        ]);
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function assignedGroups(): array
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $out = [];
+        $iterator = $DB->request([
+            'SELECT' => 'groups_id',
+            'FROM'   => Group_Ticket::getTable(),
+            'WHERE'  => ['tickets_id' => $this->tickets_id, 'type' => CommonITILActor::ASSIGN],
+            'ORDER'  => 'groups_id ASC',
+        ]);
+        foreach ($iterator as $row) {
+            $out[] = (int) $row['groups_id'];
+        }
+
+        return $out;
     }
 
     private function rule(): \GlpiPlugin\Ticketclock\Engine\RuleDefinition

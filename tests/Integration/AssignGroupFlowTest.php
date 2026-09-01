@@ -38,6 +38,7 @@ namespace GlpiPlugin\Ticketclock\Tests\Integration;
 use Calendar;
 use CalendarSegment;
 use CommonITILActor;
+use Entity;
 use Group;
 use Group_Ticket;
 use GlpiPlugin\Ticketclock\Config;
@@ -65,6 +66,9 @@ final class AssignGroupFlowTest extends TestCase
     private int $rules_id = 0;
     private int $calendars_id = 0;
     private int $tickets_id = 0;
+    private int $foreign_group = 0;
+    private int $child_entity = 0;
+    private ?array $hooks_before = null;
 
     protected function setUp(): void
     {
@@ -84,6 +88,11 @@ final class AssignGroupFlowTest extends TestCase
             ]);
         }
         (new Calendar())->updateDurationCache($this->calendars_id);
+
+        $this->child_entity = (int) (new Entity())->add([
+            'name' => 'TicketFlow child ' . $suffix, 'entities_id' => 0,
+        ]);
+        Session::changeActiveEntities(0, true);
 
         $this->first_group  = $this->assignableGroup('N1 ' . $suffix);
         $this->second_group = $this->assignableGroup('N2 ' . $suffix);
@@ -108,8 +117,16 @@ final class AssignGroupFlowTest extends TestCase
     {
         Config::set(['execution_enabled' => 0, 'dry_run_global' => 1]);
 
+        if ($this->hooks_before !== null) {
+            /** @var array $PLUGIN_HOOKS */
+            global $PLUGIN_HOOKS;
+            $PLUGIN_HOOKS = $this->hooks_before;
+            $this->hooks_before = null;
+        }
+
         foreach ([[Ticket::class, $this->tickets_id], [Rule::class, $this->rules_id],
             [Group::class, $this->first_group], [Group::class, $this->second_group],
+            [Group::class, $this->foreign_group], [Entity::class, $this->child_entity],
             [Calendar::class, $this->calendars_id]] as [$class, $id]) {
             if ($id > 0) {
                 (new $class())->delete(['id' => $id], true);
@@ -194,6 +211,134 @@ final class AssignGroupFlowTest extends TestCase
     /**
      * @param array<string, mixed> $assign
      */
+    /**
+     * `Group_Ticket::delete()` can be refused -- a hook, a business rule, another plugin -- and
+     * the return value was ignored, so the run added the new group, left the old one in place
+     * and reported "Ticket reassigned". The operator asked for a handover and got a ticket
+     * owned by two teams, told it was owned by one.
+     *
+     * Refused here through the same door a plugin would use: clearing `$item->input` in
+     * `pre_item_purge` is how core lets a hook cancel a deletion (see CommonDBTM::delete(),
+     * "input clear by a hook to cancel delete").
+     */
+    public function testAFailedRemovalIsReportedInsteadOfCountingAsAHandover(): void
+    {
+        $this->armWith(['groups_id' => $this->second_group, 'replace' => true]);
+        $this->refuseGroupRemoval();
+
+        $report = (new RuleEngine())->runRule($this->rule());
+
+        // Both groups on the ticket: the addition stands, the removal did not happen.
+        self::assertSame([$this->first_group, $this->second_group], $this->assignedGroups());
+        self::assertSame(0, $report->executed);
+        self::assertSame(1, $report->failed);
+        self::assertStringContainsString('assigned to both', $this->lastExecutionError());
+    }
+
+    /**
+     * The form's dropdown only offers groups in the rule's entity, but a dropdown restricts a
+     * browser and the group id arrives in a POST. Nothing downstream objects -- `Group_Ticket`
+     * authorizes nothing -- and the scheduled run has no session for core's entity machinery
+     * to consult, so a rule pointed at a foreign group would hand tickets to people the entity
+     * separation exists to keep them from.
+     */
+    public function testAGroupFromAnotherEntityIsRefusedAtRunTime(): void
+    {
+        $this->armWith(['groups_id' => $this->foreignGroup(), 'replace' => true]);
+
+        $report = (new RuleEngine())->runRule($this->rule());
+
+        self::assertSame([$this->first_group], $this->assignedGroups());
+        self::assertSame(1, $report->failed);
+        self::assertStringContainsString("does not belong to the ticket's entity", $this->lastExecutionError());
+    }
+
+    /**
+     * And refused when the rule is saved, so the administrator is told at the moment they do
+     * it rather than in an execution log a week later.
+     */
+    public function testTheSameGroupIsRefusedWhenTheRuleIsSaved(): void
+    {
+        $rule = new Rule();
+        self::assertTrue($rule->getFromDB($this->rules_id));
+
+        $saved = $rule->update([
+            'id'       => $this->rules_id,
+            '_actions' => ['assign_group' => ['enabled' => 1, 'groups_id' => $this->foreignGroup()]],
+        ]);
+
+        self::assertFalse($saved);
+        self::assertSame([], RuleAction::getDefinitionsForRule($this->rules_id));
+    }
+
+    /**
+     * A recursive group in an ancestor entity is what GLPI itself offers, so it has to keep
+     * working: the guard rejects foreign entities, not the entity tree.
+     */
+    public function testARecursiveGroupFromAnAncestorEntityIsStillAccepted(): void
+    {
+        $this->armWith(['groups_id' => $this->second_group, 'replace' => true]);
+
+        /** @var \DBmysql $DB */
+        global $DB;
+        $DB->update(Ticket::getTable(), ['entities_id' => $this->child_entity], ['id' => $this->tickets_id]);
+
+        $report = (new RuleEngine())->runRule($this->rule());
+
+        self::assertSame(1, $report->executed, implode(' | ', $report->errors));
+        self::assertSame([$this->second_group], $this->assignedGroups());
+    }
+
+    /**
+     * A group belonging to the child entity, reached from a ticket in that entity.
+     */
+    private function foreignGroup(): int
+    {
+        if ($this->foreign_group === 0) {
+            $this->foreign_group = (int) (new Group())->add([
+                'name' => 'TicketFlow foreign ' . uniqid(),
+                'entities_id' => $this->child_entity, 'is_recursive' => 0, 'is_assign' => 1,
+            ]);
+        }
+
+        return $this->foreign_group;
+    }
+
+    /**
+     * The message an operator actually reads. An action failure is recorded on the execution
+     * row, not in the report's `errors`, which carries refusals -- so asserting on the report
+     * alone would pass while the row said nothing.
+     */
+    private function lastExecutionError(): string
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $row = $DB->request([
+            'SELECT' => 'error',
+            'FROM'   => Execution::getTable(),
+            'WHERE'  => ['plugin_ticketclock_rules_id' => $this->rules_id],
+            'ORDER'  => 'id DESC',
+            'LIMIT'  => 1,
+        ])->current();
+
+        return (string) ($row['error'] ?? '');
+    }
+
+    private function refuseGroupRemoval(): void
+    {
+        /** @var array $PLUGIN_HOOKS */
+        global $PLUGIN_HOOKS;
+
+        $this->hooks_before = $PLUGIN_HOOKS;
+
+        $PLUGIN_HOOKS['pre_item_purge']['ticketclock'] = [
+            Group_Ticket::class => static function (Group_Ticket $item): void {
+                $item->input = false;
+            },
+        ];
+    }
+
     private function armWith(array $assign): void
     {
         RuleAction::setActionsForRule($this->rules_id, ['assign_group' => ['enabled' => 1] + $assign]);

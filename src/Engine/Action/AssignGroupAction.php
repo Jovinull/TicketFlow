@@ -99,7 +99,7 @@ final class AssignGroupAction implements ActionInterface
         $replace = $definition->boolParam('replace');
 
         try {
-            $group = $this->targetGroup($groups_id);
+            $group = $this->targetGroup($groups_id, $context->ticket->entities_id);
         } catch (RuntimeException $e) {
             return ActionResult::failure(ActionType::AssignGroup, $e->getMessage());
         }
@@ -140,8 +140,15 @@ final class AssignGroupAction implements ActionInterface
                 }
             }
 
-            if ($replace) {
-                $this->removeOtherGroups($context->ticket->tickets_id, $groups_id);
+            if ($replace && !$this->removeOtherGroups($context->ticket->tickets_id, $groups_id)) {
+                // The new group is on the ticket and at least one old one would not come off.
+                // Not rolled back: hooks and other plugins have already seen the addition, and
+                // undoing it would fire that machinery a second time. Reported instead, because
+                // "reassigned" and "now assigned to both" are different tickets to work.
+                return ActionResult::failure(
+                    ActionType::AssignGroup,
+                    __('The ticket was assigned to the new group, but at least one previous group could not be removed, so it is now assigned to both.', 'ticketclock'),
+                );
             }
         } catch (Throwable $e) {
             return ActionResult::failure(ActionType::AssignGroup, $e->getMessage());
@@ -186,7 +193,7 @@ final class AssignGroupAction implements ActionInterface
      *
      * @throws RuntimeException when the group cannot be assigned
      */
-    private function targetGroup(int $groups_id): Group
+    private function targetGroup(int $groups_id, int $entities_id): Group
     {
         $group = new Group();
         if (!$group->getFromDB($groups_id)) {
@@ -203,7 +210,48 @@ final class AssignGroupAction implements ActionInterface
             ));
         }
 
+        if (!self::groupIsVisibleIn($group, $entities_id)) {
+            throw new RuntimeException(sprintf(
+                __('Group "%s" does not belong to the ticket\'s entity, so the ticket was left where it was.', 'ticketclock'),
+                (string) ($group->fields['completename'] ?: $group->fields['name']),
+            ));
+        }
+
         return $group;
+    }
+
+    /**
+     * Whether GLPI would offer this group on an item in that entity.
+     *
+     * The form's dropdown is already restricted, but a dropdown restricts a browser, not the
+     * database: the id arrives in a POST, and an administrator delegated to one entity can
+     * submit the id of a group belonging to another. Nothing downstream would object --
+     * `Group_Ticket::add()` authorizes nothing -- and the scheduled run has no session for
+     * core's own entity machinery to consult. So the rule would quietly hand tickets to a
+     * group outside their entity, making them visible to people the entity separation exists
+     * to keep them from.
+     *
+     * Same rule core applies: the group's own entity, or an ancestor of it when the group is
+     * recursive. Written against the ticket's entity, not the session's, because the
+     * scheduled run has no session and the ticket is what is being changed.
+     *
+     * @see \DbUtils::getEntitiesRestrictCriteria() the query form of this condition
+     */
+    public static function groupIsVisibleIn(Group $group, int $entities_id): bool
+    {
+        $group_entity = (int) $group->fields['entities_id'];
+
+        if ($group_entity === $entities_id) {
+            return true;
+        }
+
+        if (!(bool) $group->fields['is_recursive']) {
+            return false;
+        }
+
+        $ancestors = array_map(intval(...), getAncestorsOf('glpi_entities', $entities_id));
+
+        return in_array($group_entity, $ancestors, true);
     }
 
     /**
@@ -232,26 +280,39 @@ final class AssignGroupAction implements ActionInterface
     /**
      * Removes every other assigned group, once the new one is in place.
      *
+     * @return bool false when at least one group would not come off
+     *
      * In that order on purpose: a ticket briefly assigned to two groups is a ticket two teams
      * can see, while a ticket briefly assigned to none is one that has fallen off every queue.
      * Deleted through the item API rather than by SQL, so the removal reaches the history the
      * same way the addition did.
      */
-    private function removeOtherGroups(int $tickets_id, int $keep): void
+    private function removeOtherGroups(int $tickets_id, int $keep): bool
     {
+        $removed = true;
+
         foreach ($this->assignedGroups($tickets_id) as $groups_id) {
             if ($groups_id === $keep) {
                 continue;
             }
 
             $link = new Group_Ticket();
-            if ($link->getFromDBByCrit([
+            if (!$link->getFromDBByCrit([
                 'tickets_id' => $tickets_id,
                 'groups_id'  => $groups_id,
                 'type'       => CommonITILActor::ASSIGN,
             ])) {
-                $link->delete(['id' => $link->fields['id']]);
+                continue;
+            }
+
+            // A hook, a business rule or another plugin can refuse this. Carrying on to the
+            // remaining groups is deliberate -- removing three of four is closer to what was
+            // asked than stopping at the first refusal -- but the caller is told.
+            if (!$link->delete(['id' => $link->fields['id']])) {
+                $removed = false;
             }
         }
+
+        return $removed;
     }
 }

@@ -40,6 +40,8 @@ use Glpi\Application\View\TemplateRenderer;
 use Glpi\Features\Clonable;
 use GlpiPlugin\Ticketclock\Engine\RuleDefinition;
 use GlpiPlugin\Ticketclock\Enum\ActionType;
+use Group;
+use GlpiPlugin\Ticketclock\Engine\Action\AssignGroupAction;
 use GlpiPlugin\Ticketclock\Enum\CalendarMode;
 use GlpiPlugin\Ticketclock\Enum\DelayUnit;
 use GlpiPlugin\Ticketclock\Enum\ResetEvent;
@@ -363,11 +365,60 @@ class Rule extends CommonDBTM
 
         // Keep the sub-object payload out of the row; the post_* hooks consume it.
         if (array_key_exists('_actions', $input)) {
-            $this->form_actions['_actions'] = (array) $input['_actions'];
+            $actions = (array) $input['_actions'];
+
+            if (!$this->assignedGroupIsInScope($actions, (int) ($input['entities_id'] ?? $this->fields['entities_id'] ?? 0))) {
+                return false;
+            }
+
+            $this->form_actions['_actions'] = $actions;
             unset($input['_actions']);
         }
 
         return $input;
+    }
+
+    /**
+     * Refuse a rule that would hand tickets to a group outside its entity.
+     *
+     * The form's dropdown only offers groups in scope, so reaching this is either a crafted
+     * POST or a group moved between entities since. Checked here so the administrator is told
+     * at the moment they save, rather than discovering it in an execution log; the action
+     * checks again per ticket at run time, which is the check that actually protects the
+     * tickets. Both are needed: this one cannot see the entity of a ticket that does not exist
+     * yet, and a recursive rule reaches entities this one does not look at.
+     *
+     * @param array<string, mixed> $actions
+     */
+    private function assignedGroupIsInScope(array $actions, int $entities_id): bool
+    {
+        $assign = (array) ($actions['assign_group'] ?? []);
+        $groups_id = (int) ($assign['groups_id'] ?? 0);
+
+        if (empty($assign['enabled']) || $groups_id <= 0) {
+            return true;
+        }
+
+        $group = new Group();
+        if (!$group->getFromDB($groups_id)) {
+            Session::addMessageAfterRedirect(
+                htmlescape(__('The group to assign no longer exists.', 'ticketclock')),
+                false,
+                ERROR,
+            );
+            return false;
+        }
+
+        if (!AssignGroupAction::groupIsVisibleIn($group, $entities_id)) {
+            Session::addMessageAfterRedirect(
+                htmlescape(__('The group to assign does not belong to this rule\'s entity.', 'ticketclock')),
+                false,
+                ERROR,
+            );
+            return false;
+        }
+
+        return true;
     }
 
     public function post_addItem(): void
