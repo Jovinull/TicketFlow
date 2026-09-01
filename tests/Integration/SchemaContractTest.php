@@ -132,7 +132,7 @@ final class SchemaContractTest extends TestCase
     {
         foreach (self::EXPECTED as $suffix => $expected) {
             self::assertSame(
-                $expected,
+                array_map(self::normaliseSignature(...), $expected),
                 $this->signatureOf('glpi_plugin_ticketclock_' . $suffix),
                 sprintf(
                     'glpi_plugin_ticketclock_%s does not match the recorded schema. If a migration '
@@ -180,18 +180,34 @@ final class SchemaContractTest extends TestCase
         ]);
 
         foreach ($iterator as $row) {
-            $out[] = sprintf(
+            $out[] = self::normaliseSignature(sprintf(
                 '%s %s %s default %s',
                 $row['COLUMN_NAME'],
                 $row['COLUMN_TYPE'],
                 $row['IS_NULLABLE'] === 'YES' ? 'NULL' : 'NOT NULL',
                 $row['COLUMN_DEFAULT'] ?? 'NULL',
-            );
+            ));
         }
 
         self::assertNotSame([], $out, sprintf('%s does not exist', $table));
 
         return $out;
+    }
+
+    /**
+     * MySQL 8 no longer reports integer display widths, while MariaDB still does.
+     *
+     * `INT(11)` and `INT` are the same storage type here: the former width never restricted
+     * the range and is deprecated in MySQL. Keeping it in this contract would make a correct
+     * schema fail solely because the database engine serialises identical metadata differently.
+     */
+    private static function normaliseSignature(string $signature): string
+    {
+        return preg_replace(
+            '/\\b(tinyint|smallint|mediumint|int|bigint)\\(\\d+\\)(?=(?: unsigned)?(?: NULL| NOT NULL))/',
+            '$1',
+            $signature,
+        ) ?? $signature;
     }
 
     /**
