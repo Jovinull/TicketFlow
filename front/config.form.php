@@ -38,6 +38,9 @@ use GlpiPlugin\Ticketclock\Rule;
 include __DIR__ . '/../../../inc/includes.php';
 
 Session::checkRight(Rule::$rightname, UPDATE);
+// These settings affect every entity and select the identity used by cron. The plugin right
+// governs rules; core's global configuration right governs the instance-wide engine.
+Session::checkRight(\Config::$rightname, UPDATE);
 
 if (isset($_POST['update'])) {
     // No explicit CSRF check here: GLPI 11 validates *and consumes* the token for every

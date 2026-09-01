@@ -36,11 +36,20 @@ declare(strict_types=1);
 namespace GlpiPlugin\Ticketclock\Engine;
 
 use RuntimeException;
+use GlpiPlugin\Ticketclock\Enum\ActionType;
 
 /**
  * Raised when the logged-in operator may not perform one action on one ticket.
  *
- * Its own type so the executor can tell "you are not allowed" apart from "the action tried
- * and failed", and record the two differently in the execution log.
+ * Its own type lets the engine record a refusal separately from an action failure. A refusal
+ * before any action releases the occurrence claim, so a manual operator who lacks one
+ * permission cannot suppress the scheduled run without changing the ticket. A refusal after
+ * an earlier action remains failed, because replaying that action could duplicate its effects.
  */
-final class OperatorNotAllowed extends RuntimeException {}
+final class OperatorNotAllowed extends RuntimeException
+{
+    public function __construct(string $message, public readonly ActionType $type)
+    {
+        parent::__construct($message);
+    }
+}

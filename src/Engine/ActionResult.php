@@ -54,6 +54,8 @@ final readonly class ActionResult
         public string $message,
         public array $data = [],
         public bool $simulated = false,
+        /** True when the logged-in operator was not allowed to attempt the action. */
+        public bool $refused = false,
     ) {}
 
     /**
@@ -81,6 +83,21 @@ final readonly class ActionResult
     }
 
     /**
+     * The action was not attempted because the manual operator lacks the corresponding right.
+     *
+     * This is deliberately distinct from a failed action. If it is the first result, the
+     * engine releases the occurrence claim so the scheduler can process it under the
+     * automation policy. A refusal after an earlier action remains failed to avoid replaying
+     * that earlier side effect.
+     *
+     * @param array<string, mixed> $data
+     */
+    public static function refused(ActionType $type, string $message, array $data = []): self
+    {
+        return new self($type, false, $message, $data, false, true);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toArray(): array
@@ -89,6 +106,7 @@ final readonly class ActionResult
             'type'      => $this->type->value,
             'success'   => $this->success,
             'simulated' => $this->simulated,
+            'refused'   => $this->refused,
             'message'   => $this->message,
             'data'      => $this->data,
         ];

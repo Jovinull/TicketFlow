@@ -350,9 +350,9 @@ final class RuleFormTest extends TestCase
     }
 
     /**
-     * The other direction. The guard is a right check and not `Ticket::check()` precisely so
-     * that it stays out of the interface's status transition rules: `canSolve()` is false for
-     * a ticket in WAITING, and a pending ticket is the only kind this plugin ever acts on.
+     * The other direction. This is deliberately only the coarse ticket-right gate. Per-action
+     * authorization belongs in OperatorAuthorization, where it can ask the ticket's actual
+     * capability methods and the logged-in profile's status-transition matrix.
      */
     public function testAnOperatorWhoMayEditTicketsIsNotBlocked(): void
     {

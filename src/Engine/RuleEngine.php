@@ -88,6 +88,7 @@ final readonly class RuleEngine
         return new self(
             new CandidateFinder(array_values(array_map(intval(...), Session::getActiveEntities()))),
             authorization: new OperatorAuthorization(),
+            actor_users_id: (int) Session::getLoginUserID(),
         );
     }
 
@@ -99,6 +100,8 @@ final readonly class RuleEngine
         ?BusinessTimeCalculator $calculator = null,
         ?ActionExecutor $executor = null,
         ?OperatorAuthorization $authorization = null,
+        /** Null for cron; the manual path attributes generated content to its operator. */
+        private ?int $actor_users_id = null,
     ) {
         $calculator ??= new BusinessTimeCalculator(new GlpiCalendarEngine());
         $fallback = Config::getInt('fallback_calendars_id');
@@ -350,11 +353,41 @@ final readonly class RuleEngine
             $fresh,
             $recheck->deadline ?? $deadline,
             $this->buildRenderer($rule, $fresh, $recheck->deadline ?? $deadline),
-            Config::getActingUserId(),
+            $this->actingUserId(),
             false,
         );
 
         $outcome = $this->executor->run($action_context);
+
+        if ($outcome['refused']) {
+            $message = $this->firstError($outcome['results']);
+            // A refused first action has made no ticket change, so releasing the occurrence
+            // lets cron process it under the automation policy. If an earlier action already
+            // ran, retaining a failed claim is safer: re-running the batch could duplicate
+            // that side effect.
+            $partial = count($outcome['results']) > 1;
+            Execution::complete(
+                $executions_id,
+                $partial ? ExecutionState::Failed : ExecutionState::Skipped,
+                $outcome['results'],
+                $message,
+            );
+            $report->errors[] = sprintf('#%d: %s', $fresh->tickets_id, $message);
+            if ($partial) {
+                $report->failed++;
+            } else {
+                $report->skipped++;
+            }
+            $report->notePreview(fn(): PreviewRow => $this->buildPreviewRow(
+                $fresh,
+                $recheck->deadline ?? $deadline,
+                $now,
+                false,
+                $partial ? 'failed' : 'refused',
+                $rule,
+            ));
+            return;
+        }
 
         Execution::complete(
             $executions_id,
@@ -392,7 +425,7 @@ final readonly class RuleEngine
             $context,
             $deadline,
             $this->buildRenderer($rule, $context, $deadline),
-            Config::getActingUserId(),
+            $this->actingUserId(),
             true,
         );
 
@@ -473,6 +506,11 @@ final readonly class RuleEngine
     private function isGloballyInert(): bool
     {
         return !Config::getBool('execution_enabled') || Config::getBool('dry_run_global');
+    }
+
+    private function actingUserId(): int
+    {
+        return $this->actor_users_id ?? Config::getActingUserId();
     }
 
     private function matcherFor(RuleDefinition $rule): ?MatcherInterface

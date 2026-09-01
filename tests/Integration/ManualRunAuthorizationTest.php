@@ -163,7 +163,15 @@ final class ManualRunAuthorizationTest extends TestCase
 
         self::assertSame(0, $this->followupsOnTicket(), 'the manual run wrote a followup the operator could not write by hand');
         self::assertSame(0, $report->executed);
-        self::assertSame(1, $report->failed, 'the refusal must be recorded, not silently skipped');
+        self::assertSame(0, $report->failed, 'a refusal is not an action failure');
+        self::assertSame(1, $report->skipped, 'the refusal must be visible, not silent');
+
+        // The denied manual attempt took a claim briefly, but it must release it before
+        // returning. Otherwise one under-privileged click disables the scheduled rule for
+        // this ticket permanently.
+        $scheduled = (new RuleEngine())->runRule($this->rule());
+        self::assertSame(1, $this->followupsOnTicket(), 'the denied manual run reserved the occurrence against cron');
+        self::assertSame(1, $scheduled->executed);
     }
 
     public function testAnOperatorWithFollowupRightsCanWriteOne(): void
@@ -174,6 +182,24 @@ final class ManualRunAuthorizationTest extends TestCase
 
         self::assertSame(1, $this->followupsOnTicket(), 'an operator who may add followups was blocked');
         self::assertSame(1, $report->executed);
+    }
+
+    public function testAManualFollowupIsAttributedToTheOperatorNotTheSystemUser(): void
+    {
+        $this->becomeOperator(followup_rights: ITILFollowup::ADDALLITEM);
+        $operator_users_id = (int) Session::getLoginUserID();
+
+        RuleEngine::forOperator()->runRule($this->rule());
+
+        /** @var \DBmysql $DB */
+        global $DB;
+        $row = $DB->request([
+            'FROM'  => ITILFollowup::getTable(),
+            'WHERE' => ['itemtype' => Ticket::class, 'items_id' => $this->tickets_id],
+        ])->current();
+
+        self::assertNotFalse($row, 'the operator run did not create its followup');
+        self::assertSame($operator_users_id, (int) $row['users_id']);
     }
 
     /**
@@ -242,7 +268,8 @@ final class ManualRunAuthorizationTest extends TestCase
         $ticket = new Ticket();
         self::assertTrue($ticket->getFromDB($this->tickets_id));
         self::assertSame(Ticket::WAITING, (int) $ticket->fields['status'], 'the ticket was moved to a status the profile denies');
-        self::assertSame(1, $report->failed);
+        self::assertSame(0, $report->failed);
+        self::assertSame(1, $report->skipped, 'a refused transition must release its occurrence for cron');
     }
 
     public function testTheSameTransitionIsAllowedWhenTheProfilePermitsIt(): void
@@ -280,7 +307,8 @@ final class ManualRunAuthorizationTest extends TestCase
         $ticket = new Ticket();
         self::assertTrue($ticket->getFromDB($this->tickets_id));
         self::assertSame(Ticket::WAITING, (int) $ticket->fields['status'], 'the hard close ignored the profile\'s status matrix');
-        self::assertSame(1, $report->failed);
+        self::assertSame(0, $report->failed);
+        self::assertSame(1, $report->skipped, 'a refused hard close must release its occurrence for cron');
     }
 
     public function testTheHardCloseRunsWhenTheProfileAllowsIt(): void
