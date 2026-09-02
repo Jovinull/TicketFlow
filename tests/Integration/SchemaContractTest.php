@@ -35,7 +35,9 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Ticketclock\Tests\Integration;
 
+use Calendar;
 use Config as CoreConfig;
+use Entity;
 use GlpiPlugin\Ticketclock\Config;
 use GlpiPlugin\Ticketclock\EntityConfig;
 use GlpiPlugin\Ticketclock\Execution;
@@ -48,6 +50,8 @@ use Migration;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+
+use function countElementsInTable;
 
 /**
  * The schema is the same whether it was installed or upgraded into.
@@ -347,6 +351,115 @@ final class SchemaContractTest extends TestCase
             Config::reload();
             Install::install(new Migration(Version::VERSION));
             $DB->clearSchemaCache();
+        }
+    }
+
+    /**
+     * 1.2.0 -> 1.3.0 in full: the table has to be created, and the instance's settings have to
+     * survive the move into it.
+     *
+     * The data-driven test above cannot reach this one. It starts from a database that is
+     * already at the current schema and only drops columns from the rules table, so
+     * `migrateTo130()` always finds `glpi_plugin_ticketclock_entityconfigs` in place and takes
+     * its "table exists" branch. The branch that creates it, and the copy of the three global
+     * values into the root entity, were never executed by anything.
+     *
+     * The values written below are deliberately the opposite of {@see EntityConfig::ROOT_DEFAULTS}
+     * -- execution on, dry run off, a real calendar. That is what makes this an ordering test as
+     * well: if the migration deleted the old configuration rows before reading them, the root
+     * would come out holding the defaults, and every assertion on the values would fail rather
+     * than quietly passing on a coincidence.
+     */
+    public function testUpgradingFrom120CreatesTheEntityPolicyTableAndCarriesTheSettingsIntoIt(): void
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $table    = EntityConfig::getTable();
+        $old_keys = ['execution_enabled', 'dry_run_global', 'fallback_calendars_id'];
+
+        $calendars_id = (int) (new Calendar())->add([
+            'name'         => 'TicketFlow migration calendar ' . uniqid(),
+            'entities_id'  => 0,
+            'is_recursive' => 1,
+        ]);
+        $child = (int) (new Entity())->add([
+            'name'        => 'TicketFlow migration child ' . uniqid(),
+            'entities_id' => 0,
+        ]);
+        self::assertGreaterThan(0, $child);
+
+        $DB->clearSchemaCache();
+
+        try {
+            $DB->doQuery('DROP TABLE IF EXISTS ' . $DB->quoteName($table));
+            $DB->clearSchemaCache();
+            EntityConfig::reload();
+
+            // What a 1.2.0 instance looks like: the policy lives in the global context, under
+            // the old name for the dry run.
+            CoreConfig::setConfigurationValues(Config::CONTEXT, [
+                'execution_enabled'          => '1',
+                'dry_run_global'             => '0',
+                'fallback_calendars_id'      => (string) $calendars_id,
+                Install::SCHEMA_VERSION_KEY  => '1.2.0',
+            ]);
+            Config::reload();
+
+            self::assertTrue(Install::install(new Migration(Version::VERSION)));
+            $DB->clearSchemaCache();
+            EntityConfig::reload();
+
+            self::assertTrue($DB->tableExists($table), 'the upgrade did not create the entity policy table');
+
+            self::assertSame(
+                array_map($this->normaliseSignature(...), self::EXPECTED['entityconfigs']),
+                $this->signatureOf($table),
+                'the table the migration creates differs from the one a clean install creates',
+            );
+
+            // The instance was armed before the upgrade and has to still be armed after it.
+            // An upgrade that silently re-inerts a working installation would stop every rule
+            // on the instance, and nothing would say why.
+            self::assertSame(1, EntityConfig::getUsedValue('execution_enabled', 0));
+            self::assertSame(0, EntityConfig::getUsedValue('dry_run', 0), 'dry_run_global did not become dry_run');
+            self::assertSame($calendars_id, EntityConfig::getUsedValue('fallback_calendars_id', 0));
+
+            // No row was written for the child, and it still behaves like the root: that is
+            // what makes the upgrade a no-op for every entity below the one that was seeded.
+            self::assertSame(
+                0,
+                countElementsInTable($table, ['entities_id' => $child]),
+                'the migration wrote a row for an entity it was not asked about',
+            );
+            self::assertTrue(EntityConfig::isExecutionEnabled($child));
+            self::assertFalse(EntityConfig::isDryRun($child));
+
+            $left = CoreConfig::getConfigurationValues(Config::CONTEXT, $old_keys);
+            self::assertSame([], is_array($left) ? $left : [], 'the old global keys were left behind');
+
+            self::assertSame(Version::SCHEMA, Install::getInstalledSchemaVersion());
+
+            // Running the installer again must not undo the seeding or duplicate the row.
+            self::assertTrue(Install::install(new Migration(Version::VERSION)));
+            EntityConfig::reload();
+            self::assertSame(1, countElementsInTable($table, ['entities_id' => 0]));
+            self::assertSame(1, EntityConfig::getUsedValue('execution_enabled', 0));
+        } finally {
+            // The rest of the suite runs on this instance, so it goes back to a whole schema
+            // and to the inert baseline every other test assumes.
+            CoreConfig::setConfigurationValues(Config::CONTEXT, [Install::SCHEMA_VERSION_KEY => '1.0.0']);
+            Config::reload();
+            Install::install(new Migration(Version::VERSION));
+            $DB->clearSchemaCache();
+
+            CoreConfig::deleteConfigurationValues(Config::CONTEXT, $old_keys);
+            Config::reload();
+            EntityConfig::reload();
+            EntityConfig::setForEntity(0, EntityConfig::ROOT_DEFAULTS);
+
+            (new Entity())->delete(['id' => $child], true);
+            (new Calendar())->delete(['id' => $calendars_id], true);
         }
     }
 
