@@ -261,7 +261,10 @@ class EntityConfig extends CommonDBTM
     /**
      * Store an entity's policy, creating the row if it has none.
      *
-     * @param array<string, int> $values
+     * Values are coerced rather than trusted: this is reached from a form POST, and the
+     * caller is not the only thing standing between `$_POST` and the stored policy.
+     *
+     * @param array<string, mixed> $values
      */
     public static function setForEntity(int $entities_id, array $values): bool
     {
