@@ -44,7 +44,6 @@ use Group_Ticket;
 use GlpiPlugin\Ticketclock\Config;
 use GlpiPlugin\Ticketclock\Engine\Action\AssignGroupAction;
 use GlpiPlugin\Ticketclock\Engine\RuleEngine;
-use GlpiPlugin\Ticketclock\Enum\ActionType;
 use GlpiPlugin\Ticketclock\Execution;
 use GlpiPlugin\Ticketclock\Rule;
 use GlpiPlugin\Ticketclock\RuleAction;
@@ -209,9 +208,6 @@ final class AssignGroupFlowTest extends TestCase
     }
 
     /**
-     * @param array<string, mixed> $assign
-     */
-    /**
      * `Group_Ticket::delete()` can be refused -- a hook, a business rule, another plugin -- and
      * the return value was ignored, so the run added the new group, left the old one in place
      * and reported "Ticket reassigned". The operator asked for a handover and got a ticket
@@ -339,6 +335,9 @@ final class AssignGroupFlowTest extends TestCase
         ];
     }
 
+    /**
+     * @param array<string, mixed> $assign
+     */
     private function armWith(array $assign): void
     {
         RuleAction::setActionsForRule($this->rules_id, ['assign_group' => ['enabled' => 1] + $assign]);
