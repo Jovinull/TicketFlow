@@ -45,6 +45,7 @@ use GlpiPlugin\Ticketclock\Engine\Action\AssignGroupAction;
 use GlpiPlugin\Ticketclock\Enum\CalendarMode;
 use GlpiPlugin\Ticketclock\Enum\DelayUnit;
 use GlpiPlugin\Ticketclock\Enum\ResetEvent;
+use GlpiPlugin\Ticketclock\Enum\ReferenceField;
 use GlpiPlugin\Ticketclock\Enum\RuleType;
 use GlpiPlugin\Ticketclock\Enum\StartEvent;
 use Session;
@@ -232,10 +233,34 @@ class Rule extends CommonDBTM
 
         $problems = [];
 
+        $type            = RuleType::tryFromString((string) ($fields['rule_type'] ?? '')) ?? RuleType::PendingInactivity;
+        $start_event     = StartEvent::tryFromString((string) ($fields['start_event'] ?? '')) ?? StartEvent::PendingStart;
+        $reference_field = ReferenceField::tryFromString(isset($fields['reference_field']) ? (string) $fields['reference_field'] : null);
+
+        // Fails closed, and refuses the whole rule rather than one ticket. A rule told to
+        // count from a column that is not on the list is not the rule anybody configured --
+        // running it from some other date would be a wrong answer on every ticket it touches,
+        // quietly. The stored value is never trusted: it reaches the engine only through
+        // `tryFrom()`, so a hand-written row cannot put a column name into a query.
+        if ($start_event === StartEvent::TicketDateField && $reference_field === null) {
+            $problems[] = sprintf(
+                __('its reference field "%s" is not one this version can read', 'ticketclock'),
+                (string) ($fields['reference_field'] ?? ''),
+            );
+        }
+
+        // The row is the other door into this. A rule type that has no implementation for the
+        // event must not run at all rather than run from a date nobody chose -- silently
+        // timing an approval from its submission while the screen says "time to resolve" is
+        // exactly the quiet wrongness this plugin refuses elsewhere.
+        if ($start_event === StartEvent::TicketDateField && $type !== RuleType::PendingInactivity) {
+            $problems[] = __('it counts from a ticket date, which only inactivity rules support', 'ticketclock');
+        }
+
         return new RuleDefinition(
             (int) ($fields['id'] ?? 0),
             (string) ($fields['name'] ?? ''),
-            RuleType::tryFromString((string) ($fields['rule_type'] ?? '')) ?? RuleType::PendingInactivity,
+            $type,
             (int) ($fields['entities_id'] ?? 0),
             (bool) ($fields['is_recursive'] ?? false),
             (bool) ($fields['is_active'] ?? false),
@@ -250,7 +275,8 @@ class Rule extends CommonDBTM
             ResetEvent::decodeList(isset($fields['reset_events']) ? (string) $fields['reset_events'] : null),
             RuleAction::getDefinitionsForRule((int) ($fields['id'] ?? 0), $problems),
             (bool) ($fields['is_dry_run'] ?? false),
-            StartEvent::tryFromString((string) ($fields['start_event'] ?? '')) ?? StartEvent::PendingStart,
+            $start_event,
+            $reference_field,
             $problems ?? [],
         );
     }
@@ -334,6 +360,10 @@ class Rule extends CommonDBTM
             return false;
         }
 
+        if (!$this->referenceFieldIsUsable($input)) {
+            return false;
+        }
+
         if (isset($input['calendar_mode']) && CalendarMode::tryFromString((string) $input['calendar_mode']) === null) {
             Session::addMessageAfterRedirect(htmlescape(__('Unknown calendar mode.', 'ticketclock')), false, ERROR);
             return false;
@@ -376,6 +406,68 @@ class Rule extends CommonDBTM
         }
 
         return $input;
+    }
+
+    /**
+     * The reference field has to be one of ours, and it has to be there when it is used.
+     *
+     * Two refusals, not one. An unknown value is either a stale rule from a version that
+     * offered more fields or a hand-made POST, and neither should reach the column list. An
+     * empty one on a rule that counts from a ticket date is a rule that cannot be timed at
+     * all: better refused at the form than saved and skipped on every ticket forever.
+     *
+     * Checked here as well as when the rule is read, because these are different doors. The
+     * form is the one a person uses; `toDefinition()` guards the row itself, which a restore,
+     * an import or a direct UPDATE can change without passing through here.
+     *
+     * @param array<string, mixed> $input
+     */
+    private function referenceFieldIsUsable(array $input): bool
+    {
+        $raw = array_key_exists('reference_field', $input)
+            ? (string) $input['reference_field']
+            : (string) ($this->fields['reference_field'] ?? '');
+
+        if ($raw !== '' && ReferenceField::tryFromString($raw) === null) {
+            Session::addMessageAfterRedirect(
+                htmlescape(__('Unknown reference field.', 'ticketclock')),
+                false,
+                ERROR,
+            );
+            return false;
+        }
+
+        $start_event = StartEvent::tryFromString(
+            (string) ($input['start_event'] ?? $this->fields['start_event'] ?? ''),
+        ) ?? StartEvent::PendingStart;
+
+        // Only the inactivity matcher implements this event. An approval rule times the
+        // approval request, and its prefilter and matcher both read the validation's own
+        // submission date -- so accepting the combination would store a setting the engine
+        // then ignores, and the rule would say one thing on screen and do another.
+        $rule_type = RuleType::tryFromString(
+            (string) ($input['rule_type'] ?? $this->fields['rule_type'] ?? ''),
+        ) ?? RuleType::PendingInactivity;
+
+        if ($start_event === StartEvent::TicketDateField && $rule_type !== RuleType::PendingInactivity) {
+            Session::addMessageAfterRedirect(
+                htmlescape(__('Counting from a date on the ticket is only available for inactivity rules. An approval rule is timed from the approval request.', 'ticketclock')),
+                false,
+                ERROR,
+            );
+            return false;
+        }
+
+        if ($start_event === StartEvent::TicketDateField && $raw === '') {
+            Session::addMessageAfterRedirect(
+                htmlescape(__('Counting from a date on the ticket needs a field to count from.', 'ticketclock')),
+                false,
+                ERROR,
+            );
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -518,8 +610,18 @@ class Rule extends CommonDBTM
             CalendarMode::Entity   => __("using each entity's calendar", 'ticketclock'),
         };
 
-        $trigger = match ($definition->type) {
-            RuleType::PendingInactivity => $definition->start_event === StartEvent::LastTargetGroupMessage
+        $trigger = match (true) {
+            $definition->type === RuleType::PendingInactivity
+                && $definition->start_event === StartEvent::TicketDateField => sprintf(
+                    __('When %1$d %2$s go by %3$s after the "%4$s" of a ticket assigned to %5$s%6$s', 'ticketclock'),
+                    $definition->delay_value,
+                    $definition->delay_unit->label(),
+                    $calendar_text,
+                    $definition->reference_field?->label() ?? __('(no field chosen)', 'ticketclock'),
+                    $group_text,
+                    $status_text,
+                ),
+            $definition->type === RuleType::PendingInactivity => $definition->start_event === StartEvent::LastTargetGroupMessage
                 ? sprintf(
                     __('When the last message on a ticket assigned to %1$s was written by that group%2$s, and %3$d %4$s go by %5$s without anybody answering', 'ticketclock'),
                     $group_text,
@@ -536,7 +638,7 @@ class Rule extends CommonDBTM
                     $definition->delay_unit->label(),
                     $calendar_text,
                 ),
-            RuleType::PendingApproval => sprintf(
+            default => sprintf(
                 __('When an approval request on a ticket assigned to %1$s stays unanswered for %2$d %3$s %4$s', 'ticketclock'),
                 $group_text,
                 $definition->delay_value,
@@ -547,6 +649,11 @@ class Rule extends CommonDBTM
 
         if ($definition->start_event === StartEvent::LastTargetGroupMessage) {
             $trigger .= __(' (any reply from outside the group stops the rule, and a status change restarts the countdown)', 'ticketclock');
+        } elseif ($definition->start_event === StartEvent::TicketDateField) {
+            // Said out loud because the field is on the form right next to the reset events,
+            // and somebody will otherwise expect a reply to push this clock the way it pushes
+            // the other two.
+            $trigger .= __(' (a date on the ticket does not restart, so replies do not move this clock)', 'ticketclock');
         } elseif ($definition->reset_events !== []) {
             $labels = array_map(static fn(ResetEvent $e): string => $e->label(), $definition->reset_events);
             $trigger .= sprintf(__(', with the clock restarting on: %s', 'ticketclock'), implode(', ', $labels));
@@ -597,6 +704,9 @@ class Rule extends CommonDBTM
             'delay_units'     => DelayUnit::options(),
             'calendar_modes'  => CalendarMode::options(),
             'start_events'    => StartEvent::options(),
+            // The empty option is what every rule that counts from something else stores, and
+            // it has to be selectable or the form could not express those rules.
+            'reference_fields' => ['' => __('None', 'ticketclock')] + ReferenceField::options(),
             'start_event_helpers' => array_combine(
                 array_map(static fn(StartEvent $e): string => $e->value, StartEvent::cases()),
                 array_map(static fn(StartEvent $e): string => $e->helper(), StartEvent::cases()),

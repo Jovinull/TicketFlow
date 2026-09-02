@@ -41,6 +41,10 @@ namespace GlpiPlugin\Ticketclock\Enum;
  * `pending_start` times the state itself: the ticket entered a pending status and the
  * countdown runs from that moment.
  *
+ * `ticket_date_field` times a date somebody put on the ticket -- an SLA target, the date it
+ * was taken into account -- chosen per rule from a closed list, {@see ReferenceField}. The
+ * arithmetic, the calendar and the actions are unchanged; only where the clock starts moves.
+ *
  * `last_target_group_message` times the *conversation*: the countdown runs from the last
  * message written by a member of the rule's target group, and only while that message is
  * still the last one on the ticket. The moment anybody else replies, the ball is back with
@@ -51,12 +55,14 @@ enum StartEvent: string
 {
     case PendingStart = 'pending_start';
     case LastTargetGroupMessage = 'last_target_group_message';
+    case TicketDateField = 'ticket_date_field';
 
     public function label(): string
     {
         return match ($this) {
             self::PendingStart => __('When the ticket entered the status', 'ticketclock'),
             self::LastTargetGroupMessage => __('Last message, when written by the target group', 'ticketclock'),
+            self::TicketDateField => __('A date stored on the ticket', 'ticketclock'),
         };
     }
 
@@ -65,6 +71,7 @@ enum StartEvent: string
         return match ($this) {
             self::PendingStart => __('The countdown runs from the moment the ticket entered the selected status.', 'ticketclock'),
             self::LastTargetGroupMessage => __('The rule only applies while the most recent message on the ticket was written by a member of one of the target groups. The countdown runs from that message, and stops as soon as anybody else replies.', 'ticketclock'),
+            self::TicketDateField => __('The countdown runs from a date field of the ticket, chosen below. The rule\'s delay is added to that date, so a rule counting from an SLA target acts after the target rather than on it. A ticket whose field is empty is reported as "no_reference_date" and left alone.', 'ticketclock'),
         };
     }
 

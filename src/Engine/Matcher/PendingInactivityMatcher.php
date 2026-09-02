@@ -39,6 +39,7 @@ use GlpiPlugin\Ticketclock\Engine\MatchResult;
 use GlpiPlugin\Ticketclock\Engine\OccurrenceKey;
 use GlpiPlugin\Ticketclock\Engine\RuleDefinition;
 use GlpiPlugin\Ticketclock\Engine\TicketContext;
+use GlpiPlugin\Ticketclock\Enum\ReferenceField;
 use GlpiPlugin\Ticketclock\Enum\RuleType;
 use GlpiPlugin\Ticketclock\Enum\StartEvent;
 use GlpiPlugin\Ticketclock\Support\Time;
@@ -46,7 +47,7 @@ use GlpiPlugin\Ticketclock\Support\Time;
 /**
  * "The ticket has been sitting in a state without the answer we are waiting for."
  *
- * Two ways to time that, chosen per rule:
+ * Three ways to time that, chosen per rule:
  *
  * **`pending_start`** — the clock runs from `glpi_tickets.begin_waiting_date`, which core
  * writes exactly when the status becomes `WAITING` and clears when it leaves
@@ -59,8 +60,16 @@ use GlpiPlugin\Ticketclock\Support\Time;
  * status, including ones core never stamps a date on, because the reference comes from the
  * conversation rather than from the state.
  *
- * In both modes a status change restarts the countdown, and produces a new occurrence, so
- * a ticket that moves between states is never acted on with a stale clock.
+ * **`ticket_date_field`** — the clock runs from a date somebody put on the ticket, chosen
+ * per rule from {@see ReferenceField}. This one deliberately does not restart: a reply does
+ * not move an SLA target, and letting reset events push it would mean a rule set to act after
+ * that target never acting on a busy ticket. The occurrence is keyed on the field as well as
+ * the date, so switching a rule from one column to another starts a new cycle rather than
+ * inheriting the claim of the configuration it replaced.
+ *
+ * In the first two modes a status change restarts the countdown, and produces a new
+ * occurrence, so a ticket that moves between states is never acted on with a stale clock.
+ * The third is anchored to the ticket's own field and moves only when that field does.
  */
 final class PendingInactivityMatcher extends AbstractMatcher
 {
@@ -84,9 +93,11 @@ final class PendingInactivityMatcher extends AbstractMatcher
             return MatchResult::noMatch('pendingreason_mismatch');
         }
 
-        return $rule->start_event === StartEvent::LastTargetGroupMessage
-            ? $this->evaluateFromLastGroupMessage($rule, $context, $now)
-            : $this->evaluateFromPendingStart($rule, $context, $now);
+        return match ($rule->start_event) {
+            StartEvent::LastTargetGroupMessage => $this->evaluateFromLastGroupMessage($rule, $context, $now),
+            StartEvent::TicketDateField => $this->evaluateFromTicketDate($rule, $context, $now),
+            StartEvent::PendingStart => $this->evaluateFromPendingStart($rule, $context, $now),
+        };
     }
 
     private function evaluateFromPendingStart(RuleDefinition $rule, TicketContext $context, string $now): MatchResult
@@ -108,6 +119,46 @@ final class PendingInactivityMatcher extends AbstractMatcher
         }
 
         return $this->finish($rule, $context, $reference, $occurrence_key, $now);
+    }
+
+    /**
+     * Counts from a date somebody put on the ticket.
+     *
+     * The reference is the field itself, so the occurrence is keyed on it and on which field
+     * was chosen. Two rules pointing at different columns of the same ticket are different
+     * cycles even when the columns happen to hold the same instant -- and an administrator who
+     * switches a rule from one field to another gets a new occurrence rather than inheriting
+     * the claim of the configuration they just replaced.
+     *
+     * `reset_events` deliberately does not move this clock. The other two start events time
+     * something that a reply genuinely restarts; a date on the ticket does not restart because
+     * somebody wrote a followup, and letting it would mean a rule set to act after an SLA
+     * target never acting on a busy ticket.
+     */
+    private function evaluateFromTicketDate(RuleDefinition $rule, TicketContext $context, string $now): MatchResult
+    {
+        $field = $rule->reference_field;
+        if ($field === null) {
+            // Belt and braces: `toDefinition()` already refuses such a rule outright, so this
+            // is only reachable if a definition is built by hand. Skipping is still the right
+            // answer -- there is no column to read.
+            return MatchResult::noMatch('unknown_reference_field');
+        }
+
+        $reference = $context->referenceDate($field);
+        if ($reference === null) {
+            // An empty SLA target is not "now", and guessing would act on every ticket that
+            // never had one.
+            return MatchResult::noMatch('no_reference_date');
+        }
+
+        return $this->finish(
+            $rule,
+            $context,
+            $reference,
+            OccurrenceKey::forTicketDate($context->tickets_id, $field->column(), $reference),
+            $now,
+        );
     }
 
     private function evaluateFromLastGroupMessage(RuleDefinition $rule, TicketContext $context, string $now): MatchResult

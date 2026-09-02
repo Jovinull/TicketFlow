@@ -103,6 +103,21 @@ final readonly class CandidateFinder
             // pending state is newer than its last message — and would exclude outright the
             // statuses core never stamps a date on.
             $this->restrictToStaleConversation($where, $tickets, $threshold);
+        } elseif ($rule->start_event === StartEvent::TicketDateField) {
+            // The same column the matcher will read. The two must agree: a prefilter on one
+            // date and arithmetic on another would silently drop tickets that are due, and the
+            // run would report having examined them.
+            //
+            // The identifier comes from the enum, never from the stored row -- `toDefinition()`
+            // refuses a rule whose reference field it cannot resolve, so by here the column is
+            // one of ours or the rule never ran.
+            $column = $rule->reference_field?->column();
+            if ($column === null) {
+                return [];
+            }
+
+            $where["$tickets.$column"] = ['<=', $threshold];
+            $where[] = ['NOT' => ["$tickets.$column" => null]];
         } else {
             $where["$tickets.begin_waiting_date"] = ['<=', $threshold];
             $where[] = ['NOT' => ["$tickets.begin_waiting_date" => null]];

@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Ticketclock\Engine;
 
+use GlpiPlugin\Ticketclock\Enum\ReferenceField;
 use GlpiPlugin\Ticketclock\Enum\ResetEvent;
 use GlpiPlugin\Ticketclock\Support\Time;
 
@@ -74,6 +75,16 @@ final readonly class TicketContext
         public ?MessageContext $last_message = null,
         /** When the ticket last changed status; null when that cannot be established. */
         public ?string $status_changed_at = null,
+        /**
+         * The ticket's own date columns a rule may count from, keyed by column name.
+         *
+         * All of {@see ReferenceField} is loaded rather than the one column a rule asked for:
+         * they sit on the row the resolver already reads, so carrying them costs nothing and
+         * keeps the resolver from having to know which rule it is resolving for.
+         *
+         * @var array<string, string|null>
+         */
+        public array $reference_dates = [],
     ) {}
 
     public function lastEventDate(ResetEvent $event): ?string
@@ -104,6 +115,23 @@ final readonly class TicketContext
         return $latest;
     }
 
+    /**
+     * The date this rule counts from, or null when the ticket carries none.
+     *
+     * Null is the answer for "the field is empty", and the caller reports it as
+     * `no_reference_date` rather than guessing -- an empty SLA target is not "now".
+     */
+    public function referenceDate(?ReferenceField $field): ?string
+    {
+        if ($field === null) {
+            return null;
+        }
+
+        $value = $this->reference_dates[$field->column()] ?? null;
+
+        return $value === null || $value === '' ? null : $value;
+    }
+
     /** Same ticket, but pointing at another approval request. */
     public function withValidation(?ValidationContext $validation): self
     {
@@ -125,6 +153,7 @@ final readonly class TicketContext
             $validation,
             $this->last_message,
             $this->status_changed_at,
+            $this->reference_dates,
         );
     }
 }

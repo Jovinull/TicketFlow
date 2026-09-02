@@ -132,6 +132,14 @@
                     'helper': start_event_helpers[item.fields['start_event']|default('pending_start')]|default('')
                 }) }}
 
+                {# Only read when the countdown starts at a ticket date; the save refuses the
+                   combination of that start event and an empty field, so it is not optional
+                   there. The helper says the delay is added to it, because an SLA target is a
+                   deadline and "act on the SLA date" is what people will expect it to mean. #}
+                {{ fields.dropdownArrayField('reference_field', item.fields['reference_field']|default(''), reference_fields, __('Ticket date to count from', 'ticketclock'), {
+                    'helper': __('Only used when the countdown starts at a date stored on the ticket. The delay below is added to this date, so a rule counting from an SLA target acts after the target, not on it.', 'ticketclock')
+                }) }}
+
                 {{ fields.numberField('delay_value', item.fields['delay_value']|default(5), __('Delay', 'ticketclock'), {'min': 1, 'required': true}) }}
 
                 {{ fields.dropdownArrayField('delay_unit', item.fields['delay_unit']|default('business_days'), delay_units, __('Unit', 'ticketclock')) }}

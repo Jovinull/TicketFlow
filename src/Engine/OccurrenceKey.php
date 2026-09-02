@@ -72,6 +72,22 @@ final class OccurrenceKey
         return self::normalize(sprintf('gs:%d:%s', $tickets_id, self::compactDate($reference_at)));
     }
 
+    /**
+     * A date stored on the ticket, keyed on which date it was.
+     *
+     * The field is part of the key on purpose. Without it, switching a rule from one column to
+     * another would silently reuse the claim of the previous configuration whenever the two
+     * columns held the same instant -- the rule would look like it had already run for a cycle
+     * it never saw.
+     *
+     * The column name is short and comes from {@see ReferenceField}, so it cannot push the key
+     * past its width on its own.
+     */
+    public static function forTicketDate(int $tickets_id, string $field, string $reference_at): string
+    {
+        return self::normalize(sprintf('td:%d:%s:%s', $tickets_id, $field, self::compactDate($reference_at)));
+    }
+
     private static function compactDate(string $date): string
     {
         // Both natives on purpose: an occurrence key must always be producible. A date we

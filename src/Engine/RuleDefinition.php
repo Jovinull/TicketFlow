@@ -39,6 +39,7 @@ use GlpiPlugin\Ticketclock\Enum\CalendarMode;
 use GlpiPlugin\Ticketclock\Enum\DelayUnit;
 use GlpiPlugin\Ticketclock\Enum\ResetEvent;
 use GlpiPlugin\Ticketclock\Enum\RuleType;
+use GlpiPlugin\Ticketclock\Enum\ReferenceField;
 use GlpiPlugin\Ticketclock\Enum\StartEvent;
 
 /**
@@ -73,6 +74,13 @@ final readonly class RuleDefinition
         public array $actions,
         public bool $is_dry_run,
         public StartEvent $start_event = StartEvent::PendingStart,
+        /**
+         * Which ticket column {@see StartEvent::TicketDateField} counts from.
+         *
+         * Null for every other start event, and null is also what an unreadable stored value
+         * becomes -- the rule is then refused rather than run against a column nobody chose.
+         */
+        public ?ReferenceField $reference_field = null,
         /**
          * Why this rule cannot be run, if it cannot.
          *

@@ -49,6 +49,7 @@ use Ticket;
 use Ticket_User;
 use TicketValidation;
 use GlpiPlugin\Ticketclock\Engine\Action\AddFollowupAction;
+use GlpiPlugin\Ticketclock\Enum\ReferenceField;
 use GlpiPlugin\Ticketclock\Enum\ResetEvent;
 use GlpiPlugin\Ticketclock\Support\Time;
 
@@ -172,7 +173,13 @@ final class TicketContextResolver
 
         $out = [];
         $iterator = $DB->request([
-            'SELECT' => ['id', 'name', 'entities_id', 'status', 'is_deleted', 'begin_waiting_date', 'date_mod'],
+            // The reference columns come from the enum, never from a rule row or a POST, so
+            // no caller can put an identifier of its own into this SELECT. They ride along on
+            // a row this query already reads.
+            'SELECT' => array_merge(
+                ['id', 'name', 'entities_id', 'status', 'is_deleted', 'begin_waiting_date', 'date_mod'],
+                array_map(static fn(ReferenceField $f): string => $f->column(), ReferenceField::cases()),
+            ),
             'FROM'   => Ticket::getTable(),
             'WHERE'  => ['id' => $ids],
         ]);
@@ -600,7 +607,25 @@ final class TicketContextResolver
             $selected_validation,
             $last_message,
             $status_changed_at,
+            $this->referenceDates($ticket),
         );
+    }
+
+    /**
+     * The whitelisted date columns of one ticket row, keyed by column name.
+     *
+     * @param array<string, mixed> $ticket
+     * @return array<string, string|null>
+     */
+    private function referenceDates(array $ticket): array
+    {
+        $out = [];
+        foreach (ReferenceField::cases() as $field) {
+            $value = $ticket[$field->column()] ?? null;
+            $out[$field->column()] = is_string($value) && $value !== '' ? $value : null;
+        }
+
+        return $out;
     }
 
     /**

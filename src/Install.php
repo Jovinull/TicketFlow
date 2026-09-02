@@ -70,6 +70,7 @@ final class Install
         '1.1.0' => 'migrateTo110',
         '1.2.0' => 'migrateTo120',
         '1.3.0' => 'migrateTo130',
+        '1.4.0' => 'migrateTo140',
     ];
 
     public static function install(Migration $migration): bool
@@ -201,6 +202,7 @@ final class Install
                     `target_status`       INT NOT NULL DEFAULT 0,
                     `pendingreasons_id`   INT UNSIGNED NOT NULL DEFAULT 0,
                     `start_event`         VARCHAR(50) NOT NULL DEFAULT 'pending_start',
+                    `reference_field`     VARCHAR(50) NOT NULL DEFAULT '',
                     `delay_value`         INT NOT NULL DEFAULT 5,
                     `delay_unit`          VARCHAR(20) NOT NULL DEFAULT 'business_days',
                     `calendar_mode`       VARCHAR(20) NOT NULL DEFAULT 'entity',
@@ -444,5 +446,25 @@ final class Install
         CoreConfig::deleteConfigurationValues(Config::CONTEXT, $keys);
         Config::reload();
         EntityConfig::reload();
+    }
+
+    /**
+     * Adds `reference_field`: a rule can time a date stored on the ticket.
+     *
+     * Empty for every rule that already exists, which is what they all mean -- the column is
+     * only read when `start_event` says to, so an upgrade changes nothing until somebody
+     * edits a rule.
+     */
+    private static function migrateTo140(Migration $migration): void
+    {
+        $migration->addField(
+            Rule::getTable(),
+            'reference_field',
+            // Explicit rather than 'string': Migration widens that to varchar(255), which
+            // would not match what a fresh install creates.
+            "varchar(50) NOT NULL DEFAULT ''",
+            ['after' => 'start_event'],
+        );
+        $migration->migrationOneTable(Rule::getTable());
     }
 }

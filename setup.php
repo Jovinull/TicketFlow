@@ -59,7 +59,7 @@ require_once __DIR__ . '/src/Version.php';
 define('PLUGIN_TICKETCLOCK_VERSION', '1.1.0');
 define('PLUGIN_TICKETCLOCK_MIN_GLPI', '11.0.0');
 define('PLUGIN_TICKETCLOCK_MAX_GLPI', '11.0.99');
-define('PLUGIN_TICKETCLOCK_SCHEMA_VERSION', '1.3.0');
+define('PLUGIN_TICKETCLOCK_SCHEMA_VERSION', '1.4.0');
 
 /**
  * Init hooks of the plugin.

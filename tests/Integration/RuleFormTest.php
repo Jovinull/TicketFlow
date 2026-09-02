@@ -66,7 +66,7 @@ final class RuleFormTest extends TestCase
     private const REQUIRED_FIELDS = [
         'name', 'is_active', 'is_recursive', 'ranking', 'comment',
         'rule_type', '_groups_id[]', '__groups_id_defined', 'target_status', 'pendingreasons_id',
-        'start_event', 'delay_value', 'delay_unit', 'calendar_mode', 'calendars_id',
+        'start_event', 'reference_field', 'delay_value', 'delay_unit', 'calendar_mode', 'calendars_id',
         '_reset_events[]', '_reset_events_defined',
         '_actions[add_followup][enabled]', '_actions[add_followup][content]',
         '_actions[add_followup][is_private]',

@@ -137,6 +137,7 @@ final class SchemaContractTest extends TestCase
             'target_status int(11) NOT NULL default 0',
             'pendingreasons_id int(10) unsigned NOT NULL default 0',
             'start_event varchar(50) NOT NULL default \'pending_start\'',
+            'reference_field varchar(50) NOT NULL default \'\'',
             'delay_value int(11) NOT NULL default 5',
             'delay_unit varchar(20) NOT NULL default \'business_days\'',
             'calendar_mode varchar(20) NOT NULL default \'entity\'',
@@ -464,15 +465,21 @@ final class SchemaContractTest extends TestCase
     }
 
     /**
-     * Each supported starting point, with the columns that version did not have yet.
+     * Each supported starting point, with every column that version did not have yet.
+     *
+     * The list has to grow with each migration, and forgetting to add a column here is how the
+     * chain stops being tested: the database this suite runs against is already at the current
+     * schema, so a column nobody drops is a column whose migration takes its "already there"
+     * branch and proves nothing.
      *
      * @return array<string, array{string, list<string>}>
      */
     public static function olderSchemas(): array
     {
         return [
-            '1.1.0, before the refusal columns' => ['1.1.0', ['last_error', 'last_error_date']],
-            '1.0.0, before start_event as well' => ['1.0.0', ['last_error', 'last_error_date', 'start_event']],
+            '1.3.0, before reference_field' => ['1.3.0', ['reference_field']],
+            '1.1.0, before the refusal columns' => ['1.1.0', ['reference_field', 'last_error', 'last_error_date']],
+            '1.0.0, before start_event as well' => ['1.0.0', ['reference_field', 'last_error', 'last_error_date', 'start_event']],
         ];
     }
     /**
