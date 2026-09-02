@@ -288,6 +288,20 @@ usual wording in English, French, Portuguese, German and Spanish; local mail gat
 these differently, so it is meant to be edited. Leaving it empty counts every message, which
 is the old behaviour.
 
+Getting a mark wrong fails quietly in both directions, so *Diagnostics* shows a recent sample
+of what each one matches: followups from the last 30 days, next to the total for the period,
+restricted to your entities. A mark matching nothing is probably not the wording your gateway
+uses. A mark matching most of the traffic is a wildcard by another name, and would make the
+engine read answered tickets as unanswered and keep acting on them.
+
+The sample is for judging a mark, not a replay of what the rules excluded, and it is worth
+knowing where the two differ. The counts use the same escaping as the engine, so a mark
+containing `%` or `_` is measured as the text it is — that part is exact. The population is
+not: it is the one both engine queries share, which includes private followups, and those are
+never allowed to decide which message is the latest. The window is 30 days, while the engine
+reads each candidate ticket's own history rather than a period. So a mark's count is an upper
+bound for the latest-message path, and a recent view of the other.
+
 ## Idempotency
 
 Each match belongs to an **occurrence**, identified by the cycle it belongs to:
