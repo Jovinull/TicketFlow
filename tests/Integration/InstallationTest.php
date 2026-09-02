@@ -293,6 +293,53 @@ final class InstallationTest extends TestCase
     }
 
     /**
+     * The catalogue manifest has to name the version this code base is.
+     *
+     * It is the one version number no test was watching, and the one with the worst failure
+     * mode. The release workflow fires on a tag and builds the archive from the tagged commit,
+     * so a manifest updated afterwards is not in the package at all: the published tarball
+     * carries the previous version's metadata for good, and the catalogue offers a download
+     * whose contents disagree with the entry that pointed at it. That has already happened
+     * once on 1.0.1, where the manifest named an archive the tag had not produced yet.
+     *
+     * Asserted against the file rather than a parsed release process, because the file is what
+     * ships. Reading it with SimpleXML rather than matching on text: the point is the value in
+     * `<num>`, not where the whitespace falls.
+     */
+    public function testTheCatalogueManifestNamesThisVersion(): void
+    {
+        $path = dirname(__DIR__, 2) . '/ticketclock.xml';
+        self::assertFileExists($path, 'the catalogue manifest is missing');
+
+        $xml = simplexml_load_file($path);
+        self::assertNotFalse($xml, 'the catalogue manifest is not valid XML');
+
+        $versions = $xml->versions->version ?? [];
+        self::assertCount(1, $versions, 'the manifest should advertise exactly one version');
+
+        $declared = (string) $versions[0]->num;
+        self::assertSame(
+            Version::VERSION,
+            $declared,
+            'the manifest advertises a different version than the code; a release built from this '
+            . 'commit would ship metadata for another one',
+        );
+
+        // The archive name is fixed by the official release workflow, so the URL can be derived
+        // rather than trusted: a hand-edited number in either half of it is the failure this
+        // guards against.
+        $expected_url = sprintf(
+            'https://github.com/Jovinull/ticketclock/releases/download/%1$s/glpi-ticketclock-%1$s.tar.bz2',
+            Version::VERSION,
+        );
+        self::assertSame(
+            $expected_url,
+            (string) $versions[0]->download_url,
+            'the manifest points at an archive the tag for this version would not produce',
+        );
+    }
+
+    /**
      * What the plugin reports to GLPI must be the same thing again.
      */
     public function testThePluginReportsItsOwnVersionToGlpi(): void
