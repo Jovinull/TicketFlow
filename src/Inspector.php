@@ -43,8 +43,11 @@ use CommonITILValidation;
 use CronTask;
 use Entity;
 use Glpi\DBAL\QueryExpression;
+use GlpiPlugin\Ticketclock\Engine\Action\AddFollowupAction;
+use GlpiPlugin\Ticketclock\Engine\AutomaticReplyFilter;
 use Group;
 use Group_Ticket;
+use ITILFollowup;
 use PendingReason;
 use PendingReason_Item;
 use Session;
@@ -65,6 +68,15 @@ use TicketValidation;
 final class Inspector
 {
     /**
+     * How far back the automatic-reply mark counts look.
+     *
+     * A window rather than the whole history: what matters is whether a mark still matches the
+     * traffic this instance receives now, and a gateway that changed its wording six months ago
+     * would otherwise keep a dead mark looking healthy forever.
+     */
+    public const MARK_SAMPLE_DAYS = 30;
+
+    /**
      * @return array<string, mixed>
      */
     public static function report(): array
@@ -73,6 +85,7 @@ final class Inspector
             'environment'  => self::environment(),
             'config'       => Config::all(),
             'warnings'     => Config::getHealthWarnings((int) Session::getActiveEntity()),
+            'marks'        => self::automaticReplyMarks(),
             'calendars'    => self::calendars(),
             'entities'     => self::entities(),
             'entities_total' => self::countEntities(),
@@ -330,6 +343,106 @@ final class Inspector
      * reports the true total alongside and the template says when it stopped short.
      */
     private const ENTITY_LIMIT = 200;
+
+    /**
+     * A recent sample of what each configured automatic-reply mark matches.
+     *
+     * A mark decides which followups the engine reads as somebody answering, and both ways of
+     * getting it wrong are quiet. Too narrow and out-of-office replies keep silencing rules;
+     * too broad and real answers are discarded, so the engine goes on chasing tickets that
+     * were already answered. Until now there was nothing to check a mark against before
+     * saving it: an administrator typed a phrase their gateway uses and found out weeks later.
+     *
+     * Counted with {@see AutomaticReplyFilter::likeLiteral()}, not with a pattern built here.
+     * The escaping is the whole difficulty -- `%` and `_` are wildcards the query builder
+     * neither knows nor touches -- and a screen that escaped differently from the engine would
+     * report numbers nobody acts on, which is worse than reporting nothing.
+     *
+     * A sample, and it should not be described as anything more. The population is the one
+     * both engine queries share -- followups on tickets, minus the ones TicketFlow wrote
+     * itself -- and it differs from what the rules actually exclude in two ways:
+     *
+     *  - one of those queries also drops private followups, and that narrowing is not applied
+     *    here, so a mark appearing only in internal notes shows matches it can never cause;
+     *  - this counts a window, while the engine reads each candidate ticket's own history.
+     *
+     * So a mark's count is an upper bound for the latest-message path and a recent view of the
+     * other. What is exact is the escaping, which is the part that decides whether a mark means
+     * what it says.
+     *
+     * @return array<string, mixed>
+     */
+    private static function automaticReplyMarks(): array
+    {
+        // Native \strtotime on purpose, as elsewhere in this plugin: the interval is built from
+        // a constant, and falling back to "now" would report an empty window rather than fail
+        // a diagnostics page.
+        // @phpstan-ignore theCodingMachineSafe.function
+        $since = date('Y-m-d H:i:s', \strtotime('-' . self::MARK_SAMPLE_DAYS . ' days') ?: time());
+        $total = self::countFollowups($since);
+
+        $marks = [];
+        foreach (Config::ignoredMessageMarks() as $mark) {
+            $matches = self::countFollowups($since, $mark);
+            $marks[] = [
+                'mark'    => $mark,
+                'matches' => $matches,
+                // Share of the window, so a mark that catches nearly everything reads as the
+                // wildcard it effectively is rather than as a large number.
+                'share'   => $total > 0 ? round($matches * 100 / $total, 1) : 0.0,
+            ];
+        }
+
+        return [
+            'window_days' => self::MARK_SAMPLE_DAYS,
+            'since'       => $since,
+            'total'       => $total,
+            'marks'       => $marks,
+        ];
+    }
+
+    /**
+     * Followups in the window, optionally only those one mark matches.
+     *
+     * Joined to the ticket for the same reason as the other link tables here:
+     * `glpi_itilfollowups` carries no entity of its own, and the reader must not be counting
+     * traffic from entities they cannot see.
+     */
+    private static function countFollowups(string $since, ?string $mark = null): int
+    {
+        $followups = ITILFollowup::getTable();
+
+        $where = [
+            $followups . '.itemtype' => Ticket::class,
+            [$followups . '.date'    => ['>=', $since]],
+            // TicketFlow's own followups are not somebody answering, and the engine excludes
+            // them at both call sites. Counting them here would inflate the denominator with
+            // messages no mark is ever asked about.
+            ['NOT' => [$followups . '.content' => ['LIKE', '%' . AddFollowupAction::MARKER . '%']]],
+        ];
+
+        if ($mark !== null) {
+            $where[] = [
+                $followups . '.content' => ['LIKE', '%' . AutomaticReplyFilter::likeLiteral($mark) . '%'],
+            ];
+        }
+
+        $criteria = [
+            'FROM'       => $followups,
+            'INNER JOIN' => [
+                Ticket::getTable() => [
+                    'ON' => [
+                        $followups         => 'items_id',
+                        Ticket::getTable() => 'id',
+                    ],
+                ],
+            ],
+            'WHERE'      => $where,
+        ];
+        self::restrict($criteria, Ticket::getTable());
+
+        return self::count($criteria);
+    }
 
     private static function countEntities(): int
     {

@@ -95,9 +95,10 @@ final class Config
      *
      * The default covers what the common mail systems put in an automatic reply, in the
      * languages this plugin ships plus German and Spanish. It is a starting point and is
-     * meant to be edited: local gateways word these differently. There is no tooling yet for
-     * checking a mark against real traffic before saving it, which is the obvious next step
-     * and is tracked separately.
+     * meant to be edited: local gateways word these differently. The diagnostics screen carries
+     * a recent sample of what each mark matches on this instance, counted with the same escaping
+     * the engine uses -- a sample for judging a mark rather than a replay of what the rules
+     * excluded; see {@see \GlpiPlugin\Ticketclock\Inspector::MARK_SAMPLE_DAYS}.
      */
     public const DEFAULT_IGNORED_MARKS = "Out of Office\n"
         . "Out of the Office\n"

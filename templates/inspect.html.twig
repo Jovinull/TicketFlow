@@ -196,6 +196,54 @@
 </div>
 
 <div class="card mb-3">
+    <div class="card-header"><h3 class="card-title"><i class="ti ti-mail-off me-1"></i>{{ __('Automatic replies', 'ticketclock') }}</h3></div>
+    <div class="card-body">
+        <p class="text-secondary mb-1">
+            {{ __('A recent sample of what each configured mark matches: followups from the last %1$d days, out of %2$d in your entities. A mark matching nothing is probably not the wording your gateway uses; a mark matching almost everything is a wildcard by another name, and would make the engine treat answered tickets as unanswered.', 'ticketclock')|format(report.marks.window_days, report.marks.total) }}
+        </p>
+        <p class="text-secondary small">
+            {{ __('The escaping is the engine\'s, so a mark containing % or _ is measured as the text it is. The sample is not a replay of what the rules excluded: it covers what both engine queries share, private followups included, and those never decide which message is the latest. The engine also reads each ticket\'s own history rather than a fixed window.', 'ticketclock') }}
+        </p>
+
+        {% if report.marks.marks|length == 0 %}
+            <div class="alert alert-warning mb-0">
+                {{ __('No mark is configured, so every message counts as somebody answering. An out-of-office reply will silence a rule for as long as it stands.', 'ticketclock') }}
+            </div>
+        {% elseif report.marks.total == 0 %}
+            <div class="alert alert-info mb-0">
+                {{ __('No followup was written in your entities during this window, so there is nothing to measure the marks against yet.', 'ticketclock') }}
+            </div>
+        {% else %}
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>{{ __('Mark', 'ticketclock') }}</th>
+                        <th>{{ __('Followups matched', 'ticketclock') }}</th>
+                        <th>{{ __('Share of the window', 'ticketclock') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in report.marks.marks %}
+                    <tr>
+                        <td><code>{{ row.mark }}</code></td>
+                        <td class="{{ row.matches == 0 ? 'text-secondary' : '' }}">{{ row.matches }}</td>
+                        <td class="{{ row.share >= 50 ? 'text-danger' : (row.matches == 0 ? 'text-secondary' : '') }}">
+                            {{ row.share }}%
+                            {% if row.matches == 0 %}
+                                <span class="small">{{ __('nothing matched', 'ticketclock') }}</span>
+                            {% elseif row.share >= 50 %}
+                                <span class="small">{{ __('matches most of the traffic', 'ticketclock') }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mb-3">
     <div class="card-header"><h3 class="card-title"><i class="ti ti-users me-1"></i>{{ __('Group assignment', 'ticketclock') }}</h3></div>
     <div class="card-body">
         <p class="text-secondary small">
