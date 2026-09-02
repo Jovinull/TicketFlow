@@ -68,9 +68,9 @@ php bin/console plugin:activate ticketclock
 Installing creates four tables (`glpi_plugin_ticketclock_rules`, `…_rulegroups`,
 `…_ruleactions`, `…_executions`), registers two automatic actions and one right.
 
-**A fresh install does nothing.** Execution is disabled, global dry run is on, the
-processing task ships disabled, and rules are created inactive. Nothing can touch a ticket
-until somebody deliberately turns it on.
+**A fresh install does nothing.** On the root entity execution is disabled and dry run is on,
+and every other entity inherits that; the processing task ships disabled, and rules are
+created inactive. Nothing can touch a ticket until somebody deliberately turns it on.
 
 ## Configuring the cron
 
@@ -320,6 +320,36 @@ From the same screen, **Run for real now** executes the rule immediately. It req
 `UPDATE` right, asks for confirmation, and still goes through the claim and re-validation
 steps.
 
+## Per-entity policy
+
+Three settings belong to an entity rather than to the instance, on the **TicketFlow** tab of
+*Administration > Entities*:
+
+| Setting | What it decides |
+|---|---|
+| Enable execution | whether TicketFlow may modify tickets in this entity at all |
+| Dry run | keeps this entity's rules simulated even when execution is enabled |
+| Fallback calendar | used by rules in *entity calendar* mode when the entity tree defines none |
+
+Each one can be left on **Inheritance of the parent entity**, which is the default for every
+entity except the root, and keeps following the parent when the parent changes. The root
+entity holds concrete values — it has nothing above it to inherit from — and a fresh install
+leaves it inert: execution off, dry run on.
+
+The entity that counts is the **ticket's**, not the rule's. A recursive rule stored on a
+parent acts on tickets in several children, and each child's own brake applies to its own
+tickets: pausing one branch leaves its siblings running.
+
+The fallback calendar must belong to the entity, or be a recursive calendar on one of its
+ancestors. This is checked when the entity is saved and again every time the engine reads it,
+because a calendar can be moved or deleted afterwards without anybody touching TicketFlow. A
+calendar that has stopped being visible is ignored, and the rule falls back to plain elapsed
+time — which every execution row records — rather than to another branch's opening hours.
+
+Batch size, the per-run ceiling, log retention, the acting user and the automatic-reply marks
+stay instance-wide in *Setup > TicketFlow > Configuration*: they describe one cron process
+running once for the whole instance.
+
 ## Permissions
 
 One right, `plugin_ticketclock_rule`, in the standard profile matrix
@@ -332,10 +362,16 @@ One right, `plugin_ticketclock_rule`, in the standard profile matrix
 | `CREATE` | create and duplicate rules |
 | `PURGE` | delete rules |
 
-On install, every profile that can already configure GLPI receives the full right.
+On install, only the profile performing the install receives the full right, so that whoever
+installed the plugin is not locked out of it. Every other profile is granted in
+*Administration > Profiles*. Installations that were set up before this changed keep the
+rights they were given: an upgrade does not revoke access an administrator may have reviewed
+and kept.
+
 Rules are entity-scoped and honour the reader's active entity. The instance-wide TicketFlow
 configuration additionally requires GLPI's own global `config` UPDATE right; changing it
-selects the automation identity and affects every entity.
+selects the automation identity and affects every entity. Per-entity policy — see below — is
+edited on the entity itself and needs only `plugin_ticketclock_rule` UPDATE there.
 
 ## Observability
 
@@ -359,6 +395,14 @@ either of them.
 
 ## Troubleshooting
 
+**One branch runs and another does not.** The switches are per entity and inherited, so a
+child that was set explicitly no longer follows its parent. Open the entity's TicketFlow tab:
+the *In force here* block shows what actually applies after inheritance is resolved.
+
+**"That calendar does not belong to this entity."** The fallback calendar has to belong to the
+entity or be a recursive calendar on an ancestor. A calendar from a sibling branch is refused,
+because it would compute this entity's deadlines from opening hours that are not its own.
+
 **A rule reports "was not run".** Its stored actions could not all be read: a row with
 unreadable JSON parameters, or an action type this version does not know. The engine refuses
 the rule rather than running the actions that survived, because a rule configured as "add a
@@ -376,9 +420,9 @@ runs. Only that rule stops; the rest of the run is unaffected, and the run summa
 under `refused`.
 
 
-**Nothing happens.** Check *Diagnostics*. In order: is execution enabled, is global dry run
-off, is the rule active, is the rule in simulation-only mode, is the `ProcessRules` task
-scheduled?
+**Nothing happens.** Check *Diagnostics*. In order: on the ticket's entity — or whichever
+ancestor it inherits from — is execution enabled and dry run off? Then: is the rule active, is
+the rule in simulation-only mode, is the `ProcessRules` task scheduled?
 
 **A group assignment fails with "does not belong to the ticket's entity".** The rule points at
 a group GLPI would not offer on those tickets. Usually the group moved entity, or lost its
