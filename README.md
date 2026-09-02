@@ -121,10 +121,33 @@ groups is listed (most tickets carry several — see `docs/rules.md`).
 **Clock** — where the countdown starts, the delay, its unit, which calendar to use, and
 which interactions restart it.
 
-> Two ways to start the countdown. *When the ticket entered the status* times the state.
+> Three ways to start the countdown. *When the ticket entered the status* times the state.
 > *Last message, when written by the target group* times the conversation: the rule applies
 > only while your team wrote the last message, and goes quiet the moment anybody else
 > replies. A status change restarts the countdown either way.
+>
+> *A date stored on the ticket* times a date somebody put there — pick which one in *Ticket
+> date to count from*. The delay is **added** to it, so a rule counting from an SLA target
+> acts after the target rather than on it. A date on the ticket does not restart, so replies
+> do not move this clock; if the field is empty the ticket is reported as `no_reference_date`
+> and left alone, never timed from a guess.
+>
+> The fields on offer are a fixed list, not every dated column GLPI has:
+>
+> | Field | Column |
+> |---|---|
+> | Opening date | `date` |
+> | Date taken into account | `takeintoaccountdate` |
+> | Time to own (SLA) | `time_to_own` |
+> | Time to resolve (SLA) | `time_to_resolve` |
+> | Internal time to own (OLA) | `internal_time_to_own` |
+> | Internal time to resolve (OLA) | `internal_time_to_resolve` |
+>
+> The omissions are deliberate. `date_mod` moves whenever anybody edits the ticket — including
+> when TicketFlow writes a followup — so a rule timed from it would push its own deadline away
+> every time it acted. `closedate` and `solvedate` describe a ticket that is over.
+> `begin_waiting_date` is already *When the ticket entered the status*. The `ola_*_begin_date`
+> columns are internal to core's own arithmetic.
 
 **Then** — an optional timeline message, one terminal action (solve / change status /
 close / nothing), and an optional notification.
