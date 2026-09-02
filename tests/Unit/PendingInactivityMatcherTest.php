@@ -50,7 +50,7 @@ final class PendingInactivityMatcherTest extends TestCase
         // Entity 0 is the root; every entity descends from it.
         $ancestors = static fn(int $entities_id): array => [0, $entities_id];
 
-        return new PendingInactivityMatcher(CalendarFactory::calculator(), 0, $ancestors);
+        return new PendingInactivityMatcher(CalendarFactory::calculator(), null, $ancestors);
     }
 
     public function testSupportsOnlyItsOwnRuleType(): void
@@ -266,7 +266,7 @@ final class PendingInactivityMatcherTest extends TestCase
             2       => [0, 2],
             default => [0, $entities_id],
         };
-        $matcher = new PendingInactivityMatcher(CalendarFactory::calculator(), 0, $ancestors);
+        $matcher = new PendingInactivityMatcher(CalendarFactory::calculator(), null, $ancestors);
 
         $result = $matcher->evaluate(
             DomainFactory::rule(entities_id: 1, is_recursive: true),

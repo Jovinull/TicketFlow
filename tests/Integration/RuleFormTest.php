@@ -283,9 +283,8 @@ final class RuleFormTest extends TestCase
         $html = (string) ob_get_clean();
 
         $this->assertPostsBack($html, [
-            'execution_enabled', 'dry_run_global', 'log_dry_runs',
-            'batch_size', 'max_tickets_per_run', 'log_retention_days',
-            'fallback_calendars_id', 'system_users_id',
+            'log_dry_runs', 'batch_size', 'max_tickets_per_run',
+            'log_retention_days', 'system_users_id',
         ]);
     }
 
@@ -309,10 +308,11 @@ final class RuleFormTest extends TestCase
     /**
      * The manual "Run for real" button acts under the operator's own session, and GLPI's
      * model layer authorizes nothing: `CommonDBTM::add()` and `update()` never call `can()`.
-     * The screen used to gate on this plugin's own right alone, and
-     * `Profile::installRights()` grants that right to every profile holding `config` -- so a
-     * configuration administrator with no helpdesk access could add followups, write
-     * solutions and close tickets from here.
+     * The screen used to gate on this plugin's own right alone, and `Profile::installRights()`
+     * used to grant that right to every profile holding `config` -- so a configuration
+     * administrator with no helpdesk access could add followups, write solutions and close
+     * tickets from here. The install no longer widens the grant that way, but instances that
+     * already ran it keep the rights they were given, so the guard still has to hold.
      */
     public function testTheManualRunNeedsTicketRightsAndNotJustTheRuleRight(): void
     {

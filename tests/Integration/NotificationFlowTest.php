@@ -40,6 +40,7 @@ use Config as CoreConfig;
 use Group;
 use Group_Ticket;
 use GlpiPlugin\Ticketclock\Config;
+use GlpiPlugin\Ticketclock\EntityConfig;
 use GlpiPlugin\Ticketclock\Engine\RuleEngine;
 use GlpiPlugin\Ticketclock\Enum\ActionType;
 use GlpiPlugin\Ticketclock\Rule;
@@ -144,12 +145,12 @@ final class NotificationFlowTest extends TestCase
             'send_notification' => ['enabled' => 1, 'event' => self::EVENT],
         ]);
 
-        Config::set(['execution_enabled' => 1, 'dry_run_global' => 0]);
+        EntityConfig::setForEntity(0, ['execution_enabled' => 1, 'dry_run' => 0]);
     }
 
     protected function tearDown(): void
     {
-        Config::set(['execution_enabled' => 0, 'dry_run_global' => 1]);
+        EntityConfig::setForEntity(0, ['execution_enabled' => 0, 'dry_run' => 1]);
 
         if ($this->notifications_id > 0) {
             (new Notification())->update([
@@ -252,7 +253,7 @@ final class NotificationFlowTest extends TestCase
      */
     public function testADryRunQueuesNothing(): void
     {
-        Config::set(['dry_run_global' => 1]);
+        EntityConfig::setForEntity(0, ['dry_run' => 1]);
 
         $tickets_id = $this->createPendingTicket();
         $before = $this->queuedFor($tickets_id);

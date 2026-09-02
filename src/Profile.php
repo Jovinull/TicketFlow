@@ -125,11 +125,22 @@ class Profile extends \Profile
     }
 
     /**
-     * Grant the full right to the profiles that already administer GLPI.
+     * Register the right, and grant it to whoever is installing the plugin.
      *
      * Must be idempotent: the plugin's install routine runs again on every upgrade, and
      * `ProfileRight::addProfileRights()` inserts unconditionally — calling it a second time
      * throws on the unicity index and takes the whole upgrade down with it.
+     *
+     * It used to grant the right to every profile holding core's `config`, which on a
+     * multi-entity instance includes the administrator of one subsidiary — a wider grant than
+     * installing a plugin should decide on somebody's behalf. Now only the profile performing
+     * the install is granted, which is the one thing that has to happen: an administrator
+     * must not be locked out of the plugin they just installed. Every other profile is the
+     * administrator's call, made in Setup > Profiles.
+     *
+     * Existing installations keep the rights they were given. Revoking on upgrade would take
+     * access away from profiles an administrator has since reviewed and kept, and a plugin
+     * silently removing permissions during an upgrade is worse than the grant it is undoing.
      */
     public static function installRights(): void
     {
@@ -140,25 +151,18 @@ class Profile extends \Profile
             ProfileRight::addProfileRights([Rule::$rightname]);
         }
 
-        // Any profile that can already configure GLPI gets the plugin right, so an
-        // administrator is not locked out of their own plugin right after installing it.
-        $iterator = $DB->request([
-            'SELECT' => 'profiles_id',
-            'FROM'   => ProfileRight::getTable(),
-            'WHERE'  => ['name' => 'config', 'rights' => ['>', 0]],
-        ]);
-
-        foreach ($iterator as $row) {
-            $DB->update(
-                ProfileRight::getTable(),
-                ['rights' => ALLSTANDARDRIGHT],
-                ['profiles_id' => $row['profiles_id'], 'name' => Rule::$rightname],
-            );
-
-            if ((int) ($_SESSION['glpiactiveprofile']['id'] ?? 0) === (int) $row['profiles_id']) {
-                $_SESSION['glpiactiveprofile'][Rule::$rightname] = ALLSTANDARDRIGHT;
-            }
+        $profiles_id = (int) ($_SESSION['glpiactiveprofile']['id'] ?? 0);
+        if ($profiles_id <= 0) {
+            return;
         }
+
+        $DB->update(
+            ProfileRight::getTable(),
+            ['rights' => ALLSTANDARDRIGHT],
+            ['profiles_id' => $profiles_id, 'name' => Rule::$rightname],
+        );
+
+        $_SESSION['glpiactiveprofile'][Rule::$rightname] = ALLSTANDARDRIGHT;
     }
 
     public static function uninstallRights(): void

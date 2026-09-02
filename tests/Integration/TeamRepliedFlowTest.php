@@ -42,6 +42,7 @@ use Group;
 use Group_Ticket;
 use Group_User;
 use GlpiPlugin\Ticketclock\Config;
+use GlpiPlugin\Ticketclock\EntityConfig;
 use GlpiPlugin\Ticketclock\Execution;
 use GlpiPlugin\Ticketclock\Engine\RuleEngine;
 use GlpiPlugin\Ticketclock\Enum\ActionType;
@@ -132,14 +133,14 @@ final class TeamRepliedFlowTest extends TestCase
         $rule->update(['id' => $this->rules_id, 'is_active' => 1]);
         RuleGroup::setGroupsForRule($this->rules_id, [$this->groups_id]);
 
-        Config::set(['execution_enabled' => 1, 'dry_run_global' => 0]);
+        EntityConfig::setForEntity(0, ['execution_enabled' => 1, 'dry_run' => 0]);
 
         $this->tickets_id = $this->assignedTicketAnsweredByTheTeam();
     }
 
     protected function tearDown(): void
     {
-        Config::set(['execution_enabled' => 0, 'dry_run_global' => 1]);
+        EntityConfig::setForEntity(0, ['execution_enabled' => 0, 'dry_run' => 1]);
 
         foreach ([[Ticket::class, $this->tickets_id], [Rule::class, $this->rules_id],
             [Group::class, $this->groups_id], [Calendar::class, $this->calendars_id],

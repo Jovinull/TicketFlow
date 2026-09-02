@@ -69,6 +69,7 @@ final class Install
         '1.0.0' => 'migrateTo100',
         '1.1.0' => 'migrateTo110',
         '1.2.0' => 'migrateTo120',
+        '1.3.0' => 'migrateTo130',
     ];
 
     public static function install(Migration $migration): bool
@@ -135,6 +136,7 @@ final class Install
     {
         // Children first so a partial drop never leaves a dangling reference.
         return [
+            EntityConfig::getTable(),
             Execution::getTable(),
             RuleAction::getTable(),
             RuleGroup::getTable(),
@@ -375,5 +377,72 @@ final class Install
                 }
             }
         }
+    }
+
+    /**
+     * Moves the three settings whose scope has a consequence out of the global context.
+     *
+     * `execution_enabled`, `dry_run_global` and `fallback_calendars_id` used to be one row
+     * each for the whole instance, which meant a branch could not pause its own engine and,
+     * worse, a calendar belonging to one entity computed the deadlines of every other. They
+     * become one row per entity, inherited from the parent.
+     *
+     * The upgrade is deliberately behaviour-preserving: the root entity is seeded with
+     * whatever the instance had, and every other entity starts on inherit, so the tree keeps
+     * running exactly as it did until an administrator decides otherwise. Only then are the
+     * old global rows removed, so a failure between the two leaves the values readable rather
+     * than lost.
+     *
+     * `dry_run_global` becomes `dry_run`: the name described where it applied, and it no
+     * longer applies there.
+     */
+    private static function migrateTo130(Migration $migration): void
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $charset   = 'utf8mb4';
+        $collation = 'utf8mb4_unicode_ci';
+        $suffix    = "ENGINE=InnoDB DEFAULT CHARSET={$charset} COLLATE={$collation} ROW_FORMAT=DYNAMIC";
+
+        $table = EntityConfig::getTable();
+
+        // Signed on purpose: -2 is core's "inherit from the parent" sentinel
+        // (Entity::CONFIG_PARENT), so these columns must be able to hold a negative value.
+        if (!$DB->tableExists($table)) {
+            $DB->doQuery("
+                CREATE TABLE {$DB->quoteName($table)} (
+                    `id`                    INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `entities_id`           INT UNSIGNED NOT NULL DEFAULT 0,
+                    `execution_enabled`     INT NOT NULL DEFAULT -2,
+                    `dry_run`               INT NOT NULL DEFAULT -2,
+                    `fallback_calendars_id` INT NOT NULL DEFAULT -2,
+                    `date_creation`         TIMESTAMP NULL DEFAULT NULL,
+                    `date_mod`              TIMESTAMP NULL DEFAULT NULL,
+                    PRIMARY KEY (`id`),
+                    UNIQUE KEY `entities_id` (`entities_id`)
+                ) {$suffix}
+            ");
+        }
+
+        $migration->migrationOneTable($table);
+
+        $keys   = ['execution_enabled', 'dry_run_global', 'fallback_calendars_id'];
+        $stored = CoreConfig::getConfigurationValues(Config::CONTEXT, $keys);
+        $stored = is_array($stored) ? $stored : [];
+
+        $root = [
+            'execution_enabled'     => (int) ($stored['execution_enabled'] ?? EntityConfig::ROOT_DEFAULTS['execution_enabled']),
+            'dry_run'               => (int) ($stored['dry_run_global'] ?? EntityConfig::ROOT_DEFAULTS['dry_run']),
+            'fallback_calendars_id' => (int) ($stored['fallback_calendars_id'] ?? EntityConfig::ROOT_DEFAULTS['fallback_calendars_id']),
+        ];
+
+        if (countElementsInTable($table, ['entities_id' => 0]) === 0) {
+            $DB->insert($table, ['entities_id' => 0] + $root);
+        }
+
+        CoreConfig::deleteConfigurationValues(Config::CONTEXT, $keys);
+        Config::reload();
+        EntityConfig::reload();
     }
 }

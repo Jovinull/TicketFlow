@@ -47,6 +47,7 @@ use GlpiPlugin\Ticketclock\Engine\Action\AddFollowupAction;
 use GlpiPlugin\Ticketclock\Engine\RuleEngine;
 use GlpiPlugin\Ticketclock\Enum\ActionType;
 use GlpiPlugin\Ticketclock\Enum\ExecutionState;
+use GlpiPlugin\Ticketclock\EntityConfig;
 use GlpiPlugin\Ticketclock\Execution;
 use GlpiPlugin\Ticketclock\Rule;
 use GlpiPlugin\Ticketclock\RuleAction;
@@ -128,26 +129,15 @@ final class PendingInactivityFlowTest extends TestCase
 
         $this->marks_before = Config::get('ignored_message_marks');
 
-        Config::set([
-            'execution_enabled' => 1,
-            'dry_run_global'    => 0,
-            'system_users_id'   => $this->requester_id,
-            // Stated rather than inherited. Two of these tests turn on which followups count
-            // as somebody answering, and an instance where an administrator edited the marks
-            // is a normal instance -- a test that reddens there says nothing useful.
-            'ignored_message_marks' => Config::DEFAULT_IGNORED_MARKS,
-        ]);
+        EntityConfig::setForEntity(0, ['execution_enabled' => 1, 'dry_run' => 0]);
+        Config::set(['system_users_id' => $this->requester_id, 'ignored_message_marks' => Config::DEFAULT_IGNORED_MARKS]);
         Config::reload();
     }
 
     protected function tearDown(): void
     {
-        Config::set([
-            'execution_enabled'     => 0,
-            'dry_run_global'        => 1,
-            'system_users_id'       => 0,
-            'ignored_message_marks' => $this->marks_before,
-        ]);
+        EntityConfig::setForEntity(0, ['execution_enabled' => 0, 'dry_run' => 1]);
+        Config::set(['system_users_id' => 0, 'ignored_message_marks' => $this->marks_before]);
         Config::reload();
         parent::tearDown();
     }

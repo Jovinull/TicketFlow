@@ -51,7 +51,7 @@ final class PendingApprovalMatcherTest extends TestCase
     {
         $ancestors = static fn(int $entities_id): array => [0, $entities_id];
 
-        return new PendingApprovalMatcher(CalendarFactory::calculator(), 0, $ancestors);
+        return new PendingApprovalMatcher(CalendarFactory::calculator(), null, $ancestors);
     }
 
     private function rule(int $delay = 2): \GlpiPlugin\Ticketclock\Engine\RuleDefinition

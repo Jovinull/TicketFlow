@@ -41,6 +41,7 @@ use GlpiPlugin\Ticketclock\Calendar\BusinessTimeCalculator;
 use GlpiPlugin\Ticketclock\Calendar\Deadline;
 use GlpiPlugin\Ticketclock\Calendar\GlpiCalendarEngine;
 use GlpiPlugin\Ticketclock\Config;
+use GlpiPlugin\Ticketclock\EntityConfig;
 use GlpiPlugin\Ticketclock\Engine\Action\AddFollowupAction;
 use GlpiPlugin\Ticketclock\Engine\Action\AssignGroupAction;
 use GlpiPlugin\Ticketclock\Engine\Action\AddSolutionAction;
@@ -105,7 +106,10 @@ final readonly class RuleEngine
         private ?int $actor_users_id = null,
     ) {
         $calculator ??= new BusinessTimeCalculator(new GlpiCalendarEngine());
-        $fallback = Config::getInt('fallback_calendars_id');
+
+        // Resolved per ticket, not once here: the fallback calendar belongs to an entity, and
+        // at this point neither a rule nor a ticket is known.
+        $fallback = static fn(int $entities_id): int => EntityConfig::getFallbackCalendarId($entities_id);
 
         // getAncestorsOf() returns an id-keyed array; the matchers only compare values, so
         // hand them a plain list.
@@ -188,12 +192,20 @@ final readonly class RuleEngine
         // stops until the row is fixed; the rest of the pass is unaffected, because runAll()
         // asks each rule separately and merges what comes back.
         // Decided before anything is written, because two of the callers must not write at
-        // all. A preview is reached with READ on the rule, and a rule left in simulation or
-        // an instance still under the global dry run has asked for a run that changes
-        // nothing. "Nothing" has to include the rule's own bookkeeping, or the guarantee is
-        // not a guarantee: without this a read-only operator could stamp an error onto a
-        // rule, or wipe an existing one off a parent-entity rule they only inherit.
-        $dry_run = $force_dry_run || $this->isGloballyInert() || $rule->is_dry_run;
+        // all. A preview is reached with READ on the rule, and a rule left in simulation has
+        // asked for a run that changes nothing. "Nothing" has to include the rule's own
+        // bookkeeping, or the guarantee is not a guarantee: without this a read-only operator
+        // could stamp an error onto a rule, or wipe an existing one off a parent-entity rule
+        // they only inherit.
+        $rule_dry_run = $force_dry_run || $rule->is_dry_run;
+
+        // Two decisions, not one. This flag governs the rule's own bookkeeping below, so it
+        // also asks whether the rule's entity is inert. The per-ticket decision is taken again
+        // further down against the ticket's entity, because a recursive rule stored on a
+        // parent acts on tickets in several children and each of them owns its own brake --
+        // composing the two with `||` here would let a paused parent veto a child that
+        // explicitly armed itself.
+        $dry_run = $rule_dry_run || $this->isInertFor($rule->entities_id);
 
         if ($rule->unusable !== []) {
             $report->refused++;
@@ -267,7 +279,17 @@ final readonly class RuleEngine
                 }
 
                 try {
-                    $this->processCandidate($rule, $matcher, $context, $candidate, $now, $dry_run, $report);
+                    // The ticket's entity, not the rule's: pausing a branch has to stop the
+                    // tickets in that branch and no others.
+                    $this->processCandidate(
+                        $rule,
+                        $matcher,
+                        $context,
+                        $candidate,
+                        $now,
+                        $rule_dry_run || $this->isInertFor($context->entities_id),
+                        $report,
+                    );
                 } catch (Throwable $e) {
                     // One bad ticket must never abort the whole run.
                     $report->failed++;
@@ -499,15 +521,18 @@ final readonly class RuleEngine
     }
 
     /**
-     * True when the plugin as a whole must not touch anything.
+     * True when this entity's rules must not touch anything.
      *
      * Two independent switches on purpose: `execution_enabled` is the "is TicketFlow
-     * allowed to act at all" master switch, `dry_run_global` is the "let it run but keep
-     * it simulated" switch used while tuning rules. A fresh install has both set to inert.
+     * allowed to act at all" master switch, `dry_run` is the "let it run but keep it
+     * simulated" switch used while tuning rules. A fresh install has both set to inert.
+     *
+     * Both are the entity's, inherited from the parent when it defines none, so pausing a
+     * branch pauses that branch and nothing else.
      */
-    private function isGloballyInert(): bool
+    private function isInertFor(int $entities_id): bool
     {
-        return !Config::getBool('execution_enabled') || Config::getBool('dry_run_global');
+        return !EntityConfig::isExecutionEnabled($entities_id) || EntityConfig::isDryRun($entities_id);
     }
 
     private function actingUserId(): int

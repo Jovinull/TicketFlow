@@ -47,10 +47,11 @@ use Ticket;
 /**
  * The diagnostics page must show the reader their own entities, and nothing else.
  *
- * The page is gated on the plugin's UPDATE right, and `Profile::installRights()` grants
- * that right to every profile that can configure GLPI. On a multi-tenant instance that
- * includes the administrator of a single subsidiary, whose core access stops at their own
- * branch of the tree. Before this was fixed, `Inspector::report()` ran instance-wide
+ * The page is gated on the plugin's UPDATE right, which `Profile::installRights()` used to
+ * grant to every profile that can configure GLPI. On a multi-tenant instance that includes
+ * the administrator of a single subsidiary, whose core access stops at their own branch of
+ * the tree -- and while the install no longer widens the grant, instances that already ran it
+ * keep those rights. Before this was fixed, `Inspector::report()` ran instance-wide
  * aggregates with no entity restriction at all, so that operator could read entity names,
  * ticket volumes, group workloads and approval counts belonging to tenants they have no
  * access to. Found by GLPI's pre-publication security review.

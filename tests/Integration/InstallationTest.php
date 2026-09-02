@@ -38,9 +38,11 @@ namespace GlpiPlugin\Ticketclock\Tests\Integration;
 use Config as CoreConfig;
 use CronTask;
 use GlpiPlugin\Ticketclock\Config;
+use GlpiPlugin\Ticketclock\EntityConfig;
 use GlpiPlugin\Ticketclock\Cron;
 use GlpiPlugin\Ticketclock\Execution;
 use GlpiPlugin\Ticketclock\Install;
+use GlpiPlugin\Ticketclock\Profile as PluginProfile;
 use GlpiPlugin\Ticketclock\Rule;
 use GlpiPlugin\Ticketclock\Version;
 use PHPUnit\Framework\TestCase;
@@ -153,6 +155,55 @@ final class InstallationTest extends TestCase
     }
 
     /**
+     * Installing must not decide, on the administrator's behalf, who else may use the plugin.
+     *
+     * It used to grant the plugin right to every profile holding core's `config`, which on a
+     * multi-entity instance includes the administrator of one subsidiary. Handing a delegated
+     * administrator control over rules that act on tickets is a decision for the person
+     * running the instance, made in Setup > Profiles -- not a side effect of installing.
+     *
+     * The profile doing the install still gets it, because being locked out of a plugin one
+     * has just installed is not a defensible default either.
+     */
+    public function testInstallingDoesNotGrantThePluginRightToOtherConfigurationProfiles(): void
+    {
+        $profile = new \Profile();
+        $profiles_id = (int) $profile->add([
+            'name'      => 'TicketFlow config-only ' . uniqid(),
+            'interface' => 'central',
+        ]);
+        self::assertGreaterThan(0, $profiles_id);
+
+        $active_before = $_SESSION['glpiactiveprofile'] ?? null;
+
+        try {
+            ProfileRight::updateProfileRights($profiles_id, [
+                'config'          => ALLSTANDARDRIGHT,
+                Rule::$rightname  => 0,
+            ]);
+
+            // The install runs under whoever is installing. Pointing that at a third profile
+            // is what makes the assertion below about the *other* profile and not about this
+            // one -- otherwise the session's own grant would mask the behaviour under test.
+            $_SESSION['glpiactiveprofile'] = ['id' => -1];
+
+            PluginProfile::installRights();
+
+            $rights = ProfileRight::getProfileRights($profiles_id, [Rule::$rightname]);
+            self::assertSame(
+                0,
+                (int) ($rights[Rule::$rightname] ?? 0),
+                'a profile holding config must not be handed the plugin right by an install',
+            );
+        } finally {
+            if ($active_before !== null) {
+                $_SESSION['glpiactiveprofile'] = $active_before;
+            }
+            $profile->delete(['id' => $profiles_id], true);
+        }
+    }
+
+    /**
      * The shipped defaults must leave the plugin unable to touch a ticket.
      *
      * Asserted on Config::DEFAULTS rather than on the stored values, for the same reason as
@@ -161,8 +212,12 @@ final class InstallationTest extends TestCase
      */
     public function testAFreshInstallIsInert(): void
     {
-        self::assertSame('0', Config::DEFAULTS['execution_enabled'], 'execution ships off');
-        self::assertSame('1', Config::DEFAULTS['dry_run_global'], 'global dry run ships on');
+        // The two switches are the root entity's policy now, and every other entity inherits
+        // it, so asserting the root is asserting the whole tree on a fresh install.
+        self::assertSame(0, EntityConfig::ROOT_DEFAULTS['execution_enabled'], 'execution ships off');
+        self::assertSame(1, EntityConfig::ROOT_DEFAULTS['dry_run'], 'dry run ships on');
+        self::assertFalse(EntityConfig::isExecutionEnabled(0), 'the root is not armed');
+        self::assertTrue(EntityConfig::isDryRun(0), 'the root is simulated');
 
         // And every default has to be written at install time, not merely fallen back to:
         // Config::get() replaces missing keys from DEFAULTS, so reading it back would prove

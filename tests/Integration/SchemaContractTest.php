@@ -37,6 +37,7 @@ namespace GlpiPlugin\Ticketclock\Tests\Integration;
 
 use Config as CoreConfig;
 use GlpiPlugin\Ticketclock\Config;
+use GlpiPlugin\Ticketclock\EntityConfig;
 use GlpiPlugin\Ticketclock\Execution;
 use GlpiPlugin\Ticketclock\Install;
 use GlpiPlugin\Ticketclock\Rule;
@@ -76,6 +77,16 @@ final class SchemaContractTest extends TestCase
      * @var array<string, list<string>>
      */
     private const EXPECTED = [
+        'entityconfigs' => [
+            'id int(10) unsigned NOT NULL default NULL',
+            'entities_id int(10) unsigned NOT NULL default 0',
+            // Signed: -2 is core's Entity::CONFIG_PARENT, the "inherit from the parent" value.
+            'execution_enabled int(11) NOT NULL default -2',
+            'dry_run int(11) NOT NULL default -2',
+            'fallback_calendars_id int(11) NOT NULL default -2',
+            'date_creation timestamp NULL default NULL',
+            'date_mod timestamp NULL default NULL',
+        ],
         'executions' => [
             'id int(10) unsigned NOT NULL default NULL',
             'plugin_ticketclock_rules_id int(10) unsigned NOT NULL default 0',
@@ -152,14 +163,14 @@ final class SchemaContractTest extends TestCase
     }
 
     /**
-     * The four tables the plugin owns, and no others. A table added by a migration and not by
-     * the installer, or the other way round, is the same drift seen from outside.
+     * The tables the plugin owns, and no others. A table added by a migration and not by the
+     * installer, or the other way round, is the same drift seen from outside.
      */
     public function testThePluginOwnsExactlyTheseTables(): void
     {
         $declared = array_map(
             static fn(string $class): string => $class::getTable(),
-            [Rule::class, RuleGroup::class, RuleAction::class, Execution::class],
+            [Rule::class, RuleGroup::class, RuleAction::class, Execution::class, EntityConfig::class],
         );
         sort($declared);
 

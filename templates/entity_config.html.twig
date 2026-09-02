@@ -1,0 +1,100 @@
+{#
+ # -------------------------------------------------------------------------
+ # TicketFlow plugin for GLPI
+ # -------------------------------------------------------------------------
+ #
+ # MIT License
+ #
+ # Permission is hereby granted, free of charge, to any person obtaining a copy
+ # of this software and associated documentation files (the "Software"), to deal
+ # in the Software without restriction, including without limitation the rights
+ # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ # copies of the Software, and to permit persons to whom the Software is
+ # furnished to do so, subject to the following conditions:
+ #
+ # The above copyright notice and this permission notice shall be included in all
+ # copies or substantial portions of the Software.
+ #
+ # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ # SOFTWARE.
+ # -------------------------------------------------------------------------
+ # @copyright Copyright (C) 2026 Felipe Jovino.
+ # @license   MIT https://opensource.org/licenses/mit-license.php
+ # @link      https://github.com/Jovinull/ticketclock
+ # -------------------------------------------------------------------------
+ #}
+
+
+{% import 'components/form/fields_macros.html.twig' as fields %}
+
+{% set inherit = -2 %}
+
+<div class="asset">
+    <form name="ticketclock_entity_config" method="post" action="{{ config('root_doc') }}/plugins/ticketclock/front/entityconfig.form.php">
+        <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token() }}" />
+        <input type="hidden" name="entities_id" value="{{ entities_id }}" />
+
+        <div class="card-body d-flex flex-wrap">
+            <div class="col-12 flex-column">
+
+                <div class="alert alert-info" role="alert">
+                    <i class="ti ti-info-circle me-1"></i>
+                    {% if is_root %}
+                        {{ __('This is the root entity, so it has nothing to inherit from. What is set here is what every entity below falls back on.', 'ticketclock') }}
+                    {% else %}
+                        {{ __('Anything left on "inherit" follows the parent entity, and keeps following it when the parent changes.', 'ticketclock') }}
+                    {% endif %}
+                </div>
+
+                <div class="row flex-row">
+                    {{ fields.largeTitle(__('Safety', 'ticketclock'), 'ti ti-shield-check', true) }}
+
+                    {{ fields.dropdownArrayField('execution_enabled', values.execution_enabled, choices, __('Enable execution', 'ticketclock'), {
+                        'helper': __('Master switch for this entity. While it is off, rules are evaluated and logged but no ticket here is ever modified.', 'ticketclock')
+                    }) }}
+
+                    {{ fields.dropdownArrayField('dry_run', values.dry_run, choices, __('Dry run', 'ticketclock'), {
+                        'helper': __('Keeps this entity\'s rules simulated even when execution is enabled. Useful while tuning rules on a live instance.', 'ticketclock')
+                    }) }}
+                </div>
+
+                <div class="row flex-row">
+                    {{ fields.largeTitle(__('Calendar', 'ticketclock'), 'ti ti-calendar-clock') }}
+
+                    {# Restricted to this entity, and to what it inherits: the same set the save
+                       and the engine accept. A calendar from another branch would compute this
+                       entity's deadlines from opening times that are not its own. #}
+                    {{ fields.dropdownField('Calendar', 'fallback_calendars_id', values.fallback_calendars_id, __('Fallback calendar', 'ticketclock'), {
+                        'entity': entities_id,
+                        'toadd': is_root ? {} : {(inherit): __('Inheritance of the parent entity')},
+                        'helper': __('Used by rules in "entity calendar" mode when the entity tree defines none. Without it, business delays fall back to plain elapsed time, which is recorded on every execution.', 'ticketclock')
+                    }) }}
+                </div>
+
+                <div class="row flex-row">
+                    {{ fields.largeTitle(__('In force here', 'ticketclock'), 'ti ti-eye') }}
+
+                    {{ fields.readOnlyField('in_force_execution', in_force.execution_enabled == 1 ? __('Yes') : __('No'), __('Enable execution', 'ticketclock')) }}
+                    {{ fields.readOnlyField('in_force_dry_run', in_force.dry_run == 1 ? __('Yes') : __('No'), __('Dry run', 'ticketclock')) }}
+                    {% set in_force_calendar = in_force.fallback_calendars_id > 0 ? get_item_name('Calendar', in_force.fallback_calendars_id) : __('None', 'ticketclock') %}
+                    {{ fields.readOnlyField('in_force_calendar', in_force_calendar, __('Fallback calendar', 'ticketclock')) }}
+                </div>
+
+            </div>
+        </div>
+
+        {% if can_edit %}
+            <div class="card-body mx-n2 border-top d-flex flex-row-reverse">
+                <button class="btn btn-primary" type="submit" name="update" value="1">
+                    <i class="ti ti-device-floppy"></i>
+                    <span>{{ _x('button', 'Save') }}</span>
+                </button>
+            </div>
+        {% endif %}
+    </form>
+</div>

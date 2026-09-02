@@ -43,6 +43,7 @@ use Glpi\Exception\Http\AccessDeniedHttpException;
 use Group;
 use Group_Ticket;
 use GlpiPlugin\Ticketclock\Config;
+use GlpiPlugin\Ticketclock\EntityConfig;
 use GlpiPlugin\Ticketclock\Engine\RuleEngine;
 use GlpiPlugin\Ticketclock\Enum\ActionType;
 use GlpiPlugin\Ticketclock\Rule;
@@ -121,7 +122,7 @@ final class ManualRunAuthorizationTest extends TestCase
             'add_followup' => ['enabled' => 1, 'content' => 'Please answer.'],
         ]);
 
-        Config::set(['execution_enabled' => 1, 'dry_run_global' => 0]);
+        EntityConfig::setForEntity(0, ['execution_enabled' => 1, 'dry_run' => 0]);
 
         $ticket = new Ticket();
         $this->tickets_id = (int) $ticket->add([
@@ -143,7 +144,7 @@ final class ManualRunAuthorizationTest extends TestCase
 
     protected function tearDown(): void
     {
-        Config::set(['execution_enabled' => 0, 'dry_run_global' => 1]);
+        EntityConfig::setForEntity(0, ['execution_enabled' => 0, 'dry_run' => 1]);
         $_SESSION['glpiactiveprofile'] = $this->profile_before;
         if ($this->cron_before !== null) {
             $_SESSION['glpicronuserrunning'] = $this->cron_before;

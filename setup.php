@@ -32,6 +32,7 @@
  */
 
 use Glpi\Plugin\Hooks;
+use GlpiPlugin\Ticketclock\EntityConfig;
 use GlpiPlugin\Ticketclock\Execution;
 use GlpiPlugin\Ticketclock\Menu;
 use GlpiPlugin\Ticketclock\Profile;
@@ -58,7 +59,7 @@ require_once __DIR__ . '/src/Version.php';
 define('PLUGIN_TICKETCLOCK_VERSION', '1.1.0');
 define('PLUGIN_TICKETCLOCK_MIN_GLPI', '11.0.0');
 define('PLUGIN_TICKETCLOCK_MAX_GLPI', '11.0.99');
-define('PLUGIN_TICKETCLOCK_SCHEMA_VERSION', '1.2.0');
+define('PLUGIN_TICKETCLOCK_SCHEMA_VERSION', '1.3.0');
 
 /**
  * Init hooks of the plugin.
@@ -75,6 +76,7 @@ function plugin_init_ticketclock(): void
     Plugin::registerClass(Profile::class, ['addtabon' => ['Profile']]);
     Plugin::registerClass(Rule::class);
     Plugin::registerClass(Execution::class);
+    Plugin::registerClass(EntityConfig::class, ['addtabon' => ['Entity']]);
 
     // Refresh the plugin rights when the user switches profile.
     $PLUGIN_HOOKS[Hooks::CHANGE_PROFILE]['ticketclock'] = Profile::onChangeProfile(...);

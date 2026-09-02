@@ -54,7 +54,7 @@ final class LastGroupMessageMatcherTest extends TestCase
     {
         $ancestors = static fn(int $entities_id): array => [0, $entities_id];
 
-        return new PendingInactivityMatcher(CalendarFactory::calculator(), 0, $ancestors);
+        return new PendingInactivityMatcher(CalendarFactory::calculator(), null, $ancestors);
     }
 
     /**

@@ -44,6 +44,7 @@ use Group_Ticket;
 use GlpiPlugin\Ticketclock\Config;
 use GlpiPlugin\Ticketclock\Engine\Action\AssignGroupAction;
 use GlpiPlugin\Ticketclock\Engine\RuleEngine;
+use GlpiPlugin\Ticketclock\EntityConfig;
 use GlpiPlugin\Ticketclock\Execution;
 use GlpiPlugin\Ticketclock\Rule;
 use GlpiPlugin\Ticketclock\RuleAction;
@@ -107,14 +108,14 @@ final class AssignGroupFlowTest extends TestCase
         $rule->update(['id' => $this->rules_id, 'is_active' => 1]);
         RuleGroup::setGroupsForRule($this->rules_id, [$this->first_group]);
 
-        Config::set(['execution_enabled' => 1, 'dry_run_global' => 0]);
+        EntityConfig::setForEntity(0, ['execution_enabled' => 1, 'dry_run' => 0]);
 
         $this->tickets_id = $this->pendingTicketAssignedTo($this->first_group);
     }
 
     protected function tearDown(): void
     {
-        Config::set(['execution_enabled' => 0, 'dry_run_global' => 1]);
+        EntityConfig::setForEntity(0, ['execution_enabled' => 0, 'dry_run' => 1]);
 
         if ($this->hooks_before !== null) {
             /** @var array $PLUGIN_HOOKS */

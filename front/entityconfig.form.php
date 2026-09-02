@@ -33,35 +33,35 @@
 
 declare(strict_types=1);
 
-namespace GlpiPlugin\Ticketclock;
+use Entity as CoreEntity;
+use GlpiPlugin\Ticketclock\EntityConfig;
 
-/**
- * The plugin's version numbers, in one place.
- *
- * GLPI's convention is a `PLUGIN_<NAME>_VERSION` constant, and setup.php still defines it
- * so anything expecting that convention keeps working. But a runtime `define()` is
- * invisible to static analysis and to any code loaded before setup.php, so the values live
- * here and setup.php reads them — one source of truth rather than two that can drift.
- */
-final class Version
-{
-    /** Plugin version, as published in the catalog manifest. */
-    public const VERSION = '1.1.0';
+include __DIR__ . '/../../../inc/includes.php';
 
-    /** Minimal GLPI version, inclusive. */
-    public const MIN_GLPI = '11.0.0';
+Session::checkRight(EntityConfig::$rightname, UPDATE);
 
-    /** Maximum GLPI version, exclusive. */
-    public const MAX_GLPI = '11.0.99';
+$entities_id = (int) ($_POST['entities_id'] ?? -1);
 
-    /**
-     * Schema version handled by this code base.
-     *
-     * Deliberately independent of the plugin version: not every release changes the
-     * schema, and {@see Install} compares this against what the database reports to decide
-     * which migrations are missing.
-     */
-    public const SCHEMA = '1.3.0';
-
-    private function __construct() {}
+// The entity has to be one this session can actually reach. Without this, the form's own
+// hidden field would decide which entity's policy is rewritten, and an operator confined to
+// one branch could pause -- or un-pause -- another one.
+if ($entities_id < 0 || !Session::haveAccessToEntity($entities_id)) {
+    Html::displayRightError();
 }
+
+if (isset($_POST['update'])) {
+    // No explicit CSRF check here: GLPI 11 validates *and consumes* the token for every
+    // non-AJAX POST in CheckCsrfListener, so checking again would fail on a token that has
+    // already been spent.
+    $saved = EntityConfig::setForEntity($entities_id, [
+        'execution_enabled'     => (int) ($_POST['execution_enabled'] ?? CoreEntity::CONFIG_PARENT),
+        'dry_run'               => (int) ($_POST['dry_run'] ?? CoreEntity::CONFIG_PARENT),
+        'fallback_calendars_id' => (int) ($_POST['fallback_calendars_id'] ?? CoreEntity::CONFIG_PARENT),
+    ]);
+
+    if ($saved) {
+        Session::addMessageAfterRedirect(htmlescape(__('Configuration saved.', 'ticketclock')), true, INFO);
+    }
+}
+
+Html::back();

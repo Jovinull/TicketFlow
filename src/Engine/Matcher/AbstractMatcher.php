@@ -48,15 +48,28 @@ abstract class AbstractMatcher implements MatcherInterface
 {
     public function __construct(
         protected readonly BusinessTimeCalculator $calculator,
-        /** Plugin-wide fallback calendar, used when an entity defines none. */
-        protected readonly int $fallback_calendars_id = 0,
+        /**
+         * Resolves the ticket's entity to its fallback calendar, 0 when none applies.
+         *
+         * A resolver rather than an id: the fallback is the entity's, not the instance's, so
+         * it cannot be read once when the engine is built -- at that point no rule and no
+         * ticket is known yet.
+         *
+         * @var callable(int): int|null
+         */
+        protected readonly mixed $fallback_calendar_resolver = null,
         /** @var callable(int): list<int>|null resolves an entity id to itself plus its ancestors */
         protected readonly mixed $entity_ancestors_resolver = null,
     ) {}
 
     protected function resolveCalendar(RuleDefinition $rule, TicketContext $context): int
     {
-        return $rule->resolveCalendarId($context->entity_calendars_id, $this->fallback_calendars_id);
+        // The ticket's entity, not the rule's: a recursive rule on a parent acts on tickets
+        // in several children, and each of them keeps its own business hours.
+        $resolver = $this->fallback_calendar_resolver;
+        $fallback = is_callable($resolver) ? (int) $resolver($context->entities_id) : 0;
+
+        return $rule->resolveCalendarId($context->entity_calendars_id, $fallback);
     }
 
     /**

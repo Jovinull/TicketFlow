@@ -47,6 +47,7 @@ use Group;
 use Group_Ticket;
 use PendingReason;
 use PendingReason_Item;
+use Session;
 use Ticket;
 use TicketValidation;
 
@@ -71,7 +72,7 @@ final class Inspector
         return [
             'environment'  => self::environment(),
             'config'       => Config::all(),
-            'warnings'     => Config::getHealthWarnings(),
+            'warnings'     => Config::getHealthWarnings((int) Session::getActiveEntity()),
             'calendars'    => self::calendars(),
             'entities'     => self::entities(),
             'entities_total' => self::countEntities(),

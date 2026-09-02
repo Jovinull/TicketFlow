@@ -36,6 +36,7 @@ declare(strict_types=1);
 namespace GlpiPlugin\Ticketclock\Engine\Action;
 
 use CommonITILActor;
+use GlpiPlugin\Ticketclock\Support\EntityScope;
 use Group;
 use Group_Ticket;
 use GlpiPlugin\Ticketclock\Engine\ActionContext;
@@ -239,19 +240,7 @@ final class AssignGroupAction implements ActionInterface
      */
     public static function groupIsVisibleIn(Group $group, int $entities_id): bool
     {
-        $group_entity = (int) $group->fields['entities_id'];
-
-        if ($group_entity === $entities_id) {
-            return true;
-        }
-
-        if (!(bool) $group->fields['is_recursive']) {
-            return false;
-        }
-
-        $ancestors = array_map(intval(...), getAncestorsOf('glpi_entities', $entities_id));
-
-        return in_array($group_entity, $ancestors, true);
+        return EntityScope::itemIsVisibleIn($group, $entities_id);
     }
 
     /**

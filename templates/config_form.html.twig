@@ -41,7 +41,7 @@
                 {% if warnings|length > 0 %}
                     <div class="alert alert-warning" role="alert">
                         <div class="fw-bold mb-1">
-                            <i class="ti ti-alert-triangle me-1"></i>{{ __('Current state', 'ticketclock') }}
+                            <i class="ti ti-alert-triangle me-1"></i>{{ __('Needs attention', 'ticketclock') }}
                         </div>
                         <ul class="mb-0">
                             {% for warning in warnings %}
@@ -54,13 +54,10 @@
                 <div class="row flex-row">
                     {{ fields.largeTitle(__('Safety', 'ticketclock'), 'ti ti-shield-check', true) }}
 
-                    {{ fields.dropdownYesNo('execution_enabled', config.execution_enabled, __('Enable execution', 'ticketclock'), {
-                        'helper': __('Master switch. While this is off, rules are evaluated and logged but no ticket is ever modified. It ships off so a fresh install cannot act on anything.', 'ticketclock')
-                    }) }}
-
-                    {{ fields.dropdownYesNo('dry_run_global', config.dry_run_global, __('Global dry run', 'ticketclock'), {
-                        'helper': __('Keeps every rule simulated even when execution is enabled. Useful while tuning rules on a live instance.', 'ticketclock')
-                    }) }}
+                    <div class="alert alert-info" role="alert">
+                        <i class="ti ti-info-circle me-1"></i>
+                        {{ __('Whether the engine may act, and whether it stays simulated, is decided per entity: open an entity and use its TicketFlow tab. Each entity inherits from its parent until it says otherwise.', 'ticketclock') }}
+                    </div>
 
                     {{ fields.dropdownField('User', 'system_users_id', config.system_users_id, __('Acting user', 'ticketclock'), {
                         'right': 'all',
@@ -83,10 +80,6 @@
                     {{ fields.numberField('max_tickets_per_run', config.max_tickets_per_run, __('Maximum candidates per run', 'ticketclock'), {
                         'min': 1,
                         'helper': __('Hard ceiling for one cron run, so a backlog can never turn into a single very long execution.', 'ticketclock')
-                    }) }}
-
-                    {{ fields.dropdownField('Calendar', 'fallback_calendars_id', config.fallback_calendars_id, __('Fallback calendar', 'ticketclock'), {
-                        'helper': __('Used by rules in "entity calendar" mode when the entity tree defines none. Without it, business delays fall back to plain elapsed time, which is recorded on every execution.', 'ticketclock')
                     }) }}
                 </div>
 

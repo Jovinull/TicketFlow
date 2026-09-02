@@ -42,6 +42,7 @@ use Entity;
 use Group;
 use Group_Ticket;
 use GlpiPlugin\Ticketclock\Config;
+use GlpiPlugin\Ticketclock\EntityConfig;
 use GlpiPlugin\Ticketclock\Engine\RuleEngine;
 use GlpiPlugin\Ticketclock\Enum\ActionType;
 use GlpiPlugin\Ticketclock\Rule;
@@ -153,12 +154,12 @@ final class EntityCalendarTest extends TestCase
             'add_followup' => ['enabled' => 1, 'content' => 'still waiting'],
         ]);
 
-        Config::set(['execution_enabled' => 0, 'dry_run_global' => 1, 'fallback_calendars_id' => 0]);
+        EntityConfig::setForEntity(0, ['execution_enabled' => 0, 'dry_run' => 1, 'fallback_calendars_id' => 0]);
     }
 
     protected function tearDown(): void
     {
-        Config::set(['fallback_calendars_id' => 0]);
+        EntityConfig::setForEntity(0, ['fallback_calendars_id' => 0]);
 
         (new Entity())->update([
             'id'                 => 0,
@@ -279,7 +280,7 @@ final class EntityCalendarTest extends TestCase
      */
     public function testTheFallbackCalendarIsUsedWhenTheTreeHasNone(): void
     {
-        Config::set(['fallback_calendars_id' => $this->calendars_id]);
+        EntityConfig::setForEntity(0, ['fallback_calendars_id' => $this->calendars_id]);
 
         $tickets_id = $this->createPendingTicket(0, '2026-08-03 09:00:00');
 

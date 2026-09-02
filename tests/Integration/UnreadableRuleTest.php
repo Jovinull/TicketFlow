@@ -41,6 +41,7 @@ use CommonITILActor;
 use Group;
 use Group_Ticket;
 use GlpiPlugin\Ticketclock\Config;
+use GlpiPlugin\Ticketclock\EntityConfig;
 use GlpiPlugin\Ticketclock\Engine\RuleEngine;
 use GlpiPlugin\Ticketclock\Rule;
 use GlpiPlugin\Ticketclock\RuleAction;
@@ -99,7 +100,7 @@ final class UnreadableRuleTest extends TestCase
         $this->rules_id        = $this->createRule('TicketFlow unreadable rule');
         $this->healthy_rules_id = $this->createRule('TicketFlow healthy rule');
 
-        Config::set(['execution_enabled' => 1, 'dry_run_global' => 0]);
+        EntityConfig::setForEntity(0, ['execution_enabled' => 1, 'dry_run' => 0]);
 
         $ticket = new Ticket();
         $this->tickets_id = (int) $ticket->add([
@@ -121,7 +122,7 @@ final class UnreadableRuleTest extends TestCase
 
     protected function tearDown(): void
     {
-        Config::set(['execution_enabled' => 0, 'dry_run_global' => 1]);
+        EntityConfig::setForEntity(0, ['execution_enabled' => 0, 'dry_run' => 1]);
 
         foreach ([[Ticket::class, $this->tickets_id], [Rule::class, $this->rules_id],
             [Rule::class, $this->healthy_rules_id], [Group::class, $this->groups_id],

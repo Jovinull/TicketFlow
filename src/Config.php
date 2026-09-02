@@ -52,18 +52,22 @@ final class Config
     public const CONTEXT = 'plugin:ticketclock';
 
     /**
-     * Defaults. A fresh install is deliberately inert: execution off, global dry run on,
-     * so installing the plugin can never start closing tickets before anybody configured
-     * anything.
+     * Defaults for the settings that belong to the instance.
+     *
+     * What is left here describes one cron process running once for the whole instance:
+     * how many tickets it looks at, who it writes as, how much it logs and for how long.
+     * "Per entity" would not mean anything for any of them.
+     *
+     * The two safety switches and the fallback calendar used to live here and now live on
+     * {@see EntityConfig}, one row per entity: a branch has to be able to pause its own
+     * engine, and a calendar belongs to an entity, so a single global one computed other
+     * branches' deadlines from opening times that were not theirs.
      *
      * @var array<string, string>
      */
     public const DEFAULTS = [
-        'execution_enabled'     => '0',
-        'dry_run_global'        => '1',
         'batch_size'            => '200',
         'max_tickets_per_run'   => '1000',
-        'fallback_calendars_id' => '0',
         'system_users_id'       => '0',
         'log_dry_runs'          => '1',
         'log_retention_days'    => '90',
@@ -278,18 +282,25 @@ final class Config
     /**
      * Problems an administrator should know about before arming a rule.
      *
+     * The two switches are policy of one entity now, so they can only be reported against
+     * one. Callers that are looking at a rule pass the rule's entity; a screen that is not
+     * about a particular entity passes the one the session is in, which is the entity whose
+     * answer that person can act on.
+     *
+     * @param int|null $entities_id the entity to report the switches for, null to report
+     *                              only what belongs to the instance
      * @return list<string>
      */
-    public static function getHealthWarnings(): array
+    public static function getHealthWarnings(?int $entities_id = null): array
     {
         $warnings = [];
 
-        if (!self::getBool('execution_enabled')) {
-            $warnings[] = __('Execution is disabled: rules are evaluated and logged, but no ticket is modified.', 'ticketclock');
+        if ($entities_id !== null && !EntityConfig::isExecutionEnabled($entities_id)) {
+            $warnings[] = __('Execution is disabled for this entity: rules are evaluated and logged, but no ticket is modified.', 'ticketclock');
         }
 
-        if (self::getBool('dry_run_global')) {
-            $warnings[] = __('Global dry run is enabled: every rule behaves as a simulation.', 'ticketclock');
+        if ($entities_id !== null && EntityConfig::isDryRun($entities_id)) {
+            $warnings[] = __('Dry run is enabled for this entity: every rule behaves as a simulation.', 'ticketclock');
         }
 
         if (self::getActingUserId() <= 0) {

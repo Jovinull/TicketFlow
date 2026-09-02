@@ -40,6 +40,7 @@ use CommonITILValidation;
 use Group;
 use Group_Ticket;
 use GlpiPlugin\Ticketclock\Config;
+use GlpiPlugin\Ticketclock\EntityConfig;
 use GlpiPlugin\Ticketclock\Engine\Action\AddFollowupAction;
 use GlpiPlugin\Ticketclock\Engine\RuleEngine;
 use GlpiPlugin\Ticketclock\Enum\ActionType;
@@ -102,16 +103,14 @@ final class PendingApprovalFlowTest extends TestCase
             'final' => ['type' => ActionType::ChangeStatus->value, 'status' => Ticket::ASSIGNED],
         ]);
 
-        Config::set([
-            'execution_enabled' => 1,
-            'dry_run_global'    => 0,
-            'system_users_id'   => $this->approver_id,
-        ]);
+        EntityConfig::setForEntity(0, ['execution_enabled' => 1, 'dry_run' => 0]);
+        Config::set(['system_users_id' => $this->approver_id]);
     }
 
     protected function tearDown(): void
     {
-        Config::set(['execution_enabled' => 0, 'dry_run_global' => 1, 'system_users_id' => 0]);
+        EntityConfig::setForEntity(0, ['execution_enabled' => 0, 'dry_run' => 1]);
+        Config::set(['system_users_id' => 0]);
         parent::tearDown();
     }
 

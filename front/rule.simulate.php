@@ -107,7 +107,7 @@ TemplateRenderer::getInstance()->display('@ticketclock/simulation.html.twig', [
     'was_real'    => $run_real,
     'ran'         => $ran,
     'description' => $rule->getHumanDescription(),
-    'warnings'    => Config::getHealthWarnings(),
+    'warnings'    => Config::getHealthWarnings((int) $rule->fields['entities_id']),
     'can_run'     => Session::haveRight(Rule::$rightname, UPDATE),
     'missing_ticket_right' => $missing_ticket_right,
     'statuses'    => Ticket::getAllStatusArray(),
